@@ -154,6 +154,7 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
 .card{background:var(--raised);border:1.5px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .card h3{font-size:16px}
+.card h3 small{font:400 13px var(--body);color:var(--muted);margin-left:8px}
 .muted{color:var(--muted)}
 .stepper{display:flex;align-items:center;gap:6px}
 .stepper button{width:36px;height:36px;border-radius:50%;border:2px solid var(--line);font-size:18px}
@@ -162,6 +163,12 @@ label.ck{display:flex;gap:8px;align-items:flex-start;font-size:15px;cursor:point
 label.ck input{width:20px;height:20px;margin-top:2px;flex:none}
 textarea{width:100%;min-height:88px;border-radius:10px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);font:16px/1.5 var(--body);padding:8px 10px}
 input[type=text]{border-radius:10px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);font:16px var(--body);padding:8px 10px;min-height:42px;width:100%}
+.cubes{display:flex;flex-wrap:wrap;gap:8px}
+.cube{width:72px;height:80px;border-radius:12px;background:var(--raised);border:2px solid var(--line);border-top:8px solid var(--cc);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:var(--shadow)}
+.cube .e{font-size:34px;line-height:1}
+.cube small{font:500 11px/1.1 var(--display);color:var(--muted);text-align:center;padding:0 3px}
+.cube.spin{animation:shake .5s}
+@media (prefers-reduced-motion:reduce){.cube.spin{animation:none}}
 .timer{font:600 30px var(--display);font-variant-numeric:tabular-nums}
 .chunkdots{display:flex;gap:6px}
 .chunkdots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
@@ -853,7 +860,7 @@ function openCreative() {
   if (S.creative.m >= 4) { P().res.spark++; log(`ภารกิจสร้างสรรค์ครบทุกด่านแล้ว ${P().name} รับประกายคิด 1`); return afterResolve(); }
   const c = DATA.CREATIVE[S.creative.m]; const s = S.creative.s; const [task, ind] = c.stages[s];
   const lander = P();
-  const per = S.players.map((p) => ({ p, n: 0, extra: false, unique: false, text: '' }));
+  const per = S.players.map((p) => ({ p, n: 0, extra: false, unique: false, twist: false, text: '' }));
   let left = 300; let iv = null;
   const tm = h('span', { class: 'timer' }, '5:00');
   const startBtn = h('button', { class: 'btn gold', type: 'button', onclick: () => {
@@ -869,14 +876,15 @@ function openCreative() {
         h('button', { type: 'button', 'aria-label': 'ลด', onclick: () => { x.n = Math.max(0, x.n - 1); n.textContent = x.n; } }, '−'), n,
         h('button', { type: 'button', 'aria-label': 'เพิ่ม', onclick: () => { x.n++; n.textContent = x.n; } }, '+'))),
       S.creative.m === 0 ? null : h('label', { class: 'ck' }, h('input', { type: 'checkbox', onchange: (e) => { x.extra = e.target.checked; } }), extraLabel),
-      S.creative.m === 2 ? h('label', { class: 'ck' }, h('input', { type: 'checkbox', onchange: (e) => { x.unique = e.target.checked; } }), 'ไม่ซ้ำกับใครในวง') : null);
+      S.creative.m === 2 ? h('label', { class: 'ck' }, h('input', { type: 'checkbox', onchange: (e) => { x.unique = e.target.checked; } }), 'ไม่ซ้ำกับใครในวง') : null,
+      c.roll ? h('label', { class: 'ck' }, h('input', { type: 'checkbox', onchange: (e) => { x.twist = e.target.checked; } }), 'ตีความภาพบนลูกเต๋าแบบพลิกแพลง และอธิบายเหตุผลได้') : null);
   });
   const extraNote = c.id === 4 && s === 0 ? h('div', { class: 'sign', style: 'font-size:17px' }, DATA.ELAB_BROKEN.join(' · ')) : null;
   openModal({
     title: `★ ภารกิจที่ ${c.id} ${c.area} · ${DATA.STAGES[s]}`, color: 'var(--gold)', closable: false,
     body: [
       h('div', { class: 'row' }, h('span', { class: 'emoji', style: 'font-size:42px;white-space:nowrap' }, c.emoji), h('div', {}, h('b', { style: 'font-family:var(--display);font-weight:500' }, c.scene), h('div', { class: 'muted', style: 'font-size:14px' }, c.sceneText))),
-      h('p', { class: 'task', style: 'margin:0' }, task), extraNote,
+      h('p', { class: 'task', style: 'margin:0' }, task), extraNote, c.roll ? cubesUI(c, s) : null,
       h('div', { class: 'row', style: 'justify-content:space-between' }, h('span', { class: 'chip' }, `ตัวบ่งชี้ ${ind}`), h('div', { class: 'row' }, tm, startBtn)),
       owlEl('ทุกคนเขียนพร้อมกันนะ! จำไว้ว่า "ถูกก่อน แล้วค่อยแปลก" นับเฉพาะประโยคที่มีภาคประธานและภาคแสดงครบ และได้ใจความ'),
       h('div', { class: 'grid2' }, cards),
@@ -897,6 +905,7 @@ function openCreative() {
       if (S.creative.m === 0) spark += Math.floor(x.n / 3);
       if (S.creative.m === 1 && x.extra) spark += 1;
       if (S.creative.m === 2 && x.unique && x.extra && !x.dup) spark += 2;
+      if (c.roll && x.twist) spark += 1;
       if (S.creative.m === 3 && x.extra) spark += 1;
       if (p === lander) spark += 1;
       p.res.spark += spark; p.stars[S.creative.m]++;
@@ -910,6 +919,43 @@ function openCreative() {
       body: [h('div', { class: 'card' }, lines.map((l) => h('div', {}, l))), owlEl(pick(['ประโยคไหนของเพื่อนที่หนูชอบที่สุด เพราะอะไร? ให้โทเคนว้าวได้นะ', 'ถ้าจะอธิบายให้น้องฟังว่าทำไมประโยคนี้ถูก จะอธิบายว่าอย่างไร?'])),
         wowPicker(), h('button', { class: 'btn primary', type: 'button', onclick: () => done() }, 'ตกลง')] });
   }
+}
+// ลูกเต๋าเรื่องเล่า (กลไกแบบ Rory's Story Cubes) สำหรับภารกิจการคิดริเริ่ม
+function cubesUI(c, s) {
+  S.cubes = s === 0 || !S.cubes ? { faces: {}, table2: S.cubes ? S.cubes.table2 : false, shown: [] } : S.cubes;
+  const st = S.cubes;
+  let showWords = false; let rolled = false;
+  const box = h('div', { class: 'card', style: 'background:color-mix(in srgb,var(--gold) 14%,var(--raised))' });
+  const cubeById = (id) => DATA.STORY_CUBES.find((x) => x.id === id);
+  const COL = { S: 'var(--subj)', V: 'var(--verb)', O: 'var(--obj)', M: 'var(--mod)' };
+  const resolve = (code) => (code === 'R' ? (st.table2 ? 'R3' : pick(['R1', 'R2', 'R3'])) : code === 'Y' ? pick(['Y1', 'Y2', 'Y3']) : code);
+  const doRoll = () => {
+    const ids = c.roll[s].map(resolve);
+    if (s === 2) st.shown = [];
+    ids.forEach((id) => {
+      const fixed = s === 0 && st.table2 && id in DATA.TABLE2_FACES;
+      st.faces[id] = fixed ? DATA.TABLE2_FACES[id] : rnd(6);
+      if (!st.shown.includes(id)) st.shown.push(id);
+    });
+    rolled = true; drawBox(true); save();
+  };
+  const drawBox = (spin) => {
+    box.innerHTML = '';
+    box.append(h('h3', {}, '🎲 ลูกเต๋าเรื่องเล่า', h('small', {}, s === 0 ? 'ทอย 4 ลูก' : s === 1 ? 'ทอยเพิ่ม 2 ลูก' : 'ทอยครบ 9 ลูก')));
+    if (s === 0 && !rolled) box.append(h('label', { class: 'ck' }, h('input', { type: 'checkbox', checked: st.table2, onchange: (e) => { st.table2 = e.target.checked; } }), 'ใช้ชุดตามตารางที่ 2 (ครูตั้งหน้า 💨 ลม · 🪁 ว่าว · 🌾 ทุ่งนา) สำหรับเก็บข้อมูลวิจัย'));
+    const shown = st.shown.filter((id) => st.faces[id] != null);
+    box.append(h('div', { class: 'cubes', 'aria-live': 'polite' }, shown.length ? shown.map((id) => {
+      const cube = cubeById(id); const [e, w] = cube.faces[st.faces[id]];
+      const fresh = c.roll[s].map(resolve).length && spin;
+      return h('div', { class: `cube${fresh ? ' spin' : ''}`, style: `--cc:${COL[cube.role]}`, title: `${cube.name}: ${w}`, role: 'img', 'aria-label': `${cube.name}: ${w}` }, h('span', { class: 'e emoji' }, e), showWords ? h('small', {}, w) : null);
+    }) : h('span', { class: 'muted' }, 'ยังไม่ได้ทอย')));
+    box.append(h('div', { class: 'row' },
+      h('button', { class: 'btn gold', type: 'button', disabled: rolled, onclick: doRoll }, rolled ? 'ทอยแล้ว' : `🎲 ${P().name} ทอยลูกเต๋า`),
+      h('label', { class: 'ck' }, h('input', { type: 'checkbox', checked: showWords, onchange: (e) => { showWords = e.target.checked; drawBox(false); } }), 'แสดงคำแนะนำใต้ภาพ')),
+      h('p', { class: 'muted', style: 'margin:0;font-size:14px' }, 'แดง = ใคร/อะไร · เหลือง = ทำอะไร · น้ำเงิน = สิ่งของ ที่ไหน/เมื่อไร อย่างไร · ภาพหนึ่งตีความได้หลายแบบ เช่น 🌙 อาจเป็นตอนกลางคืน ความฝัน หรือขนมรูปพระจันทร์'));
+  };
+  drawBox(false);
+  return box;
 }
 function wowPicker() {
   const wrap = h('div', { class: 'card' }, h('h3', {}, 'ให้โทเคน "ว้าว!" (ไม่บังคับ)'), h('p', { class: 'muted', style: 'margin:0;font-size:14px' }, 'ผู้ให้เลือกเพื่อนที่ชอบประโยคที่สุด เพื่อนได้ประกายคิด +1'));

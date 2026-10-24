@@ -1,6 +1,6 @@
 // โทเคนวงกลม 22 มม. ดาวสร้างสรรค์ 4 รูปทรง หมุดผู้เล่น ธงประเภทประโยค และลูกเต๋าประเภทประโยค
 import { doc, esc, chunk } from './lib.mjs';
-import { TYPES, PLAYERS } from './data.mjs';
+import { TYPES, PLAYERS, STORY_CUBES, CUBE_RULES } from './data.mjs';
 
 const css = `
 @page{size:210mm 297mm;margin:0}
@@ -25,6 +25,14 @@ h2{margin:0 0 3mm;font:500 12pt var(--font-display)}
 .face{border:.3mm solid #2a2233;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font:600 12pt/1 var(--font-display)}
 .face small{font:500 6pt var(--font-display);margin-top:1mm}
 .glue{border:.3mm dashed #999;background:#f3f3f3;color:#999;font-size:6pt;display:flex;align-items:center;justify-content:center}
+.cubes{display:grid;grid-template-columns:repeat(2,96mm);gap:5mm 4mm;justify-content:center}
+.cnet{display:grid;grid-template-columns:repeat(4,24mm);grid-template-rows:repeat(3,24mm)}
+.cnet .f{border:.35mm solid #2a2233;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;border-top-width:2.4mm}
+.cnet .f .e{font-size:12mm;line-height:1}
+.cnet .tab{border:.3mm dashed #999;background:#f3f3f3}
+.cname{grid-column:3/5;grid-row:3;font:500 7pt/1.2 var(--font-display);padding:2mm;color:var(--ink-muted)}
+.legend{display:grid;grid-template-columns:repeat(3,1fr);gap:2mm 4mm;font-size:8pt}
+.legend div b{font-family:var(--font-display);font-weight:500}
 .note{font-size:8pt;color:var(--ink-muted);margin:2mm 0 4mm}
 `;
 
@@ -65,5 +73,17 @@ export function tokensHtml() {
 <div class="pnote">หมุด และลูกเต๋า</div></div>
 <div class="page"><h2>ธงประเภทประโยค (5 ประเภท × 6 ผืน)</h2><div class="note">ตัดเป็นแถบ พับครึ่ง หุ้มไม้จิ้มฟันหรือไม้ลูกชิ้นไว้ตรงรอยพับ แล้วทากาว — ใช้ปักบนแท่นวางประโยค</div>
 <div class="flags">${flags.join('')}</div><div class="pnote">ธงประเภทประโยค</div></div>`;
-  return doc('โทเคน ธง หมุด', css, tokenPages.join('') + extra);
+  const COL = { S: '#c8322b', V: '#f2b705', O: '#1d4a9e', M: '#4f74b8' };
+  // กางลูกบาศก์: แถวกลาง 4 หน้า + บน/ล่าง อย่างละ 1 หน้า ช่องเทาเป็นที่ทากาว
+  const cubeNet = (cube) => {
+    const f = (k) => `<div class="f" style="border-top-color:${COL[cube.role]}"><span class="e emoji">${cube.faces[k][0]}</span></div>`;
+    return `<div class="cnet"><div class="tab"></div>${f(0)}<div class="tab"></div><div></div>${f(1)}${f(2)}${f(3)}${f(4)}<div></div>${f(5)}<div class="cname">${esc(cube.name)}<br>ลูก ${cube.id}</div></div>`;
+  };
+  const cubePages = [STORY_CUBES.slice(0, 6), STORY_CUBES.slice(6)].map((grp, i) => `<div class="page"><h2>ลูกเต๋าเรื่องเล่า ${i + 1}/2 (ภารกิจการคิดริเริ่ม)</h2>
+<div class="note">ตัดตามเส้นนอก พับตามขอบหน้า ทากาวที่ช่องเทา (หรือติดหน้ากระดาษลงบนลูกบาศก์ไม้ 2.4 ซม.) · แถบสีบนหน้าบอกหน้าที่ของคำ แดง = ใคร/อะไร · เหลือง = ทำอะไร · น้ำเงิน = สิ่งของ/ส่วนขยาย</div>
+<div class="cubes">${grp.map(cubeNet).join('')}</div>
+${i === 1 ? `<h2 style="margin-top:6mm">การ์ดคำแนะนำภาพ (วางข้างลูกเต๋า)</h2><div class="legend">${STORY_CUBES.map((c) => `<div><b style="color:${COL[c.role]}">${esc(c.name)}</b><br>${c.faces.map(([e, w]) => `<span class="emoji">${e}</span> ${esc(w)}`).join(' · ')}</div>`).join('')}</div>
+<h2 style="margin-top:5mm">กติกาลูกเต๋าเรื่องเล่า</h2><ol style="margin:0;padding-left:5mm;font-size:8.6pt;line-height:1.5">${CUBE_RULES.map((r) => `<li>${esc(r)}</li>`).join('')}</ol>` : ''}
+<div class="pnote">ลูกเต๋าเรื่องเล่า · กลไกได้แรงบันดาลใจจาก Rory's Story Cubes · ภาพบนหน้าลูกเต๋าออกแบบใหม่สำหรับเกมนี้</div></div>`).join('');
+  return doc('โทเคน ธง หมุด', css, tokenPages.join('') + extra + cubePages);
 }

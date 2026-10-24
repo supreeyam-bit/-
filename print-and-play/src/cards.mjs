@@ -3,7 +3,7 @@
 import { doc, esc, arMarker, chunk } from './lib.mjs';
 import {
   TYPES, RESOURCES, GLASS_PER_TYPE, MISSIONS, MISSION_REWARD, CHAOS, TEMPLATES, HINT_LEVELS,
-  CREATIVE, STAGES, ELAB_BROKEN, WONDERS, ROLES_JIGSAW, COACH,
+  CREATIVE, STAGES, ELAB_BROKEN, WONDERS, ROLES_JIGSAW, COACH, STORY_CUBES,
 } from './data.mjs';
 
 const css = `
@@ -114,12 +114,23 @@ export function cardsHtml() {
 
 // ---------- การ์ดใหญ่ ----------
 const lg = (inner) => card(inner, 'lgc');
+// ลูกเต๋าเรื่องเล่าที่ต้องทอยในด่านนั้น
+const CUBE_COL = { S: '#c8322b', V: '#f2b705', O: '#1d4a9e', M: '#4f74b8' };
+function cubeChips(codes) {
+  return codes.map((code) => {
+    const cube = STORY_CUBES.find((x) => x.id === code);
+    const role = cube ? cube.role : code === 'R' ? 'S' : 'V';
+    const label = cube ? cube.name : code === 'R' ? 'แดง 1 ลูก (ลูกใดก็ได้)' : 'เหลือง 1 ลูก (ลูกใดก็ได้)';
+    return `<span style="display:inline-flex;align-items:center;gap:1mm;margin:0 2mm .8mm 0;white-space:nowrap"><span style="width:3.4mm;height:3.4mm;border-radius:.8mm;background:${CUBE_COL[role]};display:inline-block"></span>${esc(label)}</span>`;
+  }).join('');
+}
 const crItems = CREATIVE.flatMap((c) => [{ c, s: -1 }, ...[0, 1, 2].map((s) => ({ c, s }))]);
 function crFront({ c, s }) {
   const band = `<div class="band" style="background:var(--spark-gold);color:var(--ink)"><span>★ ภารกิจที่ ${c.id} ${c.area} (${c.en})</span><span>ดาว${c.shape}</span></div>`;
   if (s < 0) {
     return lg({ style: 'background:#fff;border:.5mm solid var(--spark-gold)', html: `${band}<div class="bd"><span class="pill" style="align-self:flex-start">การ์ดภาพสถานการณ์</span>
-<div class="big emoji" style="font-size:17mm;white-space:nowrap">${c.emoji}</div><h2 style="text-align:center">${esc(c.scene)}</h2><p style="text-align:center">${esc(c.sceneText)}</p>
+<div class="big emoji" style="font-size:${c.emoji.split(" ").length > 3 ? 14 : 17}mm;display:flex;justify-content:center;gap:3mm">${c.emoji.split(" ").map((e) => `<span>${e}</span>`).join("")}</div><h2 style="text-align:center">${esc(c.scene)}</h2><p style="text-align:center">${esc(c.sceneText)}</p>
+${c.roll ? `<div class="crit"><b>🎲 ลูกเต๋าเรื่องเล่า 9 ลูก</b> แดง = ใคร/อะไร · เหลือง = ทำอะไร · น้ำเงิน = สิ่งของ ที่ไหน/เมื่อไร อย่างไร<br>ภาพหนึ่งตีความได้หลายแบบ ตีความพลิกแพลงและอธิบายได้ = ประกายคิด +1</div>` : ''}
 <div class="crit"><b>เรื่องเดียวกันทั้ง 3 ด่าน</b><br>${STAGES.map((x) => esc(x)).join('<br>')}</div>
 <div class="foot"><span>วางกลางโต๊ะตลอดภารกิจ<br>สแกนเพื่อดูภาพเคลื่อนไหว</span>${arMarker('scene' + c.id, '16mm')}</div></div>` });
   }
@@ -127,7 +138,7 @@ function crFront({ c, s }) {
   const timed = task.includes('5 นาที');
   const extra = c.id === 4 && s === 0 ? `<div class="sign" style="font-size:10pt">${ELAB_BROKEN.map(esc).join('<br>')}</div>` : '';
   return lg({ style: 'background:#fff;border:.5mm solid var(--spark-gold)', html: `${band}<div class="bd"><h3>${esc(STAGES[s])}</h3>
-<p class="task">${esc(task)}</p>${extra}
+<p class="task"${c.roll ? ' style="font-size:9.4pt!important"' : ''}>${esc(task)}</p>${extra}${c.roll ? `<div class="crit" style="background:#fbe9cc"><b>🎲 ทอย:</b> ${cubeChips(c.roll[s])}</div>` : ''}
 <div class="crit"><b>ถูกก่อน แล้วค่อยแปลก</b> — นับเฉพาะประโยคที่มีภาคประธานและภาคแสดงครบ และสื่อความหมายได้ถูกต้องสมบูรณ์<br>ผ่านด่าน: ประกายคิด 1 + ดาว${c.shape} 1 · ${esc(c.reward)}</div>
 <div class="foot"><span>${timed ? '⏳ นาฬิกาทราย 5 นาที · ' : ''}ทุกคนเขียนพร้อมกันบนไวท์บอร์ด</span><span class="pill">ตัวบ่งชี้ ${ind}</span></div></div>` });
 }
