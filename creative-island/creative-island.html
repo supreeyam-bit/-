@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เกาะนักคิดสี่ทิศ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Sarabun:wght@400;600;700&display=swap">
+<style>
+/* Layout: a 9×9 island loop board (four coasts = four creative-thinking components) beside a captain's log panel; challenges open as cards over the sea. */
+:root {
+  --bg: #e9f2f5;
+  --paper: #ffffff;
+  --ink: #15304a;
+  --muted: #587087;
+  --line: #c6d7e0;
+  --sea: #1f7a99;
+  --sea-on: #ffffff;
+  --scrim: rgba(12, 32, 48, .55);
+  --good: #23855a;
+  --bad: #c2384b;
+  --z1: #d99a00; --z1s: #fdf1cc; --z1on: #2a1f00;
+  --z2: #2b9458; --z2s: #dcf3e5; --z2on: #ffffff;
+  --z3: #d63d73; --z3s: #fbe0ea; --z3on: #ffffff;
+  --z4: #4558cc; --z4s: #e1e5fb; --z4on: #ffffff;
+  --neutral-s: #eef3f6;
+  --font-display: "Mitr", "Sarabun", "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif;
+  --font-body: "Sarabun", "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1b26; --paper: #152836; --ink: #e4eef4; --muted: #9bb2c2; --line: #29404f;
+    --sea: #56bcdc; --sea-on: #072230; --scrim: rgba(0, 0, 0, .65); --good: #4cc98b; --bad: #ff7085;
+    --z1: #f2b934; --z1s: #3a3112; --z1on: #2a1f00;
+    --z2: #48c27c; --z2s: #13362a; --z2on: #062014;
+    --z3: #f06a98; --z3s: #3f1a2a; --z3on: #2b0613;
+    --z4: #8293ff; --z4s: #1e2550; --z4on: #0b1036;
+    --neutral-s: #1c3242;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1b26; --paper: #152836; --ink: #e4eef4; --muted: #9bb2c2; --line: #29404f;
+  --sea: #56bcdc; --sea-on: #072230; --scrim: rgba(0, 0, 0, .65); --good: #4cc98b; --bad: #ff7085;
+  --z1: #f2b934; --z1s: #3a3112; --z1on: #2a1f00;
+  --z2: #48c27c; --z2s: #13362a; --z2on: #062014;
+  --z3: #f06a98; --z3s: #3f1a2a; --z3on: #2b0613;
+  --z4: #8293ff; --z4s: #1e2550; --z4on: #0b1036;
+  --neutral-s: #1c3242;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.55; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 500; line-height: 1.25; margin: 0; text-wrap: balance; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--sea); outline-offset: 2px; }
+input, textarea, select { font: inherit; color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; }
+textarea { resize: vertical; }
+
+.app { max-width: 1280px; margin: 0 auto; padding-block: 16px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 16px; }
+.top { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.brand { display: flex; flex-direction: column; }
+.brand h1 { font-size: clamp(24px, 4vw, 34px); }
+.brand small { color: var(--muted); font-size: 14px; }
+.top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1.5px solid var(--line); background: var(--paper); border-radius: 999px; padding: 7px 16px; font-family: var(--font-display); font-size: 15px; }
+.btn:hover { border-color: var(--sea); }
+.btn.primary { background: var(--sea); color: var(--sea-on); border-color: var(--sea); }
+.btn.zone { background: var(--zc); color: var(--zon); border-color: var(--zc); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.big { font-size: 18px; padding: 10px 24px; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 20px; align-items: start; }
+@media (max-width: 980px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+/* Board */
+.board-wrap { min-width: 0; }
+.board { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); grid-template-rows: repeat(9, minmax(0, 1fr)); gap: clamp(2px, .5vw, 5px); aspect-ratio: 1; width: 100%; max-width: 780px; margin: 0 auto; }
+.sq { position: relative; border-radius: clamp(4px, .8vw, 9px); background: var(--zs, var(--neutral-s)); border: 2px solid var(--zc, var(--line)); color: var(--zc, var(--muted)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 0; overflow: hidden; }
+.sq svg { width: 42%; height: auto; }
+.sq .code { font-family: var(--font-display); font-weight: 600; font-size: clamp(9px, 1.5vw, 14px); color: var(--ink); line-height: 1; }
+.sq .ico { font-size: clamp(13px, 2.4vw, 24px); line-height: 1; }
+.sq.special { border-style: dashed; }
+.sq.here { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--ink); z-index: 1; }
+.toks { position: absolute; inset: 2px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; pointer-events: none; }
+.tok { width: clamp(11px, 2.1vw, 22px); height: clamp(11px, 2.1vw, 22px); border-radius: 50%; background: var(--pc); border: 2px solid var(--paper); color: #fff; font-size: clamp(7px, 1.2vw, 11px); font-weight: 700; display: grid; place-items: center; box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: transform .15s; }
+.tok:nth-child(2) { justify-self: end; } .tok:nth-child(3) { align-self: end; } .tok:nth-child(4) { justify-self: end; align-self: end; }
+.center { grid-row: 2 / 9; grid-column: 2 / 9; border-radius: 18px; background: conic-gradient(from -45deg, var(--z1s) 0 25%, var(--z2s) 0 50%, var(--z3s) 0 75%, var(--z4s) 0); display: grid; place-items: center; padding: 6%; position: relative; }
+.compass { position: absolute; inset: 0; pointer-events: none; font-family: var(--font-display); font-size: clamp(10px, 1.6vw, 15px); }
+.compass span { position: absolute; color: var(--c); font-weight: 500; white-space: nowrap; }
+.compass .n { top: 4%; left: 50%; transform: translateX(-50%); }
+.compass .e { right: 3%; top: 50%; transform: translateY(-50%) rotate(90deg); transform-origin: center; right: -2%; }
+.compass .s { bottom: 4%; left: 50%; transform: translateX(-50%); }
+.compass .w { left: -2%; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+.turn-card { background: var(--paper); border-radius: 16px; padding: clamp(10px, 2.2vw, 22px); width: min(100%, 330px); text-align: center; display: flex; flex-direction: column; gap: clamp(4px, 1vw, 10px); align-items: center; box-shadow: 0 6px 24px rgba(10, 40, 60, .12); position: relative; z-index: 1; }
+.turn-card .who { font-family: var(--font-display); font-size: clamp(15px, 2.4vw, 22px); display: flex; align-items: center; gap: 8px; }
+.turn-card .round { color: var(--muted); font-size: clamp(11px, 1.5vw, 14px); }
+.dot { width: 14px; height: 14px; border-radius: 50%; background: var(--pc); display: inline-block; flex: none; }
+.die { width: clamp(40px, 7vw, 64px); height: clamp(40px, 7vw, 64px); border-radius: 14px; border: 2px solid var(--ink); display: grid; place-items: center; font-family: var(--font-display); font-size: clamp(22px, 4vw, 36px); background: var(--bg); }
+.die.rolling { animation: wob .12s infinite alternate; }
+@keyframes wob { from { transform: rotate(-8deg); } to { transform: rotate(8deg); } }
+.msg { font-size: clamp(11px, 1.6vw, 15px); color: var(--muted); min-height: 1.5em; }
+
+/* Side panel */
+.side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.panel { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel h3 { font-size: 16px; color: var(--muted); letter-spacing: .02em; }
+.legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.leg { border-radius: 10px; background: var(--zs); padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.leg b { font-family: var(--font-display); font-weight: 500; color: var(--ink); display: flex; gap: 6px; align-items: center; font-size: 15px; }
+.leg b svg { width: 16px; color: var(--zc); flex: none; }
+.leg span { font-size: 13px; color: var(--muted); line-height: 1.35; }
+.player { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line); }
+.player:first-of-type { border-top: 0; padding-top: 0; }
+.player.active .pname { text-decoration: underline; text-decoration-thickness: 3px; text-decoration-color: var(--pc); text-underline-offset: 4px; }
+.prow { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.pname { font-family: var(--font-display); font-size: 16px; display: flex; gap: 8px; align-items: center; min-width: 0; overflow-wrap: anywhere; }
+.pstat { font-variant-numeric: tabular-nums; font-size: 14px; color: var(--muted); white-space: nowrap; }
+.meters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.meter { display: flex; flex-direction: column; gap: 3px; }
+.meter .bar { height: 7px; border-radius: 4px; background: var(--zs); overflow: hidden; }
+.meter .bar i { display: block; height: 100%; background: var(--zc); border-radius: 4px; }
+.meter small { font-size: 12px; color: var(--muted); display: flex; gap: 4px; align-items: center; font-variant-numeric: tabular-nums; }
+.meter small svg { width: 10px; color: var(--zc); }
+.log { max-height: 220px; overflow: auto; font-size: 14px; display: flex; flex-direction: column; gap: 4px; padding: 0; margin: 0; list-style: none; }
+.log li { color: var(--muted); }
+.log li b { color: var(--ink); font-weight: 600; }
+
+/* Modal */
+.back { position: fixed; inset: 0; background: var(--scrim); display: grid; place-items: center; padding: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); z-index: 20; }
+.modal { background: var(--paper); border-radius: 18px; width: min(100%, 700px); max-height: calc(100% - 8px); overflow: auto; padding: clamp(16px, 3vw, 28px); display: flex; flex-direction: column; gap: 14px; border-top: 8px solid var(--zc, var(--sea)); }
+.modal.wide { width: min(100%, 980px); }
+.mh { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.zbadge { display: inline-flex; gap: 6px; align-items: center; background: var(--zs); color: var(--ink); border-radius: 999px; padding: 3px 12px 3px 8px; font-family: var(--font-display); font-size: 14px; }
+.zbadge svg { width: 16px; color: var(--zc); }
+.indtxt { font-size: 14px; color: var(--muted); }
+.prompt { background: var(--zs, var(--neutral-s)); border-radius: 14px; padding: 16px; display: flex; gap: 14px; align-items: center; }
+.prompt .pic { font-size: clamp(30px, 6vw, 48px); line-height: 1.1; flex: none; letter-spacing: 4px; }
+.prompt .ptxt { font-family: var(--font-display); font-size: clamp(18px, 3vw, 24px); min-width: 0; overflow-wrap: anywhere; }
+.tip { font-size: 15px; color: var(--muted); border-left: 4px solid var(--zc, var(--sea)); padding-left: 10px; }
+.ask { font-size: 17px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.row.end { justify-content: flex-end; }
+.spacer { flex: 1; }
+.timer { font-family: var(--font-display); font-size: 26px; font-variant-numeric: tabular-nums; min-width: 72px; }
+.timer.low { color: var(--bad); }
+.count { color: var(--muted); }
+.slots { display: flex; flex-direction: column; gap: 10px; }
+.slots label { display: flex; flex-direction: column; gap: 4px; font-size: 15px; font-weight: 600; }
+.chips { display: flex; flex-direction: column; gap: 6px; }
+.chip { text-align: left; border: 1.5px solid var(--line); background: var(--paper); border-radius: 10px; padding: 8px 12px; display: flex; gap: 10px; align-items: flex-start; }
+.chip .mark { font-weight: 700; width: 1.2em; flex: none; color: var(--good); }
+.chip.no { opacity: .6; text-decoration: line-through; }
+.chip.no .mark { color: var(--bad); }
+.chip small { color: var(--muted); display: block; text-decoration: none; }
+.chip-body { min-width: 0; overflow-wrap: anywhere; }
+.opts { display: flex; flex-direction: column; gap: 8px; }
+.opt { text-align: left; border: 1.5px solid var(--line); background: var(--paper); border-radius: 12px; padding: 10px 14px; display: flex; gap: 12px; align-items: center; }
+.opt.on { border-color: var(--zc, var(--sea)); background: var(--zs, var(--neutral-s)); box-shadow: inset 0 0 0 1px var(--zc, var(--sea)); }
+.opt .st { font-family: var(--font-display); color: var(--zc, var(--sea)); min-width: 3.2em; letter-spacing: 1px; }
+.answer { background: var(--neutral-s); border-radius: 12px; padding: 12px 14px; font-size: 18px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.stars { font-size: clamp(40px, 9vw, 64px); color: var(--zc, var(--z1)); letter-spacing: 6px; text-align: center; line-height: 1.1; }
+.stars .off { color: var(--line); }
+.center-txt { text-align: center; }
+.verdict { font-weight: 600; }
+.verdict.ok { color: var(--good); } .verdict.no { color: var(--bad); }
+.steppers { display: flex; flex-direction: column; gap: 8px; }
+.stepper { display: flex; align-items: center; gap: 10px; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.stepper .n { font-family: var(--font-display); font-size: 22px; width: 2.5em; text-align: center; font-variant-numeric: tabular-nums; }
+.sbtn { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--paper); font-size: 20px; }
+.setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 520px) { .setup-grid { grid-template-columns: 1fr; } }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+.seg { display: inline-flex; border: 1.5px solid var(--line); border-radius: 999px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 6px 16px; font-family: var(--font-display); }
+.seg button.on { background: var(--sea); color: var(--sea-on); }
+.rules { display: flex; flex-direction: column; gap: 10px; }
+.rules ol, .rules ul { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 4px; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 15px; }
+th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: center; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-family: var(--font-display); font-weight: 500; color: var(--muted); }
+.results { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.res { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.res .rank { font-family: var(--font-display); font-size: 14px; color: var(--muted); }
+.res .score { font-family: var(--font-display); font-size: 28px; }
+.res svg.radar { width: 100%; max-width: 200px; height: auto; }
+.res .title { font-size: 14px; color: var(--muted); }
+.copybox { width: 100%; min-height: 120px; font-family: ui-monospace, monospace; font-size: 12px; }
+.dice3 { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.pcube { width: 84px; height: 84px; border-radius: 16px; border: 2px solid var(--zc); background: var(--zs); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 36px; line-height: 1; gap: 4px; }
+.pcube small { font-size: 13px; color: var(--ink); font-family: var(--font-display); }
+.evcard { border-radius: 16px; border: 2px dashed var(--sea); padding: 18px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.evcard .ico { font-size: 44px; line-height: 1; }
+@media (prefers-reduced-motion: reduce) { .die.rolling { animation: none; } .tok { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <h1>เกาะนักคิดสี่ทิศ</h1>
+      <small>บอร์ดเกมฝึกการคิดสร้างสรรค์ผ่านการแต่งประโยค · คิดคล่อง คิดยืดหยุ่น คิดริเริ่ม คิดละเอียดลออ</small>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="btn-rules" type="button">กติกา</button>
+      <button class="btn" id="btn-end" type="button">จบเกมและดูผล</button>
+      <button class="btn" id="btn-new" type="button">เริ่มเกมใหม่</button>
+    </div>
+  </header>
+  <div class="main">
+    <div class="board-wrap"><div class="board" id="board"></div></div>
+    <aside class="side">
+      <section class="panel">
+        <h3>นักคิดบนเกาะ</h3>
+        <div id="players"></div>
+      </section>
+      <section class="panel">
+        <h3>สี่ทิศของการคิดสร้างสรรค์</h3>
+        <div class="legend" id="legend"></div>
+      </section>
+      <section class="panel">
+        <h3>บันทึกการเดินทาง</h3>
+        <ul class="log" id="log"></ul>
+      </section>
+    </aside>
+  </div>
+</div>
+<div class="back" id="back" hidden><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+
+<script>
+// ---------- เนื้อหา: องค์ประกอบของการคิดสร้างสรรค์ (Guilford / Torrance) ----------
+const ZONES = [
+  { name: 'การคิดคล่อง', short: 'คิดคล่อง', en: 'Fluency', shape: 'circle', land: 'ทุ่งทานตะวันคิดไว',
+    tip: 'คิดให้ได้มาก ๆ และเร็ว ๆ ไม่ต้องกลัวผิด ยิ่งได้มากยิ่งดี' },
+  { name: 'การคิดยืดหยุ่น', short: 'คิดยืดหยุ่น', en: 'Flexibility', shape: 'square', land: 'ป่าไผ่พลิกมุม',
+    tip: 'คิดได้หลายแบบ หลายมุม เปลี่ยนผู้ทำ เปลี่ยนผู้ฟัง เปลี่ยนส่วนที่ขยาย' },
+  { name: 'การคิดริเริ่ม', short: 'คิดริเริ่ม', en: 'Originality', shape: 'triangle', land: 'ภูเขาไฟไอเดียใหม่',
+    tip: 'คิดให้แปลกใหม่ ไม่ซ้ำใคร แต่เพื่อนอ่านแล้วยังเข้าใจและเหมาะกับเรื่อง' },
+  { name: 'การคิดละเอียดลออ', short: 'คิดละเอียดลออ', en: 'Elaboration', shape: 'hexagon', land: 'อ่าวปะการังรายละเอียด',
+    tip: 'เติมรายละเอียดให้ครบ ตรวจให้ถูก และอธิบายได้ว่าทำไมจึงชัดขึ้น' },
+];
+
+const IND = {
+  '1.1': 'แต่งประโยคจากภาพหรือสถานการณ์ที่กำหนดให้ได้จำนวนมากภายในเวลาที่กำหนด',
+  '1.2': 'คิดคำหรือถ้อยคำที่ใช้สื่อสารตามสถานการณ์ได้จำนวนมากและไม่ซ้ำกัน',
+  '1.3': 'คิดคำขยายเพื่อเพิ่มเติมรายละเอียดของประโยคได้จำนวนมากภายในเวลาที่กำหนด',
+  '2.1': 'แต่งประโยคจากคำที่กำหนดให้ได้หลายรูปแบบ โดยเปลี่ยนผู้ทำหรือการกระทำ',
+  '2.2': 'ปรับเปลี่ยนถ้อยคำในประโยคให้เหมาะสมกับผู้ฟังและสถานการณ์ที่แตกต่างกัน',
+  '2.3': 'ขยายประโยคได้หลายรูปแบบ โดยเปลี่ยนส่วนที่ขยาย เช่น ผู้ทำ การกระทำ เวลา หรือสถานที่',
+  '3.1': 'แต่งประโยคจากสถานการณ์ที่กำหนดให้มีความแปลกใหม่และแตกต่างจากผู้อื่น',
+  '3.2': 'สร้างสรรค์ถ้อยคำเพื่อสื่อสารที่มีความแปลกใหม่และเหมาะสมกับสถานการณ์',
+  '3.3': 'สร้างประโยคหรือข้อความสั้น ๆ โดยนำคำที่กำหนดมาประยุกต์ใช้ให้เกิดแนวคิดใหม่',
+  '4.1': 'เพิ่มเติมคำหรือข้อความขยายเพื่อให้ประโยคมีรายละเอียดชัดเจนและสมบูรณ์',
+  '4.2': 'ตรวจสอบและปรับปรุงประโยคให้มีความครบถ้วน ถูกต้อง และสอดคล้องกับสถานการณ์',
+  '4.3': 'อธิบายเหตุผลในการเพิ่มเติมหรือปรับเปลี่ยนรายละเอียดของประโยคเพื่อให้สื่อความหมายได้ชัดเจนยิ่งขึ้น',
+};
+const INDS = Object.keys(IND);
+
+// type: list = นับจำนวน · slots = นับแบบที่ต่างกัน · vote = เพื่อนโหวตความแปลกใหม่ · dice = ลูกเต๋าภาพ + โหวต
+// expand = เติมรายละเอียด · fix = ตรวจและแก้ · explain = อธิบายเหตุผล ; th = เกณฑ์จำนวนสำหรับ 1, 2, 3 ดาว
+const CH = {
+  '1.1': { title: 'ประโยคพรั่งพรู', type: 'list', T: 90, th: [2, 4, 6], unit: 'ประโยค',
+    ask: 'ดูภาพแล้วแต่งประโยคให้ได้มากที่สุด พิมพ์บรรทัดละ 1 ประโยค',
+    prompts: [
+      { pic: '🐘💦🌳', text: 'ช้างเล่นน้ำที่ลำธาร' }, { pic: '👵🪴🌻', text: 'คุณยายรดน้ำต้นไม้ในสวน' },
+      { pic: '👦🚲🌅', text: 'เด็กชายปั่นจักรยานตอนเย็น' }, { pic: '🌧️☂️🏫', text: 'ฝนตกหน้าโรงเรียน' },
+      { pic: '🐔🥚🐣', text: 'แม่ไก่กับลูกเจี๊ยบ' }, { pic: '🧺🍌🥭', text: 'ตลาดผลไม้ยามเช้า' } ] },
+  '1.2': { title: 'คำพูดเต็มกระเป๋า', type: 'list', T: 60, th: [3, 6, 9], unit: 'คำหรือถ้อยคำ',
+    ask: 'คิดคำหรือถ้อยคำที่ใช้พูดในสถานการณ์นี้ให้ได้มากที่สุด ไม่ซ้ำกัน พิมพ์บรรทัดละ 1 คำพูด',
+    prompts: [
+      { pic: '🌞🧑‍🏫', text: 'ทักทายคุณครูตอนเช้า' }, { pic: '😢🎒', text: 'ปลอบเพื่อนที่ทำของหาย' },
+      { pic: '🙏💛', text: 'ขอบคุณคนที่ช่วยเหลือเรา' }, { pic: '⚽🤝', text: 'ชวนเพื่อนมาเล่นด้วยกัน' },
+      { pic: '🎨👏', text: 'ชมเพื่อนที่วาดรูปสวย' }, { pic: '🎁😊', text: 'บอกความรู้สึกเมื่อได้รับของขวัญ' } ] },
+  '1.3': { title: 'คำขยายไม่รู้จบ', type: 'list', T: 60, th: [3, 5, 8], unit: 'คำขยาย',
+    ask: 'คิดคำขยายที่เติมหลังคำนี้ได้ให้มากที่สุด เช่น สี ขนาด รูปร่าง กลิ่น เสียง ความรู้สึก พิมพ์บรรทัดละ 1 คำ',
+    prompts: [
+      { pic: '🌺', text: 'ดอกไม้…' }, { pic: '🐕', text: 'สุนัข…' }, { pic: '🌊', text: 'ทะเล…' },
+      { pic: '🍰', text: 'ขนม…' }, { pic: '☁️', text: 'ท้องฟ้า…' }, { pic: '🏠', text: 'บ้าน…' } ] },
+  '2.1': { title: 'คำเดียว หลายเรื่อง', type: 'slots', T: 180, th: [2, 3, 4],
+    ask: 'แต่งประโยคที่มีคำนี้ แต่ละช่องให้เปลี่ยนผู้ทำหรือการกระทำไม่ซ้ำกัน',
+    slots: ['ให้ คน เป็นผู้ทำ', 'ให้ สัตว์ เป็นผู้ทำ', 'เปลี่ยนเป็นการกระทำแบบใหม่', 'ให้คำนี้เป็นผู้ทำเสียเอง'],
+    prompts: [
+      { pic: '⚽', text: 'ลูกบอล' }, { pic: '💧', text: 'น้ำ' }, { pic: '☂️', text: 'ร่ม' },
+      { pic: '📖', text: 'หนังสือ' }, { pic: '🍚', text: 'ข้าว' }, { pic: '🌳', text: 'ต้นไม้' } ] },
+  '2.2': { title: 'พูดให้ถูกคน', type: 'slots', T: 180, th: [2, 3, 4],
+    ask: 'พูดเรื่องเดียวกันกับผู้ฟังต่างกัน เลือกถ้อยคำและคำลงท้ายให้เหมาะกับแต่ละคน',
+    slots: ['พูดกับเพื่อน', 'พูดกับคุณครู', 'พูดกับน้องตัวเล็ก', 'พูดกับคุณยาย'],
+    prompts: [
+      { pic: '✏️', text: 'ขอยืมดินสอ' }, { pic: '🍱', text: 'ชวนไปกินข้าวกลางวัน' }, { pic: '⏰', text: 'ขอโทษที่มาสาย' },
+      { pic: '🌧️', text: 'บอกว่าฝนกำลังจะตก' }, { pic: '📦', text: 'ขอให้ช่วยถือของ' }, { pic: '🏆', text: 'บอกข่าวดีว่าได้รางวัล' } ] },
+  '2.3': { title: 'ขยายได้หลายทาง', type: 'slots', T: 180, th: [2, 3, 4],
+    ask: 'ขยายประโยคนี้หลายแบบ แต่ละช่องเปลี่ยนส่วนที่ขยาย แล้วเขียนประโยคเต็ม',
+    slots: ['ขยายผู้ทำ (ใคร เป็นอย่างไร)', 'ขยายการกระทำ (ทำอย่างไร)', 'ขยายเวลา (เมื่อไร)', 'ขยายสถานที่ (ที่ไหน)'],
+    prompts: [
+      { pic: '👧🍪', text: 'น้องกินขนม' }, { pic: '👨🚗', text: 'พ่อขับรถ' }, { pic: '🐦🎵', text: 'นกร้องเพลง' },
+      { pic: '👩‍🍳🍲', text: 'แม่ทำอาหาร' }, { pic: '🧒📚', text: 'เพื่อนอ่านหนังสือ' }, { pic: '🍃💨', text: 'ลมพัดใบไม้' } ] },
+  '3.1': { title: 'ถ้าโลกกลับหัว', type: 'vote', T: 180,
+    ask: 'แต่งประโยค 1–3 ประโยคจากสถานการณ์นี้ ให้แปลกใหม่ ไม่เหมือนใคร แต่เพื่อนอ่านแล้วเข้าใจ',
+    prompts: [
+      { pic: '🐈💬', text: 'ถ้าแมวพูดได้ 1 วัน' }, { pic: '🌧️🍬', text: 'ถ้าฝนตกลงมาเป็นขนม' },
+      { pic: '🏫☁️', text: 'ถ้าโรงเรียนลอยอยู่บนก้อนเมฆ' }, { pic: '🌳🚶', text: 'ถ้าต้นไม้เดินได้' },
+      { pic: '🐜🧒', text: 'ถ้าเราตัวเล็กเท่ามด' }, { pic: '🌙🛒', text: 'ถ้าดวงจันทร์ลงมาเที่ยวตลาด' } ] },
+  '3.2': { title: 'ถ้อยคำไม่ซ้ำใคร', type: 'vote', T: 180,
+    ask: 'สร้างถ้อยคำใหม่ที่ไม่เคยมีใครพูด และเหมาะกับสถานการณ์',
+    prompts: [
+      { pic: '🧁', text: 'ตั้งชื่อร้านขนมแบบใหม่ แล้วแต่งคำโฆษณา 1 ประโยค' }, { pic: '🎂', text: 'คิดคำอวยพรวันเกิดคุณครูที่ไม่ซ้ำใคร' },
+      { pic: '🚰', text: 'คิดคำขวัญชวนเพื่อนประหยัดน้ำ' }, { pic: '🗑️', text: 'คิดป้ายชวนทิ้งขยะลงถังที่อ่านแล้วอยากทำตาม' },
+      { pic: '☀️', text: 'คิดคำเปรียบเทียบแบบใหม่ “ร้อนเหมือน…”' }, { pic: '📚', text: 'คิดคำชวนเพื่อนไปห้องสมุดแบบใหม่' } ] },
+  '3.3': { title: 'ลูกเต๋าภาพเล่าเรื่อง', type: 'dice', T: 180,
+    ask: 'นำภาพทั้ง 3 ลูกมาแต่งประโยคหรือข้อความสั้น ๆ ให้เกิดแนวคิดใหม่ จะตีความภาพแบบใหม่ก็ได้ เช่น ลูกโป่งอาจเป็นดวงอาทิตย์' },
+  '4.1': { title: 'เติมให้เต็มภาพ', type: 'expand', T: 180,
+    ask: 'เติมคำขยายลงในประโยคให้ละเอียดที่สุด ให้บอกลักษณะ วิธีการ เวลา และสถานที่',
+    prompts: [
+      { pic: '🧒🧹', words: ['นักเรียน', 'กวาด', 'ห้อง'] }, { pic: '🐈💤', words: ['แมว', 'นอน'] },
+      { pic: '👦🌱', words: ['พี่', 'ปลูก', 'ต้นไม้'] }, { pic: '🧒🏊', words: ['เด็ก', 'ว่ายน้ำ'] },
+      { pic: '👵📖', words: ['คุณยาย', 'เล่า', 'นิทาน'] }, { pic: '🧑‍🌾🌾', words: ['ชาวนา', 'เกี่ยว', 'ข้าว'] } ] },
+  '4.2': { title: 'หมอประโยค', type: 'fix', T: 180,
+    ask: 'ประโยคนี้มีจุดบกพร่อง เลือกว่าบกพร่องตรงไหน แล้วเขียนประโยคที่แก้ให้ถูกต้อง ครบถ้วน และชัดเจนขึ้น',
+    problems: ['ขาดผู้ทำ (ใครหรืออะไร)', 'ขาดการกระทำ (ทำอะไร)', 'ความหมายไม่สอดคล้องกับความจริงหรือเวลา'],
+    prompts: [
+      { pic: '🍛', s: 'กินข้าวที่โรงอาหารตอนเที่ยง', p: 0 }, { pic: '🛒', s: 'แม่ตลาดเมื่อเช้านี้', p: 1 },
+      { pic: '🐟🌳', s: 'ปลาบินอยู่บนต้นมะม่วง', p: 2 }, { pic: '🏖️', s: 'พรุ่งนี้ฉันไปเที่ยวทะเลมาแล้ว', p: 2 },
+      { pic: '🐕', s: 'ตัวใหญ่สีดำเห่าเสียงดัง', p: 0 }, { pic: '📚', s: 'น้องชายตัวเล็กหนังสือนิทานในห้องสมุด', p: 1 } ] },
+  '4.3': { title: 'เพราะอะไรจึงชัด', type: 'explain', T: 180,
+    ask: 'ประโยคไหนสื่อความได้ชัดเจนกว่า เลือกแล้วอธิบายว่าเพิ่มรายละเอียดอะไรบ้าง และช่วยให้ผู้ฟังเข้าใจอย่างไร',
+    prompts: [
+      { pic: '⚽', a: 'เด็กเล่น', b: 'เด็กชายสองคนเล่นฟุตบอลอย่างสนุกสนานที่สนามหลังโรงเรียนตอนเย็น' },
+      { pic: '🍲', a: 'แม่ทำอาหาร', b: 'แม่ทำแกงจืดร้อน ๆ ในครัวตอนเช้าให้ลูกกินก่อนไปโรงเรียน' },
+      { pic: '🐦', a: 'นกบิน', b: 'นกกระจอกตัวเล็กบินอย่างรวดเร็วกลับรังบนต้นมะขามตอนพลบค่ำ' },
+      { pic: '☔', a: 'ฝนตก', b: 'ฝนตกหนักหน้าโรงเรียนตอนเลิกเรียน นักเรียนจึงกางร่มเดินกลับบ้าน' },
+      { pic: '📖', a: 'พี่อ่านหนังสือ', b: 'พี่สาวอ่านหนังสือนิทานเสียงดังฟังชัดให้น้องฟังก่อนนอน' },
+      { pic: '🧑‍🏫', a: 'ครูสอน', b: 'คุณครูใจดีสอนภาษาไทยอย่างสนุกในห้อง ป.3 ทุกวันจันทร์' } ] },
+};
+
+const DICE = [['🪁','ว่าว'],['🌾','ทุ่งนา'],['💨','ลม'],['🐢','เต่า'],['🔑','กุญแจ'],['🌈','รุ้ง'],['🚀','จรวด'],['🍉','แตงโม'],
+  ['🎒','กระเป๋า'],['🐘','ช้าง'],['⏰','นาฬิกา'],['🌙','ดวงจันทร์'],['🧦','ถุงเท้า'],['🎈','ลูกโป่ง'],['🐟','ปลา'],['🌵','กระบองเพชร'],['📮','ตู้ไปรษณีย์'],['🦉','นกฮูก']];
+
+const VOTES = [
+  [0, 'ยังไม่สื่อความหมาย หรือไม่เหมาะกับสถานการณ์'],
+  [1, 'เข้าใจได้ แต่คล้ายที่คนส่วนใหญ่คิด'],
+  [2, 'น่าสนใจ มีส่วนที่แปลกใหม่'],
+  [3, 'ว้าว! ไม่มีใครคิดแบบนี้ และยังเข้าใจได้ดี'],
+];
+
+const DETAIL = [
+  ['ลักษณะ (ผู้ทำหรือสิ่งของเป็นอย่างไร)', /(ตัวเล็ก|ตัวใหญ่|สี|ใหญ่|เล็ก|น่ารัก|ใจดี|แก่|ชรา|หนุ่ม|สาว|สูง|เตี้ย|อ้วน|ผอม|สวย|หล่อ|ขาว|ดำ|ลาย|ใหม่|เก่า|ขยัน|ซน|สอง|สาม|หลาย)/],
+  ['วิธีการ (ทำอย่างไร)', /(อย่าง|เร็ว|ช้า|เบา|ดัง|ค่อย|ตั้งใจ|สนุก|ระวัง|มีความสุข|เพลิน|ด้วย|ๆ)/],
+  ['เวลา (เมื่อไร)', /(ตอน|เมื่อ|เช้า|บ่าย|เย็น|ค่ำ|กลางคืน|วันนี้|พรุ่งนี้|ทุกวัน|วันจันทร์|วันอังคาร|วันพุธ|วันพฤหัส|วันศุกร์|วันเสาร์|วันอาทิตย์|โมง|ฤดู|ก่อน|หลังจาก)/],
+  ['สถานที่ (ที่ไหน)', /(ที่|ใน|บน|ใต้|ข้าง|ริม|กลาง|บ้าน|โรงเรียน|สวน|ทุ่ง|ตลาด|แม่น้ำ|สระ|ทะเล|ลาน|สนาม)/],
+];
+
+const OBJECTS = ['ขวดน้ำพลาสติก', 'กล่องกระดาษ', 'ช้อน', 'ยางลบ', 'ผ้าขาวม้า', 'กะลามะพร้าว', 'ไม้บรรทัด', 'หนังยาง'];
+
+const EVENTS = [
+  { id: 'wind', ico: '⛵', title: 'ลมส่งท้าย', text: 'ลมพัดเรือไปข้างหน้า 2 ช่อง แล้วทำตามช่องที่ไปถึง' },
+  { id: 'bulbs', ico: '💡', title: 'ไอเดียปลิวมา', text: 'รับประกายไอเดีย 2 ดวง' },
+  { id: 'weak', ico: '🪞', title: 'ส่องกระจกนักคิด', text: 'เล่นภารกิจในทิศที่คุณมีดาวน้อยที่สุดทันที' },
+  { id: 'storm', ico: '🌪️', title: 'วงระดมสมอง', text: 'ทุกคนช่วยกันคิดว่าสิ่งของนี้ใช้ทำอะไรได้บ้าง ใครคิดได้มากที่สุดรับดาวคิดคล่อง' },
+  { id: 'fog', ico: '🌫️', title: 'หมอกความคิดตัน', text: 'ถอยหลัง 2 ช่องโดยไม่ต้องทำตามช่อง แต่รับประกายไอเดีย 1 ดวงไว้ปลุกความคิด' },
+  { id: 'rest', ico: '🏝️', title: 'เกาะพักใจ', text: 'ทุกคนรับประกายไอเดีย 1 ดวง' },
+  { id: 'buddy', ico: '🤝', title: 'คู่หูนักคิด', text: 'เลือกเพื่อน 1 คน รับประกายไอเดียคนละ 1 ดวง' },
+  { id: 'storm', ico: '🌪️', title: 'วงระดมสมอง', text: 'ทุกคนช่วยกันคิดว่าสิ่งของนี้ใช้ทำอะไรได้บ้าง ใครคิดได้มากที่สุดรับดาวคิดคล่อง' },
+];
+
+const PCOLORS = ['#e4572e', '#0f9fb0', '#8a4fd8', '#7a5a2e'];
+
+// ---------- กระดาน 32 ช่อง: แต่ละทิศ 8 ช่อง ----------
+const PATTERN = ['gate', '1', '2', 'spark', '3', '1', '2', '3'];
+const BOARD = [];
+for (let z = 0; z < 4; z++) for (let k = 0; k < 8; k++) {
+  const t = PATTERN[k], i = z * 8 + k;
+  if (t === 'gate') BOARD.push({ type: i === 0 ? 'start' : 'event', z });
+  else if (t === 'spark') BOARD.push({ type: 'spark', z });
+  else BOARD.push({ type: 'ch', z, ind: `${z + 1}.${t}` });
+}
+const cellOf = i => i <= 8 ? [1, i + 1] : i <= 16 ? [i - 7, 9] : i <= 24 ? [9, 25 - i] : [33 - i, 1];
+
+// ---------- helpers ----------
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const rnd = n => Math.floor(Math.random() * n);
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+const zoneOf = ind => Number(ind[0]) - 1;
+const zv = z => `--zc:var(--z${z + 1});--zs:var(--z${z + 1}s);--zon:var(--z${z + 1}on)`;
+const SHAPES = {
+  circle: '<circle cx="12" cy="12" r="9"/>',
+  square: '<rect x="3.5" y="3.5" width="17" height="17" rx="2"/>',
+  triangle: '<polygon points="12,3 21.5,20 2.5,20"/>',
+  hexagon: '<polygon points="12,2.5 20.5,7.25 20.5,16.75 12,21.5 3.5,16.75 3.5,7.25"/>',
+};
+const shape = z => `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${SHAPES[ZONES[z].shape]}</svg>`;
+const starStr = n => `<span>${'★'.repeat(n)}</span><span class="off">${'★'.repeat(3 - n)}</span>`;
+const norm = s => s.replace(/\s+/g, '').toLowerCase();
+
+// ---------- state ----------
+const KEY = 'creative-island-v1';
+let S = null;
+const fresh = () => ({ started: false, over: false, players: [], turn: 0, round: 1, maxRounds: 8, log: [], used: {}, evid: [], deck: [], pending: null, lastDie: null });
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+function load() { try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.players) return d; } catch (e) {} return null; }
+const cur = () => S.players[S.turn];
+const compScore = (p, z) => INDS.filter(k => zoneOf(k) === z).reduce((a, k) => a + (p.stars[k] || 0), 0);
+const hasCrown = p => [0, 1, 2, 3].every(z => compScore(p, z) >= 3);
+const total = p => INDS.reduce((a, k) => a + (p.stars[k] || 0), 0) + (hasCrown(p) ? 3 : 0);
+function log(html) { S.log.unshift(html); S.log = S.log.slice(0, 60); }
+let busy = false;
+
+// ---------- render ----------
+function renderBoard() {
+  const b = $('#board');
+  let h = '';
+  BOARD.forEach((sq, i) => {
+    const [r, c] = cellOf(i);
+    const here = S.started && !S.over && cur() && cur().pos === i;
+    let inner, style = `grid-row:${r};grid-column:${c};`, cls = 'sq', label;
+    if (sq.type === 'ch') {
+      style += zv(sq.z);
+      inner = `${shape(sq.z)}<span class="code">${sq.ind}</span>`;
+      label = `ช่อง ${i}: ${ZONES[sq.z].name} ตัวบ่งชี้ ${sq.ind}`;
+    } else if (sq.type === 'start') {
+      cls += ' special'; style += zv(0);
+      inner = `<span class="ico">⚓</span><span class="code">เริ่ม</span>`; label = 'ท่าเรือเริ่มต้น';
+    } else if (sq.type === 'spark') {
+      cls += ' special'; style += zv(sq.z);
+      inner = `<span class="ico">💡</span>`; label = 'ประกายไอเดีย';
+    } else {
+      cls += ' special';
+      inner = `<span class="ico">🌀</span><span class="code">ลม</span>`; label = 'การ์ดลมความคิด';
+    }
+    const toks = S.players.map((p, pi) => p.pos === i ? `<span class="tok" style="--pc:${p.color}">${pi + 1}</span>` : '').join('');
+    h += `<div class="${cls}${here ? ' here' : ''}" style="${style}" title="${esc(label)}" aria-label="${esc(label)}">${inner}<div class="toks">${toks}</div></div>`;
+  });
+  const p = cur();
+  const card = !S.started ? `<div class="turn-card"><div class="who">ยินดีต้อนรับสู่เกาะ</div><div class="msg">ตั้งค่าผู้เล่นเพื่อออกเดินทาง</div><button class="btn primary big" type="button" data-act="setup">ตั้งค่าเกม</button></div>`
+    : S.over ? `<div class="turn-card"><div class="who">จบการเดินทาง</div><button class="btn primary big" type="button" data-act="results">ดูผล</button></div>`
+    : `<div class="turn-card">
+        <div class="round">รอบที่ ${Math.min(S.round, S.maxRounds)} จาก ${S.maxRounds}</div>
+        <div class="who"><span class="dot" style="--pc:${p.color}"></span>${esc(p.name)}</div>
+        <div class="die${busy ? ' rolling' : ''}" id="die" aria-live="polite">${S.lastDie ?? '?'}</div>
+        <button class="btn primary big" type="button" data-act="roll" ${busy ? 'disabled' : ''}>ทอยเต๋า</button>
+        <div class="msg" id="msg">${esc(S.msg || 'ทอยเต๋าแล้วเดินตามเข็มนาฬิกา')}</div>
+      </div>`;
+  h += `<div class="center"><div class="compass">
+      <span class="n" style="--c:var(--z1)">${ZONES[0].land}</span><span class="e" style="--c:var(--z2)">${ZONES[1].land}</span>
+      <span class="s" style="--c:var(--z3)">${ZONES[2].land}</span><span class="w" style="--c:var(--z4)">${ZONES[3].land}</span>
+    </div>${card}</div>`;
+  b.innerHTML = h;
+}
+
+function renderSide() {
+  $('#legend').innerHTML = ZONES.map((z, i) => `<div class="leg" style="${zv(i)}"><b>${shape(i)}${z.name}</b><span>${z.en} · ตัวบ่งชี้ ${i + 1}.1–${i + 1}.3</span><span>${z.tip}</span></div>`).join('');
+  $('#players').innerHTML = S.players.length ? S.players.map((p, pi) => `
+    <div class="player${pi === S.turn && !S.over ? ' active' : ''}" style="--pc:${p.color}">
+      <div class="prow"><span class="pname"><span class="dot"></span>${pi + 1}. ${esc(p.name)}${hasCrown(p) ? ' 👑' : ''}</span>
+      <span class="pstat">💡 ${p.idea} · ★ ${total(p)}</span></div>
+      <div class="meters">${ZONES.map((z, zi) => { const v = compScore(p, zi); return `<div class="meter" style="${zv(zi)}" title="${z.name} ${v} ดาว"><div class="bar"><i style="width:${Math.min(100, v / 9 * 100)}%"></i></div><small>${shape(zi)}${v}</small></div>`; }).join('')}</div>
+    </div>`).join('') : '<p class="msg">ยังไม่มีผู้เล่น กด “ตั้งค่าเกม” กลางกระดาน</p>';
+  $('#log').innerHTML = S.log.length ? S.log.map(l => `<li>${l}</li>`).join('') : '<li>การเดินทางยังไม่เริ่ม</li>';
+}
+function render() { renderBoard(); renderSide(); }
+
+// ---------- modal ----------
+const back = $('#back'), modal = $('#modal');
+function openModal(html, z = null, wide = false) {
+  modal.setAttribute('style', z == null ? '' : zv(z));
+  modal.className = 'modal' + (wide ? ' wide' : '');
+  modal.innerHTML = html;
+  back.hidden = false;
+  const f = modal.querySelector('textarea, input, button.primary');
+  if (f) f.focus({ preventScroll: true });
+}
+function closeModal() { back.hidden = true; modal.innerHTML = ''; stopTimer(); }
+
+// ---------- setup ----------
+let setupN = 3, setupR = 8;
+function openSetup() {
+  const names = S.players.length ? S.players.map(p => p.name) : [];
+  const row = i => `<label class="field" style="--pc:${PCOLORS[i]}"><span><span class="dot"></span> ผู้เล่นที่ ${i + 1}</span><input id="pname-${i}" value="${esc(names[i] || ['ทีมทานตะวัน', 'ทีมไผ่เขียว', 'ทีมลาวา', 'ทีมปะการัง'][i])}" maxlength="24"></label>`;
+  openModal(`
+    <h2>ตั้งค่าการเดินทาง</h2>
+    <p class="tip">เล่นได้ 2–4 คนหรือ 2–4 ทีม ผลัดกันใช้อุปกรณ์เครื่องเดียว คนที่ไม่ได้เล่นตาของตัวเองเป็น “เพื่อนผู้ตรวจ”</p>
+    <div class="row"><span>จำนวนผู้เล่น</span><div class="seg">${[2, 3, 4].map(n => `<button type="button" data-act="setn" data-n="${n}" class="${n === setupN ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+    <div class="setup-grid">${Array.from({ length: setupN }, (_, i) => row(i)).join('')}</div>
+    <div class="row"><span>จำนวนรอบ</span><div class="seg">${[6, 8, 10].map(n => `<button type="button" data-act="setr" data-n="${n}" class="${n === setupR ? 'on' : ''}">${n}</button>`).join('')}</div><span class="count">ประมาณ ${setupR * setupN * 3} นาที</span></div>
+    <div class="row end"><button class="btn" type="button" data-act="close">ยกเลิก</button><button class="btn primary big" type="button" data-act="start">ออกเดินทาง</button></div>`);
+}
+function readSetupNames() { return Array.from({ length: setupN }, (_, i) => ($('#pname-' + i)?.value || '').trim() || `ผู้เล่น ${i + 1}`); }
+function startGame() {
+  const names = readSetupNames();
+  S = fresh();
+  S.started = true; S.maxRounds = setupR;
+  S.players = names.map((name, i) => ({ name, color: PCOLORS[i], pos: 0, idea: 1, stars: {} }));
+  S.deck = shuffle(EVENTS.map((_, i) => i));
+  log('เรือทุกลำออกจาก <b>ท่าเรือ</b> พร้อมประกายไอเดียคนละ 1 ดวง');
+  closeModal(); save(); render();
+}
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+// ---------- turn ----------
+async function roll() {
+  if (busy || !S.started || S.over) return;
+  busy = true; renderBoard();
+  const die = () => $('#die');
+  for (let k = 0; k < 8 && !reduced; k++) { if (die()) die().textContent = 1 + rnd(6); await sleep(70); }
+  const n = 1 + rnd(6);
+  S.lastDie = n; S.msg = `${cur().name} ทอยได้ ${n}`;
+  await move(cur(), n);
+  busy = false;
+  resolve();
+}
+async function move(p, n) {
+  const dir = n > 0 ? 1 : -1;
+  for (let k = 0; k < Math.abs(n); k++) {
+    p.pos = (p.pos + dir + 32) % 32;
+    if (dir > 0 && p.pos === 0) { p.idea += 2; log(`<b>${esc(p.name)}</b> ผ่านท่าเรือ รับ 💡 2 ดวง`); }
+    render(); await sleep(190);
+  }
+}
+function resolve() {
+  const p = cur(), sq = BOARD[p.pos];
+  render();
+  if (sq.type === 'ch') openChallenge(sq.ind);
+  else if (sq.type === 'spark') {
+    p.idea += 1; log(`<b>${esc(p.name)}</b> เจอประกายไอเดีย รับ 💡 1 ดวง`);
+    S.msg = `${p.name} รับ 💡 1 ดวง`; endTurn();
+  } else if (sq.type === 'event') openEvent();
+  else { S.msg = `${p.name} จอดพักที่ท่าเรือ`; endTurn(); }
+}
+function endTurn() {
+  S.pending = null;
+  S.turn = (S.turn + 1) % S.players.length;
+  if (S.turn === 0) S.round++;
+  if (S.round > S.maxRounds) { S.over = true; save(); render(); openResults(); return; }
+  save(); render();
+}
+
+// ---------- challenge ----------
+let C = null, timerId = null;
+function pickPrompt(ind) {
+  const pool = CH[ind].prompts; if (!pool) return null;
+  const used = S.used[ind] = S.used[ind] || [];
+  let avail = pool.map((_, i) => i).filter(i => !used.includes(i));
+  if (!avail.length) { used.length = 0; avail = pool.map((_, i) => i); }
+  const i = avail[rnd(avail.length)]; used.push(i); return pool[i];
+}
+const rollDice = () => shuffle(DICE.slice()).slice(0, 3);
+function openChallenge(ind, note = '') {
+  const def = CH[ind];
+  C = { ind, def, phase: 'intro', prompt: pickPrompt(ind), note };
+  if (def.type === 'dice') C.dice = rollDice();
+  if (def.type === 'explain') C.flip = Math.random() < .5;
+  S.pending = { ind }; save();
+  renderChallenge();
+}
+const baseOf = pr => pr.words.join('');
+function promptBlock() {
+  const { def, prompt: pr } = C;
+  if (def.type === 'dice') return `<div class="dice3">${C.dice.map(d => `<div class="pcube"><span>${d[0]}</span><small>${d[1]}</small></div>`).join('')}</div>`;
+  if (def.type === 'expand') return `<div class="prompt"><span class="pic">${pr.pic}</span><span class="ptxt">${esc(baseOf(pr))}</span></div>`;
+  if (def.type === 'fix') return `<div class="prompt"><span class="pic">${pr.pic}</span><span class="ptxt">${esc(pr.s)}</span></div>`;
+  if (def.type === 'explain') {
+    const [x, y] = C.flip ? [pr.b, pr.a] : [pr.a, pr.b];
+    return `<div class="prompt"><span class="pic">${pr.pic}</span><span class="ptxt">ก. ${esc(x)}<br>ข. ${esc(y)}</span></div>`;
+  }
+  return `<div class="prompt"><span class="pic">${pr.pic}</span><span class="ptxt">${esc(pr.text)}</span></div>`;
+}
+function headBlock() {
+  const z = zoneOf(C.ind), p = cur();
+  return `<div class="mh"><span class="zbadge">${shape(z)}${ZONES[z].name} · ${C.ind}</span><span class="pname"><span class="dot" style="--pc:${p.color}"></span>${esc(p.name)} · 💡 ${p.idea}</span></div>
+    <h2>${C.def.title}</h2><div class="indtxt">ตัวบ่งชี้ ${C.ind} ${IND[C.ind]}</div>`;
+}
+function renderChallenge() {
+  const { def, phase } = C, z = zoneOf(C.ind), p = cur();
+  let h = headBlock();
+  if (phase === 'intro') {
+    h += `${C.note ? `<div class="tip">${esc(C.note)}</div>` : ''}${promptBlock()}
+      <div class="ask">${def.ask}</div>
+      <div class="tip">${ZONES[z].tip}</div>
+      ${def.type === 'list' ? `<div class="tip">เกณฑ์: ${def.th.map((t, i) => `${t} ${def.unit} = ${i + 1} ดาว`).join(' · ')} · เวลา ${def.T} วินาที</div>` : ''}
+      ${def.type === 'slots' ? `<div class="tip">เกณฑ์: ทำได้ ${def.th.map((t, i) => `${t} แบบ = ${i + 1} ดาว`).join(' · ')}</div>` : ''}
+      <div class="row end">
+        ${def.type === 'dice' ? `<button class="btn" type="button" data-act="reroll-dice" ${p.idea < 1 ? 'disabled' : ''}>ทอยภาพใหม่ (💡1)</button>`
+          : `<button class="btn" type="button" data-act="swap" ${p.idea < 1 ? 'disabled' : ''}>เปลี่ยนโจทย์ (💡1)</button>`}
+        <button class="btn zone big" type="button" data-act="go">เริ่มเลย</button>
+      </div>`;
+  } else if (phase === 'play') {
+    h += promptBlock() + `<div class="ask">${def.ask}</div>` + playInputs() + `
+      <div class="row"><span class="timer" id="timer">${fmt(C.left)}</span>
+      <button class="btn" type="button" data-act="more" ${p.idea < 1 ? 'disabled' : ''}>+30 วินาที (💡1)</button>
+      <span class="spacer"></span><button class="btn zone big" type="button" data-act="submit">ส่งให้เพื่อนตรวจ</button></div>`;
+  } else if (phase === 'review') {
+    h += reviewBlock() + `<div class="row"><span class="count" id="preview">${previewTxt()}</span><span class="spacer"></span><button class="btn zone big" type="button" data-act="confirm">ยืนยันผล</button></div>`;
+  } else {
+    const n = C.result;
+    h += `<div class="stars">${starStr(n)}</div><p class="center-txt ask">${esc(p.name)} ได้ ${n} ดาวใน${ZONES[z].name}</p>
+      <p class="center-txt tip" style="border:0;padding:0">${['ไม่เป็นไร ลองใหม่รอบหน้า ความคิดยิ่งฝึกยิ่งคม', 'เริ่มต้นได้ดี ลองคิดเพิ่มอีกนิดรอบหน้า', 'เยี่ยมมาก ความคิดกำลังโลดแล่น', 'สุดยอดนักคิด!'][n]}</p>
+      <div class="row end"><button class="btn primary big" type="button" data-act="done">จบตา</button></div>`;
+  }
+  openModal(h, z);
+  if (phase === 'play') {
+    const ta = $('#ans-list');
+    if (ta) ta.addEventListener('input', () => { $('#live').textContent = `ได้แล้ว ${listItems(ta.value).length} ${def.unit}`; });
+  }
+}
+const fmt = s => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
+function playInputs() {
+  const { def, prompt: pr } = C;
+  switch (def.type) {
+    case 'list': return `<textarea id="ans-list" rows="7" placeholder="พิมพ์บรรทัดละ 1 ${def.unit}"></textarea><span class="count" id="live">ได้แล้ว 0 ${def.unit}</span>`;
+    case 'slots': return `<div class="slots">${def.slots.map((s, i) => `<label for="slot-${i}">${s}<input id="slot-${i}" autocomplete="off"></label>`).join('')}</div>`;
+    case 'vote': case 'dice': return `<textarea id="ans-text" rows="4" placeholder="เขียนประโยคหรือข้อความของคุณ"></textarea>`;
+    case 'expand': return `<textarea id="ans-text" rows="3">${esc(baseOf(pr))}</textarea>`;
+    case 'fix': return `<div class="opts" role="radiogroup">${def.problems.map((t, i) => `<button type="button" class="opt" data-act="pick" data-i="${i}"><span class="st">${'กขค'[i]}</span>${t}</button>`).join('')}</div>
+      <label class="field" for="ans-text">ประโยคที่แก้แล้ว<input id="ans-text" autocomplete="off" value="${esc(pr.s)}"></label>`;
+    case 'explain': return `<div class="opts" role="radiogroup">${['ก', 'ข'].map((t, i) => `<button type="button" class="opt" data-act="pick" data-i="${i}"><span class="st">${t}</span>ประโยค ${t} ชัดเจนกว่า</button>`).join('')}</div>
+      <label class="field" for="ans-text">เพราะอะไร<textarea id="ans-text" rows="3" placeholder="ประโยคนี้เพิ่ม… ทำให้ผู้ฟังรู้ว่า…"></textarea></label>`;
+  }
+}
+const listItems = v => v.split('\n').map(s => s.trim()).filter(Boolean);
+function startTimer() {
+  stopTimer(); C.left = C.def.T;
+  timerId = setInterval(() => {
+    C.left--;
+    const t = $('#timer'); if (t) { t.textContent = fmt(C.left); t.classList.toggle('low', C.left <= 10); }
+    if (C.left <= 0) submit();
+  }, 1000);
+}
+function stopTimer() { if (timerId) clearInterval(timerId); timerId = null; }
+function submit() {
+  stopTimer();
+  const { def, prompt: pr } = C;
+  const val = id => ($('#' + id)?.value || '').trim();
+  if (def.type === 'list') {
+    const seen = new Set();
+    C.rev = listItems($('#ans-list')?.value || '').map(t => { const k = norm(t), dup = seen.has(k); seen.add(k); return { t, ok: !dup, dup }; });
+    C.answer = C.rev.map(r => r.t).join(' / ');
+  } else if (def.type === 'slots') {
+    C.rev = def.slots.map((label, i) => { const t = val('slot-' + i); return { label, t, ok: !!t }; });
+    C.answer = C.rev.filter(r => r.t).map(r => `${r.label}: ${r.t}`).join(' / ');
+  } else if (def.type === 'vote' || def.type === 'dice') {
+    C.text = val('ans-text'); C.vote = C.text ? null : 0; C.allpics = false;
+    C.answer = (def.type === 'dice' ? `[${C.dice.map(d => d[1]).join(', ')}] ` : '') + C.text;
+  } else if (def.type === 'expand') {
+    C.text = val('ans-text');
+    let rest = C.text; pr.words.forEach(w => { rest = rest.replace(w, ' '); });
+    C.changed = norm(C.text) !== norm(baseOf(pr));
+    C.checks = DETAIL.map(([, re]) => { const m = C.changed ? rest.match(re) : null; return { ok: !!m, hint: m ? m[0] : '' }; });
+    C.answer = C.text;
+  } else if (def.type === 'fix') {
+    C.text = val('ans-text'); C.diagOk = C.pick === pr.p;
+    C.checks = [{ ok: false }, { ok: false }];
+    C.answer = `${C.pick != null ? def.problems[C.pick] : 'ไม่ได้เลือก'} → ${C.text}`;
+  } else if (def.type === 'explain') {
+    C.text = val('ans-text');
+    const detailedIdx = C.flip ? 0 : 1; C.pickOk = C.pick === detailedIdx;
+    C.checks = [{ ok: false }, { ok: false }];
+    C.answer = `${C.pick != null ? 'เลือก ' + 'กข'[C.pick] : 'ไม่ได้เลือก'} เพราะ ${C.text}`;
+  }
+  C.phase = 'review'; renderChallenge();
+}
+function reviewBlock() {
+  const { def, prompt: pr } = C;
+  const tip = '<div class="tip">เพื่อน ๆ ช่วยกันตรวจ แตะเพื่อเปลี่ยนผล ✓ ผ่าน / ✗ ไม่ผ่าน</div>';
+  const chip = (i, ok, body, small = '') => `<button type="button" class="chip${ok ? '' : ' no'}" data-act="tog" data-i="${i}" aria-pressed="${ok}"><span class="mark">${ok ? '✓' : '✗'}</span><span class="chip-body">${body}${small ? `<small>${small}</small>` : ''}</span></button>`;
+  switch (def.type) {
+    case 'list':
+      return tip + `<div class="tip">ตัดข้อที่ไม่ใช่${def.unit} ไม่ตรงโจทย์ หรือซ้ำความหมายกันออก</div>` +
+        (C.rev.length ? `<div class="chips">${C.rev.map((r, i) => chip(i, r.ok, esc(r.t), r.dup ? 'ซ้ำกับข้อก่อนหน้า' : '')).join('')}</div>` : '<p class="answer">ไม่มีคำตอบ</p>');
+    case 'slots':
+      return tip + `<div class="tip">ผ่านเมื่อเป็นประโยคที่สื่อความได้ และทำตามที่ช่องนั้นบอก</div><div class="chips">${C.rev.map((r, i) => r.t ? chip(i, r.ok, esc(r.t), esc(r.label)) : `<div class="chip no"><span class="mark">–</span><span class="chip-body">ไม่ได้เขียน<small>${esc(r.label)}</small></span></div>`).join('')}</div>`;
+    case 'vote': case 'dice':
+      return `<div class="answer">${esc(C.text) || 'ไม่มีคำตอบ'}</div>
+        <div class="tip">เพื่อน ๆ ช่วยกันเลือก 1 ข้อ: ความคิดนี้แปลกใหม่แค่ไหน และยังเหมาะกับโจทย์หรือไม่</div>
+        <div class="opts">${VOTES.map(([n, t]) => `<button type="button" class="opt${C.vote === n ? ' on' : ''}" data-act="vote" data-n="${n}"><span class="st">${'★'.repeat(n) || '—'}</span>${t}</button>`).join('')}</div>
+        ${def.type === 'dice' ? `<div class="chips">${chip('pics', C.allpics, `ใช้ครบทั้ง 3 ภาพ (${C.dice.map(d => d[0] + ' ' + d[1]).join(' ')})`, 'ถ้าใช้ไม่ครบ ได้สูงสุด 1 ดาว')}</div>` : ''}`;
+    case 'expand':
+      return `<div class="answer">${esc(C.text)}</div>
+        ${C.changed ? '' : '<p class="verdict no">ยังไม่ได้เติมรายละเอียด</p>'}
+        <div class="tip">ระบบเดาจากคำที่เติม เพื่อน ๆ ตรวจซ้ำได้ว่าประโยคบอกสิ่งเหล่านี้จริงหรือไม่</div>
+        <div class="chips">${C.checks.map((c, i) => chip(i, c.ok, DETAIL[i][0], c.hint ? `ระบบพบคำว่า “${esc(c.hint)}”` : '')).join('')}</div>
+        <div class="tip">เกณฑ์: 1 อย่าง = 1 ดาว · 2–3 อย่าง = 2 ดาว · ครบ 4 อย่าง = 3 ดาว</div>`;
+    case 'fix':
+      return `<p class="verdict ${C.diagOk ? 'ok' : 'no'}">${C.diagOk ? '✓ บอกจุดบกพร่องถูกต้อง' : `✗ จุดบกพร่องที่ถูกคือ “${def.problems[pr.p]}”`}</p>
+        <div class="answer">${esc(C.text) || 'ไม่ได้เขียนประโยคใหม่'}</div>${tip}
+        <div class="chips">${chip(0, C.checks[0].ok, 'ประโยคใหม่ถูกต้อง ครบถ้วน และสอดคล้องกับความจริง')}${chip(1, C.checks[1].ok, 'เพิ่มรายละเอียดให้ชัดเจนขึ้นกว่าเดิม')}</div>`;
+    case 'explain':
+      return `<p class="verdict ${C.pickOk ? 'ok' : 'no'}">${C.pickOk ? '✓ เลือกประโยคที่ชัดเจนกว่าได้ถูกต้อง' : '✗ ประโยคที่ชัดเจนกว่าคือประโยคที่มีรายละเอียดมากกว่า'}</p>
+        <div class="answer">${esc(C.text) || 'ไม่ได้อธิบายเหตุผล'}</div>${tip}
+        <div class="chips">${chip(0, C.checks[0].ok, 'บอกได้ว่าเพิ่มรายละเอียดอะไร (ลักษณะ วิธีการ เวลา สถานที่)')}${chip(1, C.checks[1].ok, 'บอกได้ว่ารายละเอียดช่วยให้ผู้ฟังเข้าใจอย่างไร')}</div>`;
+  }
+}
+function computeStars() {
+  const { def } = C;
+  const th = n => def.th.filter(t => n >= t).length;
+  switch (def.type) {
+    case 'list': case 'slots': return th(C.rev.filter(r => r.ok && (r.t)).length);
+    case 'vote': return C.vote ?? 0;
+    case 'dice': return C.allpics ? (C.vote ?? 0) : Math.min(1, C.vote ?? 0);
+    case 'expand': { if (!C.changed) return 0; const k = C.checks.filter(c => c.ok).length; return k >= 4 ? 3 : k >= 2 ? 2 : k; }
+    case 'fix': return (C.diagOk ? 1 : 0) + C.checks.filter(c => c.ok).length;
+    case 'explain': return (C.pickOk ? 1 : 0) + C.checks.filter(c => c.ok).length;
+  }
+}
+function previewTxt() {
+  if ((C.def.type === 'vote' || C.def.type === 'dice') && C.vote == null) return 'เลือกระดับความแปลกใหม่ก่อน';
+  const n = computeStars();
+  return `ผลตอนนี้ ${'★'.repeat(n)}${'☆'.repeat(3 - n)} (${n} ดาว)`;
+}
+function finishChallenge() {
+  const p = cur(), n = C.result;
+  p.stars[C.ind] = (p.stars[C.ind] || 0) + n;
+  const prompt = C.def.type === 'dice' ? C.dice.map(d => d[1]).join(' ') : C.prompt.text || C.prompt.s || (C.prompt.words ? baseOf(C.prompt) : `${C.prompt.a} / ${C.prompt.b}`);
+  S.evid.push({ p: p.name, ind: C.ind, prompt, answer: C.answer, stars: n });
+  log(`<b>${esc(p.name)}</b> ${C.def.title} (${C.ind}) ได้ ${'★'.repeat(n) || '0 ดาว'}`);
+  S.msg = `${p.name} ได้ ${n} ดาว${ZONES[zoneOf(C.ind)].short}`;
+  C = null; closeModal(); endTurn();
+}
+
+// ---------- event cards ----------
+let E = null;
+function openEvent() {
+  if (!S.deck.length) S.deck = shuffle(EVENTS.map((_, i) => i));
+  const ev = EVENTS[S.deck.pop()];
+  E = { ev, phase: 'card' };
+  S.pending = { event: true }; save();
+  renderEvent();
+}
+function renderEvent() {
+  const { ev } = E, p = cur();
+  let h = `<div class="mh"><span class="zbadge">🌀 การ์ดลมความคิด</span><span class="pname"><span class="dot" style="--pc:${p.color}"></span>${esc(p.name)}</span></div>`;
+  if (E.phase === 'card') {
+    h += `<div class="evcard"><span class="ico">${ev.ico}</span><h2>${ev.title}</h2><p>${ev.text}</p></div>`;
+    if (ev.id === 'buddy') h += `<div class="row">${S.players.map((q, i) => i === S.turn ? '' : `<button class="btn" type="button" data-act="buddy" data-i="${i}"><span class="dot" style="--pc:${q.color}"></span> ${esc(q.name)}</button>`).join('')}</div>`;
+    else h += `<div class="row end"><button class="btn primary big" type="button" data-act="ev-go">ทำตามการ์ด</button></div>`;
+  } else if (E.phase === 'play') {
+    h += `<h2>วงระดมสมอง</h2><div class="prompt"><span class="pic">🌪️</span><span class="ptxt">${esc(E.obj)} ใช้ทำอะไรได้บ้าง?</span></div>
+      <div class="tip">ทุกคนเขียนลงกระดาษหรือไวท์บอร์ดพร้อมกัน ใช้แบบแปลก ๆ ได้ แต่ต้องทำได้จริง ข้อที่ซ้ำกับคนอื่นยังนับได้</div>
+      <div class="row"><span class="timer" id="timer">${fmt(E.left)}</span><span class="spacer"></span><button class="btn primary big" type="button" data-act="ev-count">หมดเวลา นับคะแนน</button></div>`;
+  } else {
+    h += `<h2>แต่ละคนคิดได้กี่ข้อ</h2><div class="tip">ให้เพื่อนช่วยกันนับเฉพาะข้อที่ใช้ได้จริง</div>
+      <div class="steppers">${S.players.map((q, i) => `<div class="stepper"><span class="pname"><span class="dot" style="--pc:${q.color}"></span>${esc(q.name)}</span>
+        <span class="row"><button class="sbtn" type="button" data-act="dec" data-i="${i}" aria-label="ลด">−</button><span class="n">${E.counts[i]}</span><button class="sbtn" type="button" data-act="inc" data-i="${i}" aria-label="เพิ่ม">+</button></span></div>`).join('')}</div>
+      <div class="tip">คนที่คิดได้มากที่สุดรับ ★ 1 ดวงในตัวบ่งชี้ 1.2 · ทุกคนที่คิดได้ตั้งแต่ 3 ข้อรับ 💡 1 ดวง</div>
+      <div class="row end"><button class="btn primary big" type="button" data-act="ev-storm-done">ยืนยัน</button></div>`;
+  }
+  openModal(h);
+}
+async function eventGo() {
+  const { ev } = E, p = cur();
+  if (ev.id === 'storm') {
+    E.obj = OBJECTS[rnd(OBJECTS.length)]; E.phase = 'play'; E.left = 60; E.counts = S.players.map(() => 0);
+    renderEvent(); stopTimer();
+    timerId = setInterval(() => { E.left--; const t = $('#timer'); if (t) { t.textContent = fmt(E.left); t.classList.toggle('low', E.left <= 10); } if (E.left <= 0) { stopTimer(); E.phase = 'count'; renderEvent(); } }, 1000);
+    return;
+  }
+  closeModal(); E = null;
+  if (ev.id === 'wind') { log(`<b>${esc(p.name)}</b> ลมส่งท้าย เดินหน้า 2 ช่อง`); await move(p, 2); resolve(); return; }
+  if (ev.id === 'fog') { p.idea += 1; log(`<b>${esc(p.name)}</b> หลงหมอก ถอยหลัง 2 ช่อง รับ 💡 1`); await move(p, -2); S.msg = `${p.name} ถอยหลัง 2 ช่อง`; endTurn(); return; }
+  if (ev.id === 'bulbs') { p.idea += 2; log(`<b>${esc(p.name)}</b> รับ 💡 2 ดวง`); S.msg = `${p.name} รับ 💡 2 ดวง`; endTurn(); return; }
+  if (ev.id === 'rest') { S.players.forEach(q => q.idea++); log('ทุกคนแวะเกาะพักใจ รับ 💡 คนละ 1 ดวง'); S.msg = 'ทุกคนรับ 💡 1 ดวง'; endTurn(); return; }
+  if (ev.id === 'weak') {
+    const scores = [0, 1, 2, 3].map(z => compScore(p, z)), min = Math.min(...scores);
+    const zs = [0, 1, 2, 3].filter(z => scores[z] === min), z = zs[rnd(zs.length)];
+    const ind = `${z + 1}.${1 + rnd(3)}`;
+    log(`<b>${esc(p.name)}</b> ส่องกระจก ไปฝึก${ZONES[z].name}`);
+    openChallenge(ind, `การ์ดส่องกระจกนักคิด: ${ZONES[z].name}คือทิศที่คุณมีดาวน้อยที่สุด`);
+  }
+}
+
+// ---------- results ----------
+function radar(p) {
+  const max = Math.max(9, ...[0, 1, 2, 3].map(z => compScore(p, z)));
+  const c = 100, R = 70, ang = [-90, 0, 90, 180].map(a => a * Math.PI / 180);
+  const pt = (z, v) => [c + Math.cos(ang[z]) * R * v / max, c + Math.sin(ang[z]) * R * v / max];
+  const ring = f => [0, 1, 2, 3].map(z => pt(z, max * f).join(',')).join(' ');
+  const poly = [0, 1, 2, 3].map(z => pt(z, compScore(p, z)).join(',')).join(' ');
+  const lab = [[c, 16, 'middle'], [196, c + 4, 'end'], [c, 194, 'middle'], [4, c + 4, 'start']];
+  return `<svg class="radar" viewBox="0 0 200 200" role="img" aria-label="กราฟความคิดสร้างสรรค์ของ ${esc(p.name)}">
+    ${[1 / 3, 2 / 3, 1].map(f => `<polygon points="${ring(f)}" fill="none" stroke="var(--line)" stroke-width="1"/>`).join('')}
+    ${[0, 1, 2, 3].map(z => `<line x1="${c}" y1="${c}" x2="${pt(z, max)[0]}" y2="${pt(z, max)[1]}" stroke="var(--line)"/>`).join('')}
+    <polygon points="${poly}" fill="${p.color}" fill-opacity=".28" stroke="${p.color}" stroke-width="2.5"/>
+    ${[0, 1, 2, 3].map(z => `<circle cx="${pt(z, compScore(p, z))[0]}" cy="${pt(z, compScore(p, z))[1]}" r="4" fill="var(--z${z + 1})"/>`).join('')}
+    ${lab.map(([x, y, a], z) => `<text x="${x}" y="${y}" text-anchor="${a}" font-size="11" fill="var(--ink)" font-family="Sarabun, sans-serif">${ZONES[z].short} ${compScore(p, z)}</text>`).join('')}
+  </svg>`;
+}
+function resultText() {
+  const head = ['ผู้เล่น', ...INDS, ...ZONES.map(z => z.short), 'มงกุฎ', 'คะแนนรวม'];
+  const rows = S.players.map(p => [p.name, ...INDS.map(k => p.stars[k] || 0), ...[0, 1, 2, 3].map(z => compScore(p, z)), hasCrown(p) ? 3 : 0, total(p)]);
+  const ev = S.evid.map(e => [e.p, e.ind, e.prompt, e.answer, e.stars]);
+  const line = a => a.map(x => `"${String(x).replace(/"/g, '""')}"`).join(',');
+  return [line(head), ...rows.map(line), '', line(['ผู้เล่น', 'ตัวบ่งชี้', 'โจทย์', 'คำตอบ', 'ดาว']), ...ev.map(line)].join('\n');
+}
+function openResults() {
+  const ranked = S.players.slice().sort((a, b) => total(b) - total(a));
+  const best = z => { const m = Math.max(...S.players.map(p => compScore(p, z))); return m > 0 ? S.players.filter(p => compScore(p, z) === m) : []; };
+  const titles = ['นักคิดว่องไว', 'นักพลิกมุม', 'นักประดิษฐ์ความคิด', 'นักเติมรายละเอียด'];
+  const titleOf = p => [0, 1, 2, 3].filter(z => best(z).includes(p)).map(z => titles[z]).join(' · ');
+  const h = `<h2>ผลการเดินทางรอบเกาะ</h2>
+    <p class="tip">คะแนนรวม = ดาวทุกตัวบ่งชี้ + มงกุฎนักคิดสี่ทิศ 3 คะแนน (เมื่อได้ทุกทิศ ทิศละ 3 ดาวขึ้นไป)</p>
+    <div class="results">${ranked.map((p, i) => `<div class="res"><span class="rank">อันดับ ${ranked.findIndex(q => total(q) === total(p)) + 1}</span>
+      <span class="pname"><span class="dot" style="--pc:${p.color}"></span>${esc(p.name)}${hasCrown(p) ? ' 👑' : ''}</span>
+      <span class="score">${total(p)} คะแนน</span>${radar(p)}<span class="title">${titleOf(p) || 'นักเดินทางผู้กล้า'}</span></div>`).join('')}</div>
+    <h3>ดาวรายตัวบ่งชี้</h3>
+    <div class="table-wrap"><table><thead><tr><th>ผู้เล่น</th>${INDS.map(k => `<th title="${esc(IND[k])}">${k}</th>`).join('')}<th>รวม</th></tr></thead>
+      <tbody>${S.players.map(p => `<tr><td>${esc(p.name)}</td>${INDS.map(k => `<td>${p.stars[k] || 0}</td>`).join('')}<td><b>${total(p)}</b></td></tr>`).join('')}</tbody></table></div>
+    <p class="tip">ครูนำผลไปใช้ประเมินตัวบ่งชี้ 1.1–4.3 ได้ ปุ่มด้านล่างคัดลอกคะแนนและคำตอบทุกข้อแบบ CSV ไปวางในสเปรดชีต</p>
+    <textarea class="copybox" id="copybox" readonly hidden></textarea>
+    <div class="row end"><button class="btn" type="button" data-act="copy">คัดลอกผลการประเมิน</button>
+      ${S.over ? '' : '<button class="btn" type="button" data-act="close">กลับไปเล่นต่อ</button>'}
+      <button class="btn primary" type="button" data-act="setup">เริ่มเกมใหม่</button></div>`;
+  openModal(h, null, true);
+}
+function confirmEnd() {
+  openModal(`<h2>จบเกมตอนนี้เลยไหม</h2><p>ระบบจะสรุปคะแนนจากดาวที่ทุกคนได้จนถึงตอนนี้</p>
+    <div class="row end"><button class="btn" type="button" data-act="close">เล่นต่อ</button><button class="btn primary" type="button" data-act="end-now">จบเกมและดูผล</button></div>`);
+}
+function openRules() {
+  openModal(`<h2>กติกาเกาะนักคิดสี่ทิศ</h2>
+  <div class="rules">
+    <p><b>เป้าหมาย</b> แล่นเรือรอบเกาะ สะสมดาวจากภารกิจของการคิดสร้างสรรค์ทั้ง 4 ทิศ ให้ได้คะแนนรวมมากที่สุด และพยายามคว้า “มงกุฎนักคิดสี่ทิศ” โดยได้ทุกทิศ ทิศละ 3 ดาวขึ้นไป (โบนัส 3 คะแนน)</p>
+    <p><b>สี่ทิศของเกาะ</b> (องค์ประกอบของการคิดสร้างสรรค์ตามแนวคิดของกิลฟอร์ดและทอแรนซ์)</p>
+    <ul>${ZONES.map((z, i) => `<li><b>${z.name} (${z.en})</b> ${z.land} — ${z.tip}</li>`).join('')}</ul>
+    <p><b>เล่นอย่างไร</b></p>
+    <ol>
+      <li>ผลัดกันทอยเต๋า เดินตามเข็มนาฬิกา แล้วทำตามช่องที่หยุด</li>
+      <li><b>ช่องภารกิจ</b> (มีรูปทรงและเลขตัวบ่งชี้) ทำภารกิจของตัวบ่งชี้นั้นภายในเวลาที่กำหนด แล้วส่งให้เพื่อนตรวจ ได้ 0–3 ดาว</li>
+      <li><b>💡 ประกายไอเดีย</b> รับ 1 ดวง · ผ่านท่าเรือรับ 2 ดวง · ใช้ 💡 1 ดวงเพื่อเปลี่ยนโจทย์ ทอยภาพใหม่ หรือต่อเวลา 30 วินาที</li>
+      <li><b>🌀 ลมความคิด</b> จั่วการ์ดเหตุการณ์ เช่น วงระดมสมองที่ทุกคนเล่นพร้อมกัน</li>
+      <li>เล่นครบตามจำนวนรอบที่ตั้งไว้ แล้วดูผลเป็นกราฟสี่ทิศของแต่ละคน</li>
+    </ol>
+    <p><b>เพื่อนผู้ตรวจ</b> คนที่ไม่ได้เล่นในตานั้นช่วยกันตรวจตามเกณฑ์บนหน้าจอ ตรวจอย่างยุติธรรมและชมสิ่งที่ดีก่อนเสมอ ครูเป็นผู้ตัดสินเมื่อเห็นไม่ตรงกัน</p>
+    <p><b>เกณฑ์ดาว</b> คิดคล่องนับจำนวนคำตอบที่ใช้ได้ · คิดยืดหยุ่นนับจำนวนแบบที่ต่างกัน · คิดริเริ่มให้เพื่อนโหวตความแปลกใหม่ที่ยังเหมาะกับโจทย์ · คิดละเอียดลออนับรายละเอียดที่ครบ ความถูกต้อง และเหตุผล</p>
+  </div>
+  <div class="row end"><button class="btn primary" type="button" data-act="close">เข้าใจแล้ว</button></div>`, null, true);
+}
+
+// ---------- events ----------
+document.addEventListener('click', async e => {
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  const act = a.dataset.act, i = Number(a.dataset.i), n = Number(a.dataset.n);
+  const p = S.players.length ? cur() : null;
+  switch (act) {
+    case 'setup': openSetup(); break;
+    case 'setn': { const names = readSetupNames(); setupN = n; openSetup(); names.forEach((v, k) => { const el = $('#pname-' + k); if (el) el.value = v; }); break; }
+    case 'setr': { const names = readSetupNames(); setupR = n; openSetup(); names.forEach((v, k) => { const el = $('#pname-' + k); if (el) el.value = v; }); break; }
+    case 'start': startGame(); break;
+    case 'close': closeModal(); if (C || E || S.pending) resumePending(); break;
+    case 'roll': roll(); break;
+    case 'results': openResults(); break;
+    case 'swap': if (p.idea > 0) { p.idea--; C.prompt = pickPrompt(C.ind); save(); renderChallenge(); renderSide(); } break;
+    case 'reroll-dice': if (p.idea > 0) { p.idea--; C.dice = rollDice(); save(); renderChallenge(); renderSide(); } break;
+    case 'go': C.phase = 'play'; C.left = C.def.T; renderChallenge(); startTimer(); break;
+    case 'more': if (p.idea > 0) { p.idea--; C.left += 30; const t = $('#timer'); if (t) t.textContent = fmt(C.left); a.disabled = p.idea < 1; save(); renderSide(); } break;
+    case 'pick': C.pick = i; modal.querySelectorAll('[data-act="pick"]').forEach(b => b.classList.toggle('on', Number(b.dataset.i) === i)); break;
+    case 'submit': submit(); break;
+    case 'tog': {
+      const k = a.dataset.i;
+      if (k === 'pics') C.allpics = !C.allpics;
+      else if (C.rev) C.rev[i].ok = !C.rev[i].ok;
+      else C.checks[i].ok = !C.checks[i].ok;
+      renderChallenge(); break;
+    }
+    case 'vote': C.vote = n; renderChallenge(); break;
+    case 'confirm':
+      if ((C.def.type === 'vote' || C.def.type === 'dice') && C.vote == null) { $('#preview').textContent = 'เลือกระดับความแปลกใหม่ 1 ข้อก่อนยืนยัน'; break; }
+      C.result = computeStars(); C.phase = 'result'; renderChallenge(); break;
+    case 'done': finishChallenge(); break;
+    case 'ev-go': eventGo(); break;
+    case 'buddy': { const q = S.players[i]; p.idea++; q.idea++; log(`<b>${esc(p.name)}</b> กับ <b>${esc(q.name)}</b> เป็นคู่หูนักคิด รับ 💡 คนละ 1`); S.msg = `${p.name} กับ ${q.name} รับ 💡 คนละ 1`; closeModal(); E = null; endTurn(); break; }
+    case 'ev-count': stopTimer(); E.phase = 'count'; renderEvent(); break;
+    case 'inc': E.counts[i]++; renderEvent(); break;
+    case 'dec': E.counts[i] = Math.max(0, E.counts[i] - 1); renderEvent(); break;
+    case 'ev-storm-done': {
+      const m = Math.max(...E.counts);
+      const tops = m > 0 ? S.players.filter((_, k) => E.counts[k] === m) : [];
+      tops.forEach(q => { q.stars['1.2'] = (q.stars['1.2'] || 0) + 1; });
+      S.players.forEach((q, k) => { if (E.counts[k] >= 3) q.idea++; });
+      S.evid.push({ p: 'ทุกคน', ind: '1.2', prompt: `วงระดมสมอง: ${E.obj}`, answer: S.players.map((q, k) => `${q.name} ${E.counts[k]} ข้อ`).join(' / '), stars: 1 });
+      log(`วงระดมสมอง “${esc(E.obj)}” ${tops.length ? tops.map(q => `<b>${esc(q.name)}</b>`).join(', ') + ' คิดได้มากที่สุด รับ ★' : 'ยังไม่มีใครได้ดาว'}`);
+      S.msg = 'จบวงระดมสมอง'; closeModal(); E = null; endTurn(); break;
+    }
+    case 'end-now': S.over = true; S.pending = null; save(); render(); openResults(); break;
+    case 'copy': {
+      const txt = resultText(), box = $('#copybox');
+      try { await navigator.clipboard.writeText(txt); a.textContent = 'คัดลอกแล้ว วางในสเปรดชีตได้เลย'; }
+      catch (err) { box.hidden = false; box.value = txt; box.focus(); box.select(); a.textContent = 'เลือกข้อความไว้แล้ว กด Ctrl+C เพื่อคัดลอก'; }
+      break;
+    }
+  }
+});
+back.addEventListener('click', e => { if (e.target === back && !C && !E && (S.started || S.over)) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !back.hidden && !C && !E && S.started) closeModal(); });
+$('#btn-rules').onclick = openRules;
+$('#btn-new').onclick = () => { setupN = S.players.length || 3; setupR = S.maxRounds || 8; openSetup(); };
+$('#btn-end').onclick = () => { if (!S.started) return openSetup(); if (S.over) return openResults(); if (C || E || busy) return; confirmEnd(); };
+
+// เปิดภารกิจที่ค้างอยู่อีกครั้ง (เช่น รีโหลดหน้า หรือปิดหน้าต่างโดยไม่ตั้งใจ)
+function resumePending() {
+  if (!S.pending || S.over) { C = null; E = null; return; }
+  if (C) { stopTimer(); C.phase = 'intro'; renderChallenge(); }
+  else if (E) { stopTimer(); E.phase = 'card'; renderEvent(); }
+  else if (S.pending.ind) openChallenge(S.pending.ind);
+  else if (S.pending.event) openEvent();
+}
+
+function boot(data) {
+  S = (data && data.S) || load() || fresh();
+  render();
+  if (!S.started) openSetup();
+  else if (S.over) openResults();
+  else resumePending();
+}
+window.claude?.hot?.snapshot?.(() => ({ S }));
+window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
+</script>
+</body>
+</html>
