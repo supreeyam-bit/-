@@ -9,7 +9,7 @@ export const BASE_CSS = `
   --role-subject:#c8322b;--role-verb:#f2b705;--role-object:#1d4a9e;--role-on-dark:#ffffff;--role-on-light:#2a2233;
   --type-statement:#2e7d4f;--type-negative:#5b4b8a;--type-question:#b4541a;--type-command:#1f2a44;--type-request:#b03a72;
   --chaos:#4a2a5e;--spark-gold:#e8a33d;--coop-teal:#17767a;--hint-sky:#dcebf7;
-  --water:#d6eff7;--water-wave:#a9dcec;--grass:#d4ec9f;--grass-edge:#8fbf4f;--sand:#f3dfb0;--sand-edge:#d2a862;
+  --water:#c4efe9;--water-wave:#8fdcd2;--plaza:#e8f6c9;--grass:#d4ec9f;--grass-edge:#8fbf4f;--sand:#f3dfb0;--sand-edge:#d2a862;
   --font-display:Mitr,"Noto Sans Thai",sans-serif;--font-body:Sarabun,"Noto Sans Thai",sans-serif;
 }
 *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}

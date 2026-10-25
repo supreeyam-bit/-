@@ -11,7 +11,7 @@
   --t-statement:#2e7d4f;--t-negative:#5b4b8a;--t-question:#b4541a;--t-command:#1f2a44;--t-request:#b03a72;
   --chaos:#4a2a5e;--gold:#e8a33d;--teal:#17767a;--sky:#dcebf7;--focus:#1d4a9e;--good:#2e7d4f;--bad:#b4341a;
   --shadow:0 2px 0 #d9cfb8;--scrim:rgba(42,34,51,.55);
-  --water:#cdeef8;--wave:#a6dcee;--grass:#d4ec9f;--grass-edge:#8fbf4f;--sand:#f3dfb0;--sand-edge:#d2a862;
+  --water:#a8e6df;--wave:#7fd6cc;--grass:#d4ec9f;--grass-edge:#8fbf4f;--sand:#f3dfb0;--sand-edge:#d2a862;
   --display:Mitr,"Noto Sans Thai",system-ui,sans-serif;--body:Sarabun,"Noto Sans Thai",system-ui,sans-serif;
   --emoji:"Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif;
 }
@@ -19,12 +19,12 @@
   --paper:#1b1a24;--raised:#262433;--ink:#f4efe3;--muted:#b8b0c4;--line:#3d3a4d;--subj:#d23d34;--obj:#3a6fc9;--mod:#5d82c6;
   --t-negative:#6a5a9c;--t-command:#4a5a85;--chaos:#7a4a96;--teal:#1f8a8e;--sky:#24364a;--focus:#8aa0d6;--good:#4caf78;--bad:#e0714f;
   --shadow:0 2px 0 #0e0d14;--scrim:rgba(0,0,0,.6);color-scheme:dark;
-  --water:#10303d;--wave:#174556;--grass:#34502a;--grass-edge:#1f3318;--sand:#4a3c25;--sand-edge:#2e2516}}
+  --water:#0f3a3a;--wave:#155050;--grass:#34502a;--grass-edge:#1f3318;--sand:#4a3c25;--sand-edge:#2e2516}}
 :root[data-theme="dark"]{
   --paper:#1b1a24;--raised:#262433;--ink:#f4efe3;--muted:#b8b0c4;--line:#3d3a4d;--subj:#d23d34;--obj:#3a6fc9;--mod:#5d82c6;
   --t-negative:#6a5a9c;--t-command:#4a5a85;--chaos:#7a4a96;--teal:#1f8a8e;--sky:#24364a;--focus:#8aa0d6;--good:#4caf78;--bad:#e0714f;
   --shadow:0 2px 0 #0e0d14;--scrim:rgba(0,0,0,.6);color-scheme:dark;
-  --water:#10303d;--wave:#174556;--grass:#34502a;--grass-edge:#1f3318;--sand:#4a3c25;--sand-edge:#2e2516}
+  --water:#0f3a3a;--wave:#155050;--grass:#34502a;--grass-edge:#1f3318;--sand:#4a3c25;--sand-edge:#2e2516}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{background-color:var(--water);background-image:radial-gradient(ellipse 34px 8px at 50% 100%,transparent 70%,var(--wave) 72%,var(--wave) 84%,transparent 86%);background-size:96px 48px;color:var(--ink);font:16px/1.55 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -59,7 +59,7 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus
 /* พื้นที่หลัก */
 .main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr);gap:16px;align-items:start}
 @media (max-width:980px){.main{grid-template-columns:minmax(0,1fr)}}
-.board{position:relative;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(9,1fr);gap:4px;aspect-ratio:11/9;width:100%;max-width:100%;background:var(--sand);border:2px solid var(--sand-edge);border-radius:18px;padding:8px;box-shadow:0 6px 0 var(--sand-edge)}
+.board{position:relative;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(9,1fr);gap:4px;aspect-ratio:11/9;width:100%;max-width:100%;background:#f6e6bf;border:2px solid var(--sand-edge);border-radius:18px;padding:8px;box-shadow:0 6px 0 var(--sand-edge)}
 .cell{position:relative;border-radius:8px;background:var(--grass);border:1.5px solid var(--grass-edge);box-shadow:0 3px 0 var(--grass-edge);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:2px;min-width:0}
 .cell .ic{font-size:clamp(14px,2.4vw,28px);line-height:1}
 .cell .ic.t{font-family:var(--display);font-weight:600}
@@ -78,6 +78,24 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus
 .cell .vb{position:absolute;top:1px;left:3px;background:var(--verb);color:var(--on-light);border-radius:5px;padding:0 4px;font:500 clamp(7px,.8vw,10px)/1.4 var(--display)}
 @media (max-width:640px){.cell .vb{display:none}}
 .rolldie{min-width:78px;height:78px;padding:0 8px;border-radius:14px;border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font:600 20px/1.1 var(--display);text-align:center}
+.tower{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tower .tn{font:500 13px var(--display);color:var(--muted);width:100%}
+.tb{display:inline-flex;align-items:center;gap:2px;padding:2px 9px;border-radius:999px;border:2px solid var(--bc);background:color-mix(in srgb,var(--bc) 14%,var(--raised));font:500 13px var(--display)}
+@media (max-width:700px){.tower{display:none}}
+.zones{display:flex;flex-wrap:wrap;gap:6px}
+.zone{display:inline-flex;align-items:center;gap:4px;padding:3px 12px;border-radius:10px;background:var(--zc);color:#fff;font:500 14px var(--display)}
+.zone small{opacity:.85;font-size:12px}
+.village{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;background:var(--grass);border:2px solid var(--grass-edge);border-radius:16px;padding:10px 8px;box-shadow:0 0 0 5px var(--sand),0 7px 0 5px var(--sand-edge);margin:6px 5px 12px}
+.vil{display:flex;flex-direction:column;align-items:center;gap:0;min-width:0}
+.vil .roof{width:0;height:0;border-left:24px solid transparent;border-right:24px solid transparent;border-bottom:16px solid var(--vc)}
+.vil .house{width:40px;height:28px;background:var(--raised);border:2px solid #8a5a2b;border-top:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+.vil .lab{margin-top:4px;background:var(--vc);color:#fff;border-radius:7px;padding:2px 6px;font:500 12px/1.2 var(--display);text-align:center}
+.vil:hover .house,.vil:focus-visible .house{transform:translateY(-2px)}
+@media (max-width:640px){.village{grid-template-columns:repeat(4,1fr)}}
+.picker{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px 44px}
+.pk{width:40px;height:40px;border-radius:12px;border:2px solid var(--line);background:var(--raised);font-size:22px;display:flex;align-items:center;justify-content:center}
+.pk.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--gold)}
+.pk:disabled{opacity:.3}
 .mmap{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
 .mmb{border:2px solid var(--bc);border-left-width:8px;border-radius:10px;padding:8px 10px;font-size:14px}
 .mmb b{color:var(--bc);font-family:var(--display);font-weight:500;font-size:15px}
@@ -86,7 +104,7 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus
 .pawns{position:absolute;bottom:2px;left:2px;right:2px;display:flex;flex-wrap:wrap;gap:1px;justify-content:center}
 .pawn{width:clamp(14px,1.9vw,22px);height:clamp(14px,1.9vw,22px);border-radius:50%;border:2px solid #fff;font-size:clamp(9px,1.1vw,13px);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,.35);transition:transform .2s}
 .pawn.cur{transform:scale(1.25);z-index:2}
-.center{grid-column:2/11;grid-row:2/9;border-radius:14px;background:var(--raised);border:1.5px solid var(--sand-edge);padding:clamp(8px,1.5vw,18px);display:flex;flex-direction:column;gap:10px;min-width:0;overflow:hidden}
+.center{grid-column:2/11;grid-row:2/9;border-radius:14px;background:var(--raised);border:1.5px solid var(--sand-edge);box-shadow:0 0 0 6px var(--water),0 0 0 8px var(--sand-edge);margin:8px;padding:clamp(8px,1.5vw,18px);display:flex;flex-direction:column;gap:10px;min-width:0;overflow:hidden}
 .turnline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .turnline h2{font-size:clamp(16px,2vw,22px)}
 .die{width:clamp(44px,6vw,64px);height:clamp(44px,6vw,64px);border-radius:14px;background:var(--paper);border:2px solid var(--line);font:600 clamp(22px,3.4vw,34px)/1 var(--display);display:flex;align-items:center;justify-content:center}
@@ -112,6 +130,7 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus
 .panel h3{font-size:16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .panel h3 small{font:400 13px var(--body);color:var(--muted)}
 .res{display:flex;flex-wrap:wrap;gap:6px}
+.cell.res{flex-wrap:nowrap;gap:0}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:var(--paper);border:1.5px solid var(--line);font:500 14px var(--display);font-variant-numeric:tabular-nums}
 .chip.btnish{cursor:pointer}
 .chip .g{width:12px;height:12px;border-radius:50%}
@@ -307,10 +326,10 @@ const SAVE_KEY = 'wordland-save-v1';
 let S = null; // game state
 let ui = { view: null, modal: null };
 
-function newPlayer(i, name) {
+function newPlayer(i, name, pick) {
   const p = DATA.PLAYERS[i];
   return {
-    i, name: name || p.name, hex: p.hex, animal: p.animal, pos: 0,
+    i, name: name || p.name, hex: p.hex, animal: pick || p.animal, pos: 0,
     hand: [...draw('S', 2), ...draw('V', 2), ...draw('O', 2)],
     res: { wood: 1, brick: 1, stone: 0, spark: 0, hint: 3, helper: 0, wow: 2 },
     glass: { statement: 0, negative: 0, question: 0, command: 0, request: 0 },
@@ -331,9 +350,9 @@ function draw(role, n = 1) {
   }
   return out;
 }
-function startGame(names) {
+function startGame(names, picks = []) {
   S = {
-    players: names.map((n, i) => newPlayer(i, n)), cur: 0, meter: 2, phase: 'roll', die: null,
+    players: names.map((n, i) => newPlayer(i, n, picks[i])), cur: 0, meter: 2, phase: 'roll', die: null,
     wonders: { bridge: 0, clock: 0, lighthouse: 0 }, creative: { m: 0, s: 0 }, built: false,
     log: ['เริ่มเกม! ยุ่งเหยิงตื่นแล้ว มาตรวัดความสับสนอยู่ที่ 2'], ended: null, finalRound: false, sel: 0, turns: 0,
   };
@@ -356,6 +375,7 @@ function renderSetup() {
   const saved = store.get(SAVE_KEY);
   let count = 3;
   const names = DATA.PLAYERS.map((p) => p.name);
+  const picks = DATA.PLAYERS.map((p) => p.animal);
   const app = $('#app'); app.innerHTML = '';
   const list = h('div', { class: 'card' });
   const drawList = () => {
@@ -363,9 +383,13 @@ function renderSetup() {
     list.append(h('h3', {}, 'ผู้เล่น'));
     for (let i = 0; i < count; i++) {
       const p = DATA.PLAYERS[i];
-      list.append(h('div', { class: 'prow' }, h('div', { class: 'dot emoji', style: `background:${p.hex}` }, p.animal),
+      list.append(h('div', { class: 'prow' }, h('div', { class: 'dot emoji', style: `background:${p.hex}` }, picks[i]),
         h('input', { type: 'text', id: `pname${i}`, value: names[i], 'aria-label': `ชื่อผู้เล่นที่ ${i + 1}`, oninput: (e) => { names[i] = e.target.value; } }),
-        h('span', { class: 'muted', style: 'font-size:13px' }, i === 0 ? 'เริ่มก่อน' : '')));
+        h('span', { class: 'muted', style: 'font-size:13px' }, i === 0 ? 'เริ่มก่อน' : '')),
+        h('div', { class: 'picker', role: 'radiogroup', 'aria-label': `เลือกนักสร้างของผู้เล่นที่ ${i + 1}` }, DATA.BUILDERS.map(([e, nm]) => {
+          const taken = picks.slice(0, count).some((x, k) => k !== i && x === e);
+          return h('button', { type: 'button', class: `pk emoji${picks[i] === e ? ' on' : ''}`, role: 'radio', 'aria-checked': picks[i] === e ? 'true' : 'false', title: nm, 'aria-label': nm, disabled: taken, onclick: () => { picks[i] = e; drawList(); } }, e);
+        })));
     }
   };
   drawList();
@@ -374,12 +398,13 @@ function renderSetup() {
   app.append(h('div', { class: 'setup' },
     h('div', { class: 'hero' }, h('span', { class: 'muted', style: 'font:500 14px var(--display)' }, 'บอร์ดเกมการเรียนรู้ภาษาไทย ป.3 · ฉบับดิจิทัล'),
       h('h1', {}, DATA.TITLE),
-      h('p', {}, 'ยุ่งเหยิง สัตว์ประหลาดความสับสน กินลำดับของคำจนป้ายในเมืองพังหมด ผลัดกันทอยเต๋า ซ่อมป้าย ต่อประโยคสร้างเมือง และช่วยกันสร้างสิ่งก่อสร้างมหัศจรรย์ก่อนมาตรวัดความสับสนถึง 12'),
+      h('p', {}, 'เกาะสี่เหลี่ยมกลางแม่น้ำ มี 3 โซน: การสร้างประโยค · การขยายประโยค · การใช้ภาษา รอบหอคอยความคิดสร้างสรรค์ แต่ยุ่งเหยิงกินลำดับคำจนป้ายพัง เลือกนักสร้างเมืองตัวจิ๋วของเรา แล้วช่วยกันซ่อมเมือง!'),
+      h('div', { class: 'row', style: 'gap:6px' }, DATA.LOOP.map(([e, t], k) => h('span', { class: 'chip' }, h('span', { class: 'emoji' }, e), ` ${k + 1}. ${t}`))),
       blocks),
     h('div', { class: 'row' }, h('span', { style: 'font:500 16px var(--display)' }, 'จำนวนผู้เล่น'), seg),
     list,
     h('div', { class: 'row' },
-      h('button', { class: 'btn primary', type: 'button', onclick: () => startGame(names.slice(0, count).map((n, i) => n.trim() || DATA.PLAYERS[i].name)) }, 'เริ่มผจญภัย'),
+      h('button', { class: 'btn primary', type: 'button', onclick: () => startGame(names.slice(0, count).map((n, i) => n.trim() || DATA.PLAYERS[i].name), picks.slice(0, count)) }, 'เริ่มผจญภัย'),
       saved && saved.S && !saved.S.ended ? h('button', { class: 'btn', type: 'button', onclick: () => { S = saved.S; uid = saved.uid || 1000; render(); } }, 'เล่นเกมที่ค้างไว้ต่อ') : null,
       h('button', { class: 'btn', type: 'button', onclick: openRules }, 'กติกาย่อ'),
       h('button', { class: 'btn', type: 'button', onclick: () => openLibrary() }, 'คลังความรู้')),
@@ -387,12 +412,14 @@ function renderSetup() {
 }
 
 // ====================== หน้าจอเกม ======================
+// เริ่มมุมซ้ายล่าง เดินขึ้นตามเข็มนาฬิกา (ตรงกับกระดานชุดพิมพ์) · ช่อง 0–11 โซน 1 · 12–23 โซน 2 · 24–35 โซน 3
 function cellPos(i) {
-  if (i <= 10) return [i, 0];
-  if (i <= 18) return [10, i - 10];
-  if (i <= 28) return [10 - (i - 18), 8];
-  return [0, 8 - (i - 28)];
+  if (i <= 8) return [0, 8 - i];
+  if (i <= 18) return [i - 8, 0];
+  if (i <= 26) return [10, i - 18];
+  return [10 - (i - 26), 8];
 }
+const zoneOf = (i) => DATA.ZONES[Math.min(2, Math.floor(i / 12))];
 function render() {
   if (!S) return renderSetup();
   save();
@@ -424,7 +451,8 @@ function boardEl(cur) {
     const [c, r] = cellPos(i);
     const isText = ['?', '★', '⇄'].includes(s.icon);
     const pawns = S.players.filter((p) => p.pos === i).map((p) => h('span', { class: `pawn emoji${p === cur ? ' cur' : ''}`, style: `background:${p.hex}`, title: p.name }, p.animal));
-    b.append(h('div', { class: `cell ${s.cls}`, style: `grid-column:${c + 1};grid-row:${r + 1}`, title: `${s.name}: ${s.text}` },
+    const z = zoneOf(i);
+    b.append(h('div', { class: `cell ${s.cls}`, style: `grid-column:${c + 1};grid-row:${r + 1};border-top:5px solid ${z.color}`, title: `โซน ${z.n} ${z.name} · ${s.name}: ${s.text}` },
       h('span', { class: 'no' }, i || ''), DATA.SPACE_VERBS[i] ? h('span', { class: 'vb' }, `➜ ${DATA.SPACE_VERBS[i][0]}`) : null,
       h('span', { class: `ic ${isText ? 't' : 'emoji'}` }, s.icon), h('span', { class: 'nm' }, s.name),
       pawns.length ? h('div', { class: 'pawns' }, pawns) : null));
@@ -446,9 +474,15 @@ function boardEl(cur) {
     h('div', { class: 'turnline' }, die,
       h('div', {}, h('div', { class: 'muted', style: 'font-size:13px' }, `เทิร์นของ`), h('h2', {}, h('span', { class: 'emoji' }, cur.animal), ' ', cur.name)),
       S.finalRound ? h('span', { class: 'chip', style: 'border-color:var(--gold)' }, 'รอบสุดท้าย!') : null),
+    h('div', { class: 'tower', title: DATA.TOWER.name }, h('span', { class: 'tn' }, h('span', { class: 'emoji' }, '⭐'), ' ', DATA.TOWER.name),
+      DATA.TOWER.badges.map(([e, en, th, col], k) => h('span', { class: 'tb', style: `--bc:${col}`, title: `${en} ${th}` }, h('span', { class: 'emoji' }, e), ` ${th} `, h('b', {}, cur.stars[k])))),
     makeActs(), logEl()));
   // จอแคบ: ปุ่มและบันทึกเหตุการณ์ย้ายมาอยู่ใต้กระดาน
-  return h('div', { class: 'boardwrap' }, b, h('div', { class: 'below' }, makeActs(), logEl()));
+  const zones = h('div', { class: 'zones' }, DATA.ZONES.map((z) => h('span', { class: 'zone', style: `--zc:${z.color}` }, h('span', { class: 'emoji' }, z.icon), ` โซน ${z.n} ${z.name}`, h('small', {}, ` ช่อง ${(z.n - 1) * 12}–${z.n * 12 - 1}`))));
+  const open = [openStory, () => openLibrary(), openTools, () => openBoard(), openCreativeCenter, () => openScaffolds(), () => openConsult()];
+  const village = h('div', { class: 'village', role: 'navigation', 'aria-label': 'หมู่บ้าน 7 องค์ประกอบ' }, DATA.VILLAGE.map(([e, name, col], k) => h('button', { class: 'vil', type: 'button', style: `--vc:${col}`, onclick: open[k] },
+    h('span', { class: 'roof' }), h('span', { class: 'house emoji' }, e), h('span', { class: 'lab' }, `${k + 1} ${name}`))));
+  return h('div', { class: 'boardwrap' }, zones, b, village, h('div', { class: 'below' }, makeActs(), logEl()));
 }
 
 function sideEl() {
@@ -1297,6 +1331,29 @@ function openConsult() {
       h('div', { class: 'card' }, h('h3', {}, 'ลองตอบครูฮูกในใจ'), h('ul', { style: 'margin:0;padding-left:20px' }, DATA.SCAFFOLDS.find((x) => x.id === 'metacognitive').cards.map(([t, b]) => h('li', {}, h('b', {}, t + ': '), b)))),
       h('p', { class: 'muted', style: 'margin:0;font-size:14px' }, 'การโค้ช 3 บทบาท: ' + DATA.COACH_ROLES.map(([r]) => r).join(' · '))] });
 }
+function openStory() {
+  openModal({ title: '❗ สถานการณ์ปัญหา', color: 'var(--subj)', onClose: () => render(),
+    body: [h('p', { class: 'task', style: 'margin:0' }, 'Block World อาณาจักรนักสร้างโลกแห่งคำ มี 3 โซน คือ โซน 1 การสร้างประโยค (เกาะโรงเรียน) โซน 2 การขยายประโยค (ทุ่งนา) และโซน 3 การใช้ภาษา (ตลาด) ทุกสิ่งต่อขึ้นจากบล็อกคำ แต่สัตว์ประหลาด "ยุ่งเหยิง" กินลำดับคำและธงประเภทประโยค ป้ายจึงอ่านไม่รู้เรื่อง บ้านพัง สะพานขาด'),
+      h('div', { class: 'sign' }, 'ปลา · แมว · กิน'), owlEl('ป้ายนี้ผิดตรงไหน? ใครเป็นคนทำ ทำอะไร กับอะไร? ช่วยกันซ่อมป้ายและต่อเมืองให้กลับมาสวยงามนะ'),
+      h('div', { class: 'card' }, h('h3', {}, `มาตรวัดความสับสนตอนนี้: ${S.meter} / 12`), h('span', { style: 'font-size:15px' }, 'ถึง 4 และ 8 ยุ่งเหยิงโจมตี ถึง 12 ทุกคนแพ้ สร้างสิ่งมหัศจรรย์สำเร็จ 1 แห่ง มาตรวัด −3'))] });
+}
+function openTools() {
+  openModal({ title: '🧠 เครื่องมือทางปัญญา', color: '#7a4a96', onClose: () => render(),
+    body: [houseOf(['S:แมว', 'V:กิน', 'O:ปลา']),
+      h('ul', { style: 'margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px' },
+        h('li', {}, h('b', {}, 'บล็อกคำ 3 สี: '), 'แดง ▲ ประธาน · เหลือง ➜ กริยา · น้ำเงิน ● กรรม · ส่วนขยาย · คำเปลี่ยนร่าง'),
+        h('li', {}, h('b', {}, 'แท่นวางประโยค + ธงประเภท: '), 'วางเรียงซ้ายไปขวา ลองสลับ แล้วกดตรวจ'),
+        h('li', {}, h('b', {}, 'ทอยประโยค: '), 'ลูกเต๋าใคร + กริยาบนช่อง + การ์ดเวลา 4 กาล + ลูกเต๋าประเภทประโยค'),
+        h('li', {}, h('b', {}, 'ลูกเต๋าเรื่องเล่า: '), 'ภาพ 9 ลูกสำหรับภารกิจคิดริเริ่ม')),
+      S.phase === 'act' && !S.built ? h('button', { class: 'btn gold', type: 'button', onclick: () => { closeModal(); openBuild(); } }, '🏗 ไปต่อบล็อกสร้างบ้าน') : null] });
+}
+function openCreativeCenter() {
+  const p = P();
+  openModal({ title: '🎨 ศูนย์ส่งเสริมการคิดสร้างสรรค์', color: 'var(--gold)', onClose: () => render(),
+    body: [processEl(), h('div', { class: 'card' }, h('h3', {}, `ความก้าวหน้าของ${p.name}`),
+      h('div', { class: 'tower' }, DATA.TOWER.badges.map(([e, en, th, col], k) => h('span', { class: 'tb', style: `--bc:${col}` }, h('span', { class: 'emoji' }, e), ` ${th} ดาว `, h('b', {}, p.stars[k])))),
+      h('span', { class: 'muted', style: 'font-size:14px' }, `ภารกิจถัดไป: ${S.creative.m < 4 ? `${DATA.CREATIVE[S.creative.m].area} · ${DATA.STAGES[S.creative.s]}` : 'ครบทุกด่านแล้ว'} — หยุดที่ช่อง ★ เพื่อเล่น`))] });
+}
 function openLibrary() {
   openModal({ title: '📚 คลังความรู้: ประโยคและบ้านประโยค', color: 'var(--ink)', onClose: () => render(),
     body: [mindmapEl(), processEl(), houseOf(['S:ประธาน · ใคร?', 'V:กริยา · ทำอะไร?', 'O:กรรม · กับอะไร?']),
@@ -1307,6 +1364,7 @@ function openLibrary() {
 function openRules() {
   openModal({ title: 'กติกาย่อ', color: 'var(--ink)', onClose: () => (S ? render() : null),
     body: [h('ol', { style: 'margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px' },
+      h('li', {}, h('b', {}, 'วงจรการเล่น: '), DATA.LOOP.map(([, t]) => t).join(' → ')),
       h('li', {}, h('b', {}, 'สำรวจ: '), 'ทอยเต๋า เดินตามเข็มนาฬิกา ทำตามช่องที่หยุด'),
       h('li', {}, h('b', {}, 'ทอยประโยค 🎲: '), 'หยุดที่ช่องทรัพยากร ทอยลูกเต๋าใคร + ลูกเต๋าประเภทประโยค และจั่วการ์ดเวลา (ทำไปแล้ว · ทำเป็นประจำ · กำลังทำ · จะทำ) แล้วต่อประโยคด้วยกริยาบนช่อง ผ่าน = ทรัพยากร + บล็อกคำ 2 ใบ ใส่การ์ดขยายเพิ่มได้ถูก = บล็อกเพิ่ม 1 ยังไม่ผ่านก็ยังได้ทรัพยากร'),
       h('li', {}, h('b', {}, 'สร้าง/อัปเกรด: '), 'ต่อบล็อกคำบนแท่นวาง ปักธงประเภท ผู้ตรวจป้ายถาม ใคร? ทำอะไร? กับอะไร? แล้วจ่ายทรัพยากร (ไม้ อิฐ หิน แก้วสีของย่าน และประกายคิดสำหรับหอคอย)'),
