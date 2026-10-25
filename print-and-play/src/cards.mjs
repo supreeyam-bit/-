@@ -3,7 +3,7 @@
 import { doc, esc, arMarker, chunk } from './lib.mjs';
 import {
   TITLE, TYPES, RESOURCES, GLASS_PER_TYPE, MISSIONS, MISSION_REWARD, CHAOS, TEMPLATES, HINT_LEVELS,
-  CREATIVE, STAGES, ELAB_BROKEN, WONDERS, ROLES_JIGSAW, COACH, STORY_CUBES, TIME_PLACE,
+  CREATIVE, STAGES, ELAB_BROKEN, WONDERS, ROLES_JIGSAW, COACH, STORY_CUBES, TIME_CARDS, EXTRA_CARDS, TENSES,
 } from './data.mjs';
 
 const css = `
@@ -104,15 +104,23 @@ ${lv === 1 ? '<p>วางบล็อกลงร่องตามแม่แ
 const hintBack = ({ t, lv }) => card({ style: 'background:var(--hint-sky);color:var(--ink)', html: `<div class="bd back" style="color:var(--ink)"><div class="t">💡 การ์ดคำใบ้</div><div style="background:${t.color};color:#fff;border-radius:2mm;padding:1mm 3mm;font:500 10pt var(--font-display)">${t.sym} ${t.name} · ขั้น ${lv + 1}</div>
 <p style="font-size:8.4pt;margin-top:2mm"><b>ก่อนเปิด ถามตัวเองก่อน:</b><br>ตอนนี้เราติดตรงไหน?<br>☐ หาคำไม่เจอ ☐ เรียงไม่ถูก<br>☐ ไม่รู้ว่าเป็นประโยคประเภทไหน</p></div>` });
 
-// ---------- เวลาและสถานที่ (ทอยประโยค) ----------
-const TP_COLOR = { 'เวลา': '#4f74b8', 'สถานที่': '#2e7d4f', 'อย่างไร': '#b4541a' };
-const TP_Q = { 'เวลา': 'เมื่อไร?', 'สถานที่': 'ที่ไหน?', 'อย่างไร': 'อย่างไร?' };
-const tpFront = (c) => card({ style: 'background:#fff;border:.4mm solid var(--line)', html: `<div class="band" style="background:${TP_COLOR[c.kind]}"><span>🎲 เวลาและสถานที่</span><span>${TP_Q[c.kind]}</span></div>
-<div class="bd" style="justify-content:center;text-align:center"><span class="pill" style="align-self:center">ส่วนขยายบอก${c.kind === 'อย่างไร' ? 'ลักษณะ' : c.kind}</span>
-<h2 style="font-size:19pt;margin:3mm 0">${esc(c.word)}</h2>
-${c.aux ? `<p style="background:#fbe9cc;border-radius:2mm;padding:1.6mm 2mm">ใช้คู่กับคำช่วย <b style="font-family:var(--font-display);font-size:11pt">${esc(c.aux)}</b><br>วางหน้ากริยา: ฉัน<b>${esc(c.aux)}</b>ปลูกต้นไม้${esc(c.word)}</p>` : `<p>ใส่คำนี้ลงในประโยคที่ทอยได้<br>ให้ประโยคยาวขึ้นและชัดขึ้น</p>`}
-<div class="foot"><span>ใส่ได้ถูกต้อง = บล็อกคำเพิ่ม 1</span><span class="pill">#${c.id}</span></div></div>` });
-const tpBack = () => card({ style: 'background:#4f74b8', html: `<div class="bd back"><div class="big emoji">🎲</div><div class="t">เวลาและสถานที่</div><div class="s">เมื่อไร? · ที่ไหน? · อย่างไร?</div><div class="ttl">${TITLE}</div></div>` });
+// ---------- การ์ดเวลา 4 กาล + การ์ดขยายเพิ่ม (ทอยประโยค) ----------
+const timeFront = (c) => {
+  const t = TENSES[c.tense];
+  return card({ style: 'background:#fff;border:.4mm solid var(--line)', html: `<div class="band" style="background:${t.color}"><span>🕒 การ์ดเวลา · เมื่อไร?</span><span>${t.name}</span></div>
+<div class="bd" style="justify-content:center;text-align:center"><span class="pill" style="align-self:center">${t.name}</span>
+<h2 style="font-size:19pt;margin:2mm 0">${esc(c.word)}</h2>
+${c.aux ? `<p style="background:#fbe9cc;border-radius:2mm;padding:1.6mm 2mm">ใส่คำช่วย <b style="font-family:var(--font-display);font-size:12pt">${esc(c.aux)}</b> หน้ากริยา<br>ฉัน<b>${esc(c.aux)}</b>ปลูกต้นไม้${esc(c.word)}</p>` : `<p style="background:var(--paper);border-radius:2mm;padding:1.6mm 2mm">ไม่ต้องใส่คำช่วย<br>ฉันปลูกต้นไม้${esc(c.word)}</p>`}
+<p style="font-size:7.4pt;color:var(--ink-muted)">${c.tense === 'past' || c.tense === 'now' ? 'คำสั่ง/ขอร้อง: จั่วการ์ดใหม่' : 'คำสั่ง/ขอร้อง: ใช้ได้ ไม่ต้องใส่คำช่วย'}</p>
+<div class="foot"><span>ต้องใช้ทุกครั้งที่ทอยประโยค</span><span class="pill">#${c.id}</span></div></div>` });
+};
+const timeBack = () => card({ style: 'background:#1d4a9e', html: `<div class="bd back"><div class="big emoji">🕒</div><div class="t">การ์ดเวลา</div><div class="s">ทำไปแล้ว · ทำเป็นประจำ<br>กำลังทำ · จะทำ</div><div class="ttl">${TITLE}</div></div>` });
+const EX_COLOR = { 'สถานที่': '#2e7d4f', 'อย่างไร': '#b03a72' };
+const extraFront = (c) => card({ style: 'background:#fff;border:.4mm solid var(--line)', html: `<div class="band" style="background:${EX_COLOR[c.kind]}"><span>➕ การ์ดขยายเพิ่ม</span><span>${c.kind === 'สถานที่' ? 'ที่ไหน?' : 'อย่างไร?'}</span></div>
+<div class="bd" style="justify-content:center;text-align:center"><span class="pill" style="align-self:center">ส่วนขยายบอก${c.kind === 'อย่างไร' ? 'ลักษณะ' : 'สถานที่'}</span>
+<h2 style="font-size:19pt;margin:3mm 0">${esc(c.word)}</h2><p>ใส่คำนี้ลงในประโยคที่ทอยได้<br>ให้ประโยคยาวขึ้นและชัดขึ้น</p>
+<div class="foot"><span>โบนัส: ใส่ได้ถูกต้อง = บล็อกคำเพิ่ม 1</span><span class="pill">#${c.id}</span></div></div>` });
+const extraBack = () => card({ style: 'background:#2e7d4f', html: `<div class="bd back"><div class="big emoji">➕</div><div class="t">การ์ดขยายเพิ่ม</div><div class="s">ที่ไหน? · อย่างไร?</div><div class="ttl">${TITLE}</div></div>` });
 
 export function cardsHtml() {
   return doc('การ์ดเกม', css,
@@ -120,7 +128,8 @@ export function cardsHtml() {
     sheets(MISSIONS, missionFront, missionBack, 'std', 3, 9, 'การ์ดภารกิจซ่อมป้าย') +
     sheets(CHAOS, chaosFront, chaosBack, 'std', 3, 9, 'การ์ดภัยยุ่งเหยิง') +
     sheets(hintItems, hintFront, hintBack, 'std', 3, 9, 'การ์ดคำใบ้') +
-    sheets(TIME_PLACE, tpFront, tpBack, 'std', 3, 9, 'การ์ดเวลาและสถานที่'));
+    sheets(TIME_CARDS, timeFront, timeBack, 'std', 3, 9, 'การ์ดเวลา') +
+    sheets(EXTRA_CARDS, extraFront, extraBack, 'std', 3, 9, 'การ์ดขยายเพิ่ม'));
 }
 
 // ---------- การ์ดใหญ่ ----------

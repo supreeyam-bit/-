@@ -3,7 +3,7 @@ import { doc, esc } from './lib.mjs';
 import {
   TITLE, SHORT_TITLE, TYPES, SUBJECTS, VERBS, OBJECTS, MODIFIERS, CHANGERS, GHOSTS, RESOURCES, GLASS_PER_TYPE,
   MISSIONS, MISSION_REWARD, CHAOS, CREATIVE, STAGES, INDICATORS, STORY_CUBES, CUBE_RULES, WONDERS, COACH, SPACE_KINDS, PATH, COST, PLAYERS,
-  SPACE_VERBS, WHO_DIE, TIME_PLACE, ROLL_RULES,
+  SPACE_VERBS, TIME_CARDS, EXTRA_CARDS, TENSES, ROLL_RULES,
 } from './data.mjs';
 
 const css = `
@@ -90,7 +90,7 @@ function components() {
     ['การ์ดภารกิจซ่อมป้าย ★ / ★★ / ★★★ (กองละ 12)', String(MISSIONS.length), 'ไฟล์ 04'],
     ['การ์ดภัยยุ่งเหยิง', String(CHAOS.length), 'ไฟล์ 04'],
     ['การ์ดคำใบ้ (5 ประเภท × 3 ขั้น)', '15', 'ไฟล์ 04'],
-    [`การ์ดเวลาและสถานที่ (ทอยประโยค): เวลา · สถานที่ · อย่างไร`, String(TIME_PLACE.length), 'ไฟล์ 04'],
+    [`การ์ดเวลา 4 กาล ${TIME_CARDS.length} · การ์ดขยายเพิ่ม (สถานที่ · อย่างไร) ${EXTRA_CARDS.length} (ทอยประโยค)`, String(TIME_CARDS.length + EXTRA_CARDS.length), 'ไฟล์ 04'],
     ['การ์ดภารกิจสร้างสรรค์: ภาพสถานการณ์ 4 + ด่าน 12', '16', 'ไฟล์ 05'],
     ['การ์ดภารกิจร่วม: สิ่งมหัศจรรย์ 3 + ด่าน 9', '12', 'ไฟล์ 05'],
     ['การ์ดคำถามโค้ช', String(COACH.length), 'ไฟล์ 05'],
@@ -155,11 +155,13 @@ function rollBox() {
   const cell = ([i, [v, objs]]) => `<td>${i} ${SPACE_KINDS[PATH[i]].icon}</td><td><b>${esc(v)}</b></td><td>${objs.map(esc).join(' · ')}</td>`;
   const verbs = list.slice(0, 6).map((x, n) => `<tr>${cell(x)}${cell(list[n + 6])}</tr>`).join('');
   return `<h2>ทอยประโยค 🎲 (ช่องทรัพยากร)</h2>
-<div class="box gold"><ol style="margin:0">${ROLL_RULES.map((r) => `<li>${esc(r)}</li>`).join('')}</ol>
-<p style="margin:2mm 0 0"><b>ตัวอย่าง</b> หยุดที่ช่อง 1 ➜ ปลูก · ทอยได้ <b>คุณยาย</b> + <b>✕ ปฏิเสธ</b> → "คุณยายไม่ปลูกผัก" · จั่วการ์ด <b>พรุ่งนี้ (จะ)</b> → "คุณยายจะไม่ปลูกผักพรุ่งนี้" ได้บล็อกเพิ่ม 1</p></div>
+<div class="box gold" style="font-size:9.8pt;line-height:1.45"><ol style="margin:0">${ROLL_RULES.map((r) => `<li>${esc(r)}</li>`).join('')}</ol>
+<p style="margin:2mm 0 0"><b>ตัวอย่าง</b> หยุดที่ช่อง 1 ➜ ปลูก · ทอยได้ <b>คุณยาย</b> + <b>✕ ปฏิเสธ</b> · การ์ดเวลา <b>พรุ่งนี้ (จะ)</b> → "คุณยายจะไม่ปลูกผักพรุ่งนี้" · จั่วการ์ดขยายเพิ่ม <b>ในสวน</b> → "คุณยายจะไม่ปลูกผักในสวนพรุ่งนี้" ได้บล็อกเพิ่ม 1</p></div>
+<table><tr><th>การ์ดเวลา 4 กาล</th>${Object.values(TENSES).map((t) => `<th style="color:${t.color}">${t.name}<br><span class="small">${t.en}</span></th>`).join('')}</tr>
+<tr><td>คำบอกเวลา</td>${Object.keys(TENSES).map((k) => `<td>${TIME_CARDS.filter((c) => c.tense === k).map((c) => esc(c.word)).join(' · ')}</td>`).join('')}</tr>
+<tr><td>ตัวอย่าง</td>${Object.values(TENSES).map((t) => `<td>${esc(t.ex)}</td>`).join('')}</tr></table>
 <table><tr><th style="width:10%">ช่อง</th><th style="width:10%">กริยา ➜</th><th>กรรม (ตัวอย่าง)</th><th style="width:10%">ช่อง</th><th style="width:10%">กริยา ➜</th><th>กรรม (ตัวอย่าง)</th></tr>${verbs}</table>
-<p class="small">ลูกเต๋าใคร: ${WHO_DIE.map((w) => (w ? esc(w) : '★ เลือกเอง')).join(' · ')} · ลูกเต๋าประเภทประโยค: ${TYPES.map((t) => `${t.sym} ${t.name}`).join(' · ')} · ★ เลือกเอง<br>
-ฝึกตัวบ่งชี้ 1.1 (แต่งได้เร็วทุกตา) · 2.1 (เปลี่ยนผู้ทำและประเภทประโยคตามลูกเต๋า) · 4.1 (ขยายด้วยการ์ดเวลาและสถานที่) · กลไกได้แรงบันดาลใจจากเกม Sentence Maker (ELI) และ Sentence Dice ดัดแปลงให้เข้ากับภาษาไทยที่ไม่ผันกริยาแต่ใช้คำบอกเวลาและคำช่วย จะ · กำลัง</p>`;
+<p class="small">ฝึกตัวบ่งชี้ 1.1 (แต่งได้เร็วทุกตา) · 2.1 (เปลี่ยนผู้ทำ เวลา และประเภทประโยคตามลูกเต๋าและการ์ด) · 4.1 (ขยายด้วยการ์ดขยายเพิ่ม) · ดัดแปลงจากเกม Sentence Maker (ELI): กริยาบนช่อง + เต๋าสรรพนาม + เต๋ารูปประโยค + การ์ดคำบอกเวลา 4 tense — ภาษาไทยไม่ผันกริยา จึงใช้คำบอกเวลาและคำช่วย จะ · กำลัง แทน</p>`;
 }
 
 function building() {
