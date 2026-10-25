@@ -1,6 +1,6 @@
 // กระดานหลัก 594 × 420 มม. พิมพ์เป็น A3 แนวตั้ง 2 แผ่นต่อกัน
 import { doc, esc } from './lib.mjs';
-import { TITLE, PATH, SPACE_KINDS, WONDERS, CREATIVE } from './data.mjs';
+import { TITLE, PATH, SPACE_KINDS, WONDERS, CREATIVE, SPACE_VERBS } from './data.mjs';
 
 const W = 594, H = 420, M = 10, COLS = 11, ROWS = 9;
 const CW = (W - 2 * M) / COLS, CH = (H - 2 * M) / ROWS;
@@ -32,6 +32,7 @@ const css = `
 .sp.corner{border-width:1mm}
 .sp.corner .ic{font-size:20mm}
 .sp .no{color:inherit;opacity:.75}
+.sp .vb{position:absolute;top:1.6mm;left:2mm;background:var(--role-verb);color:var(--ink);border-radius:1.6mm;padding:.2mm 2mm;font:500 10pt/1.35 var(--font-display)}
 .inner{position:absolute;left:${M + CW + 4}mm;top:${M + CH + 4}mm;width:${W - 2 * M - 2 * CW - 8}mm;height:${H - 2 * M - 2 * CH - 8}mm;border-radius:6mm;background:#fff;border:.6mm solid var(--line);padding:7mm;display:grid;grid-template-rows:auto auto 1fr;gap:6mm}
 .top{display:flex;justify-content:space-between;gap:8mm}
 .title h1{margin:0;font:600 30pt/1.05 var(--font-display)}
@@ -75,6 +76,7 @@ function spaces() {
     const isText = s.icon === '?' || s.icon === '★' || s.icon === '⇄';
     return `<div class="sp ${s.cls}" style="left:${M + c * CW + 0.8}mm;top:${M + r * CH + 0.8}mm">
 <span class="no">${i === 0 ? 'เริ่ม' : i}</span>
+${SPACE_VERBS[i] ? `<span class="vb">➜ ${esc(SPACE_VERBS[i][0])}</span>` : ''}
 <div class="ic ${isText ? 't disp' : 'emoji'}">${s.icon}</div>
 <div><div class="nm">${esc(s.name)}</div><div class="tx">${esc(s.text)}</div></div></div>`;
   }).join('');
@@ -95,7 +97,7 @@ function inner() {
 ${CREATIVE.map((c) => `<span class="r">${c.id}. ${esc(c.area.replace('การคิด', ''))}<br><small style="font:400 7.5pt var(--font-body);color:var(--ink-muted)">${esc(c.scene)}</small></span><span class="c"></span><span class="c"></span><span class="c"></span>`).join('')}</div>`;
   return `<div class="inner">
 <div class="top"><div class="title"><h1>${TITLE}</h1><p>ซ่อมป้าย สร้างเมือง และขับไล่ยุ่งเหยิงด้วยประโยคที่ถูกต้อง</p><div class="strip">${strip}</div></div>
-<div class="turn"><b>ลำดับเทิร์น</b><ol><li><b>สำรวจ</b> ทอยเต๋าเดินตามเข็มนาฬิกา ทำตามช่องที่หยุด</li><li><b>สร้าง/อัปเกรด</b> ต่อบล็อกบนแท่นวาง ปักธง อ่านออกเสียง</li><li><b>ตรวจป้าย</b> คนทางซ้ายถาม: ใคร? ทำอะไร? กับอะไร? ธงถูกไหม?</li><li><b>จ่ายทรัพยากร</b> เขียนประโยคลงที่ดินในกระดานเมือง</li><li><b>จบเทิร์น</b> ทอยเต๋าได้ 1 → มาตรวัดความสับสน +1</li></ol></div></div>
+<div class="turn"><b>ลำดับเทิร์น</b><ol><li><b>สำรวจ</b> ทอยเต๋าเดินตามเข็มนาฬิกา ทำตามช่องที่หยุด · ช่องทรัพยากร: <b>ทอยประโยค</b> ใคร + ➜ กริยาบนช่อง + ประเภท</li><li><b>สร้าง/อัปเกรด</b> ต่อบล็อกบนแท่นวาง ปักธง อ่านออกเสียง</li><li><b>ตรวจป้าย</b> คนทางซ้ายถาม: ใคร? ทำอะไร? กับอะไร? ธงถูกไหม?</li><li><b>จ่ายทรัพยากร</b> เขียนประโยคลงที่ดินในกระดานเมือง</li><li><b>จบเทิร์น</b> ทอยเต๋าได้ 1 → มาตรวัดความสับสน +1</li></ol></div></div>
 <div class="meter"><h3>มาตรวัดความสับสน</h3><div class="track">${track}</div></div>
 <div class="lower">${wonders}<div class="panel cr"><h3>ภารกิจสร้างสรรค์ ★</h3>${crGrid}<div class="reward">ผ่านด่าน: ประกายคิด 1 + ดาวของด้านนั้น · ผู้หยุดที่ ★ ได้ประกายคิดเพิ่ม 1 · ครบ 3 ด่าน +2 แต้มเมือง</div></div></div>
 </div>`;

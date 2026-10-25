@@ -1,6 +1,6 @@
-// โทเคนวงกลม 22 มม. ดาวสร้างสรรค์ 4 รูปทรง หมุดผู้เล่น ธงประเภทประโยค และลูกเต๋าประเภทประโยค
+// โทเคนวงกลม 22 มม. ดาวสร้างสรรค์ 4 รูปทรง หมุดผู้เล่น ธงประเภทประโยค ลูกเต๋าประเภทประโยค และลูกเต๋าใคร
 import { doc, esc, chunk } from './lib.mjs';
-import { TYPES, PLAYERS, STORY_CUBES, CUBE_RULES } from './data.mjs';
+import { TYPES, PLAYERS, STORY_CUBES, CUBE_RULES, WHO_DIE } from './data.mjs';
 
 const css = `
 @page{size:210mm 297mm;margin:0}
@@ -68,8 +68,12 @@ export function tokensHtml() {
   const face = (t) => (t ? `<div class="face" style="background:${t.color}">${t.sym}<small>${t.name}</small></div>` : '<div class="face" style="background:#e8a33d;color:#2a2233">★<small>เลือกเอง</small></div>');
   const [a, b, c, d, e] = TYPES;
   const net = `<div class="net"><div></div>${face(a)}<div></div><div></div>${face(b)}${face(c)}${face(d)}${face(e)}<div></div>${face(null)}<div></div><div></div></div>`;
+  const who = (w) => (w ? `<div class="face" style="background:var(--role-subject)">${esc(w)}<small>ใคร</small></div>` : '<div class="face" style="background:#e8a33d;color:#2a2233">★<small>เลือกเอง</small></div>');
+  const [w0, w1, w2, w3, w4, w5] = WHO_DIE.map(who);
+  const whoNet = `<div class="net"><div></div>${w0}<div></div><div></div>${w1}${w2}${w3}${w4}<div></div>${w5}<div></div><div></div></div>`;
   const extra = `<div class="page"><h2>หมุดผู้เล่น</h2><div class="note">ตัด พับครึ่งตามเส้นกลาง ทากาวสองด้านเข้าหากัน แล้วเสียบฐานด้วยดินน้ำมันหรือคลิปหนีบกระดาษ</div><div class="row">${pawns}</div>
-<h2 style="margin-top:6mm">ลูกเต๋าประเภทประโยค</h2><div class="note">ตัดตามเส้นนอก พับตามขอบหน้าแต่ละช่อง แล้วติดเทปเป็นลูกบาศก์ (หรือติดสติกเกอร์บนลูกเต๋าจริง)</div>${net}
+<h2 style="margin-top:6mm">ลูกเต๋าทอยประโยค: ประเภทประโยค + ใคร</h2><div class="note">ตัดตามเส้นนอก พับตามขอบหน้าแต่ละช่อง แล้วติดเทปเป็นลูกบาศก์ (หรือติดสติกเกอร์บนลูกเต๋าจริง) · ใช้คู่กันเมื่อหยุดที่ช่องทรัพยากร และใช้ลูกเต๋าประเภทประโยคในภารกิจอื่นได้ตามเดิม</div>
+<div class="row" style="gap:14mm">${net}${whoNet}</div>
 <div class="pnote">หมุด และลูกเต๋า</div></div>
 <div class="page"><h2>ธงประเภทประโยค (5 ประเภท × 6 ผืน)</h2><div class="note">ตัดเป็นแถบ พับครึ่ง หุ้มไม้จิ้มฟันหรือไม้ลูกชิ้นไว้ตรงรอยพับ แล้วทากาว — ใช้ปักบนแท่นวางประโยค</div>
 <div class="flags">${flags.join('')}</div><div class="pnote">ธงประเภทประโยค</div></div>`;

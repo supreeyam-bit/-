@@ -3,7 +3,7 @@
 import { doc, esc, arMarker, chunk } from './lib.mjs';
 import {
   TYPES, RESOURCES, GLASS_PER_TYPE, MISSIONS, MISSION_REWARD, CHAOS, TEMPLATES, HINT_LEVELS,
-  CREATIVE, STAGES, ELAB_BROKEN, WONDERS, ROLES_JIGSAW, COACH, STORY_CUBES,
+  CREATIVE, STAGES, ELAB_BROKEN, WONDERS, ROLES_JIGSAW, COACH, STORY_CUBES, TIME_PLACE,
 } from './data.mjs';
 
 const css = `
@@ -104,12 +104,23 @@ ${lv === 1 ? '<p>วางบล็อกลงร่องตามแม่แ
 const hintBack = ({ t, lv }) => card({ style: 'background:var(--hint-sky);color:var(--ink)', html: `<div class="bd back" style="color:var(--ink)"><div class="t">💡 การ์ดคำใบ้</div><div style="background:${t.color};color:#fff;border-radius:2mm;padding:1mm 3mm;font:500 10pt var(--font-display)">${t.sym} ${t.name} · ขั้น ${lv + 1}</div>
 <p style="font-size:8.4pt;margin-top:2mm"><b>ก่อนเปิด ถามตัวเองก่อน:</b><br>ตอนนี้เราติดตรงไหน?<br>☐ หาคำไม่เจอ ☐ เรียงไม่ถูก<br>☐ ไม่รู้ว่าเป็นประโยคประเภทไหน</p></div>` });
 
+// ---------- เวลาและสถานที่ (ทอยประโยค) ----------
+const TP_COLOR = { 'เวลา': '#4f74b8', 'สถานที่': '#2e7d4f', 'อย่างไร': '#b4541a' };
+const TP_Q = { 'เวลา': 'เมื่อไร?', 'สถานที่': 'ที่ไหน?', 'อย่างไร': 'อย่างไร?' };
+const tpFront = (c) => card({ style: 'background:#fff;border:.4mm solid var(--line)', html: `<div class="band" style="background:${TP_COLOR[c.kind]}"><span>🎲 เวลาและสถานที่</span><span>${TP_Q[c.kind]}</span></div>
+<div class="bd" style="justify-content:center;text-align:center"><span class="pill" style="align-self:center">ส่วนขยายบอก${c.kind === 'อย่างไร' ? 'ลักษณะ' : c.kind}</span>
+<h2 style="font-size:19pt;margin:3mm 0">${esc(c.word)}</h2>
+${c.aux ? `<p style="background:#fbe9cc;border-radius:2mm;padding:1.6mm 2mm">ใช้คู่กับคำช่วย <b style="font-family:var(--font-display);font-size:11pt">${esc(c.aux)}</b><br>วางหน้ากริยา: ฉัน<b>${esc(c.aux)}</b>ปลูกต้นไม้${esc(c.word)}</p>` : `<p>ใส่คำนี้ลงในประโยคที่ทอยได้<br>ให้ประโยคยาวขึ้นและชัดขึ้น</p>`}
+<div class="foot"><span>ใส่ได้ถูกต้อง = บล็อกคำเพิ่ม 1</span><span class="pill">#${c.id}</span></div></div>` });
+const tpBack = () => card({ style: 'background:#4f74b8', html: `<div class="bd back"><div class="big emoji">🎲</div><div class="t">เวลาและสถานที่</div><div class="s">เมื่อไร? · ที่ไหน? · อย่างไร?</div><div class="ttl">ดินแดนมหัศจรรย์แห่งคำ</div></div>` });
+
 export function cardsHtml() {
   return doc('การ์ดเกม', css,
     sheets(resItems, resFront, resBack, 'std', 3, 9, 'การ์ดทรัพยากร') +
     sheets(MISSIONS, missionFront, missionBack, 'std', 3, 9, 'การ์ดภารกิจซ่อมป้าย') +
     sheets(CHAOS, chaosFront, chaosBack, 'std', 3, 9, 'การ์ดภัยยุ่งเหยิง') +
-    sheets(hintItems, hintFront, hintBack, 'std', 3, 9, 'การ์ดคำใบ้'));
+    sheets(hintItems, hintFront, hintBack, 'std', 3, 9, 'การ์ดคำใบ้') +
+    sheets(TIME_PLACE, tpFront, tpBack, 'std', 3, 9, 'การ์ดเวลาและสถานที่'));
 }
 
 // ---------- การ์ดใหญ่ ----------

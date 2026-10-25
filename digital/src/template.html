@@ -70,6 +70,10 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus
 .cell.market{border-color:var(--verb);border-width:2.5px}
 .cell.corner{border-width:2.5px}
 .cell .no{position:absolute;top:1px;right:4px;font-size:9px;opacity:.7}
+.cell .vb{position:absolute;top:1px;left:3px;background:var(--verb);color:var(--on-light);border-radius:5px;padding:0 4px;font:500 clamp(7px,.8vw,10px)/1.4 var(--display)}
+@media (max-width:640px){.cell .vb{display:none}}
+.rolldie{width:78px;height:78px;border-radius:14px;border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font:600 20px/1.1 var(--display);text-align:center}
+.rolldie small{font:400 12px var(--body);opacity:.9}
 .pawns{position:absolute;bottom:2px;left:2px;right:2px;display:flex;flex-wrap:wrap;gap:1px;justify-content:center}
 .pawn{width:clamp(14px,1.9vw,22px);height:clamp(14px,1.9vw,22px);border-radius:50%;border:2px solid #fff;font-size:clamp(9px,1.1vw,13px);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,.35);transition:transform .2s}
 .pawn.cur{transform:scale(1.25);z-index:2}
@@ -409,7 +413,8 @@ function boardEl(cur) {
     const isText = ['?', '★', '⇄'].includes(s.icon);
     const pawns = S.players.filter((p) => p.pos === i).map((p) => h('span', { class: `pawn emoji${p === cur ? ' cur' : ''}`, style: `background:${p.hex}`, title: p.name }, p.animal));
     b.append(h('div', { class: `cell ${s.cls}`, style: `grid-column:${c + 1};grid-row:${r + 1}`, title: `${s.name}: ${s.text}` },
-      h('span', { class: 'no' }, i || ''), h('span', { class: `ic ${isText ? 't' : 'emoji'}` }, s.icon), h('span', { class: 'nm' }, s.name),
+      h('span', { class: 'no' }, i || ''), DATA.SPACE_VERBS[i] ? h('span', { class: 'vb' }, `➜ ${DATA.SPACE_VERBS[i][0]}`) : null,
+      h('span', { class: `ic ${isText ? 't' : 'emoji'}` }, s.icon), h('span', { class: 'nm' }, s.name),
       pawns.length ? h('div', { class: 'pawns' }, pawns) : null));
   });
   const die = h('div', { class: 'die', id: 'die', 'aria-live': 'polite' }, S.die ?? '🎲');
@@ -518,10 +523,7 @@ function resolveSpace(k) {
   const gain = (key, label) => { p.res[key]++; log(`${p.name} ได้${label} 1`); };
   switch (k) {
     case 'start': p.hand.push(...draw()); log(`${p.name} จั่วบล็อกคำ 1 ใบที่ท่าเรือ`); return afterResolve();
-    case 'wood': gain('wood', 'ไม้'); p.hand.push(...draw(null, 2)); return lessonNudge('wood');
-    case 'brick': gain('brick', 'อิฐ'); p.hand.push(...draw(null, 2)); return lessonNudge('brick');
-    case 'stone': gain('stone', 'หิน'); p.hand.push(...draw(null, 2)); return lessonNudge('stone');
-    case 'glass': { const t = pick(DATA.TYPES); p.glass[t.id]++; p.hand.push(...draw(null, 2)); log(`${p.name} ได้${t.glass} 1 และบล็อกคำ 2 ใบ`); return lessonNudge(t.id); }
+    case 'wood': case 'brick': case 'stone': case 'glass': return openRoll(k);
     case 'hint': p.res.hint += 2; log(`${p.name} ได้โทเคนคำใบ้ 2`); return afterResolve();
     case 'mission': return chooseMission();
     case 'challenge': return openMission(drawMission(3), { challenge: true });
@@ -534,6 +536,94 @@ function resolveSpace(k) {
     case 'bigmarket': return openMarket(true);
   }
   afterResolve();
+}
+// ====================== ทอยประโยค (ช่องทรัพยากร) ======================
+const RES_LABEL = { wood: 'ไม้', brick: 'อิฐ', stone: 'หิน' };
+function openRoll(k) {
+  const p = P();
+  const [verb, objs] = DATA.SPACE_VERBS[p.pos];
+  const who = pick(DATA.WHO_DIE); // null = เลือกเอง
+  const typeIds = [...DATA.TYPES.map((t) => t.id), null];
+  const want = pick(typeIds); // null = เลือกเอง
+  const glassType = k === 'glass' ? pick(DATA.TYPES).id : null;
+  const whoTiles = who ? [tile('S:' + who)] : shuffle(DATA.WHO_DIE.filter(Boolean)).slice(0, 3).map((w) => tile('S:' + w));
+  const verbTile = tile('V:' + verb);
+  const tiles = shuffle([...whoTiles, verbTile, ...objs.map((o) => tile('O:' + o)), ...['ไม่', 'ไหม', 'จง', 'ห้าม', 'ช่วย', 'หน่อย'].map((w) => tile('C:' + w))]);
+  let card = null, cardTiles = [], attempt = 0, helper = null; const hints = [];
+  let ui2 = dockUI({ tiles, placeholder: 'แตะบล็อกเพื่อต่อประโยค: ใคร + ➜ ' + verb });
+  const dockSlot = h('div', {}, ui2.el);
+  const fb = h('div', { 'aria-live': 'polite' });
+  const owlSlot = h('div', {}, owlEl(`ประโยคนี้ต้องมี ${who || 'ใครก็ได้ 1 คน'} และกริยา "${verb}" ${want ? `เป็นประโยค${TYPE[want].name}` : 'เป็นประโยคประเภทไหนก็ได้'} ลองพูดออกเสียงก่อนวางบล็อกนะ`));
+  const hintSlot = h('div');
+  const drawHint = () => { hintSlot.innerHTML = ''; hintSlot.append(hintBox(want || ui2.get().flag || 'statement', hints, () => { P().res.hint--; hints.push(hints.length); drawHint(); })); };
+  const die = (txt, sub, bg, light) => h('div', { class: 'rolldie', style: `background:${bg}${light ? ';color:var(--on-light)' : ''}` }, txt, h('small', {}, sub));
+  const dice = h('div', { class: 'row', style: 'gap:12px;align-items:center' },
+    who ? die(who, 'ใคร', 'var(--subj)') : die('★', 'เลือกใครเอง', 'var(--gold)', true),
+    h('span', { style: 'font:600 22px var(--display)' }, '+'), die('➜ ' + verb, 'กริยาบนช่อง', 'var(--verb)', true),
+    h('span', { style: 'font:600 22px var(--display)' }, '+'), want ? die(TYPE[want].sym, TYPE[want].name, TCOL(want)) : die('★', 'เลือกประเภทเอง', 'var(--gold)', true));
+  const cardSlot = h('div');
+  const drawCard = () => {
+    card = pick(DATA.TIME_PLACE);
+    cardTiles = [tile('M:' + card.word), ...(card.aux ? [tile('M:' + card.aux)] : [])];
+    const { dock, tray } = ui2.get();
+    ui2 = dockUI({ tiles: [...dock, ...tray, ...cardTiles], placeholder: 'แตะบล็อกเพื่อต่อประโยค: ใคร + ➜ ' + verb });
+    dockSlot.innerHTML = ''; dockSlot.append(ui2.el);
+    cardSlot.innerHTML = '';
+    cardSlot.append(h('div', { class: 'card', style: 'background:var(--sky);border-color:transparent' }, h('h3', {}, `🎲 การ์ดเวลาและสถานที่: ${card.word}`),
+      h('span', { style: 'font-size:14px' }, card.aux ? `ใช้คู่กับคำช่วย "${card.aux}" วางหน้ากริยา (หรือหน้าคำว่า ไม่) เช่น ฉัน${card.aux}${verb}…${card.word}` : 'ใส่คำนี้ลงในประโยคให้ยาวขึ้นและชัดขึ้น ได้บล็อกคำเพิ่ม 1')));
+  };
+  const cardBtn = h('button', { class: 'btn', type: 'button', onclick: () => { cardBtn.remove(); drawCard(); } }, '🎲 จั่วการ์ดเวลาและสถานที่ (โบนัส)');
+  const judge = (dock, flag) => {
+    if (!dock.length) return { ok: false, issue: 'บล็อกเรียงสลับ', msg: 'แท่นยังว่างอยู่ แตะบล็อกเพื่อวางก่อนนะ' };
+    if (!dock.some((t) => t.r === 'S' && whoTiles.includes(t))) return { ok: false, issue: 'ขาดประธาน', msg: `ยังไม่มี ${who || 'ประธานจากลูกเต๋า'} ในประโยค` };
+    if (!dock.includes(verbTile)) return { ok: false, issue: 'ขาดกริยา', msg: `ยังไม่ได้ใช้กริยา "${verb}" จากช่องที่หยุด` };
+    const pr = parse(dock);
+    if (!pr.ok) return { ok: false, issue: pr.issue };
+    if (!flag) return { ok: false, issue: 'ปักธงผิด', msg: 'ยังไม่ได้ปักธงประเภทประโยค' };
+    if (want && pr.type !== want) return { ok: false, issue: 'ปักธงผิด', msg: `ลูกเต๋าให้แต่งประโยค${TYPE[want].name} ลองดูคำสังเกต: ${TYPE[want].cue}` };
+    if (pr.type !== flag) return { ok: false, issue: 'ปักธงผิด', msg: 'ประโยคถูกแล้ว แต่ธงยังไม่ตรงกับคำสังเกต' };
+    if (card && card.aux && dock.includes(cardTiles[1])) {
+      const at = dock.indexOf(cardTiles[1]); const nx = dock[at + 1];
+      const okAux = nx && (nx === verbTile || (nx.r === 'C' && tileType(nx) === 'negative' && dock[at + 2] === verbTile));
+      if (!okAux) return { ok: false, issue: 'บล็อกเรียงสลับ', msg: `คำช่วย "${card.aux}" ต้องวางหน้ากริยา (หรือหน้าคำว่า ไม่)` };
+      if (!dock.includes(cardTiles[0])) return { ok: false, issue: 'ขยายแล้วความหมายเปลี่ยน', msg: `ใช้ "${card.aux}" แล้ว อย่าลืมใส่ "${card.word}" ด้วยนะ` };
+    }
+    if (card && card.aux && dock.includes(cardTiles[0]) && !dock.includes(cardTiles[1])) return { ok: false, issue: 'ขยายแล้วความหมายเปลี่ยน', msg: `"${card.word}" ต้องใช้คู่กับคำช่วย "${card.aux}" หน้ากริยา` };
+    return { ok: true, bonus: !!card && dock.includes(cardTiles[0]), type: pr.type };
+  };
+  const gainRes = () => {
+    if (glassType) { p.glass[glassType]++; return TYPE[glassType].glass; }
+    p.res[k]++; return RES_LABEL[k];
+  };
+  const check = () => {
+    const { dock, flag } = ui2.get();
+    const res = judge(dock, flag);
+    fb.className = `feedback ${res.ok ? 'ok' : 'no'}`;
+    if (res.ok) {
+      const name = gainRes(); const n = res.bonus ? 3 : 2;
+      p.hand.push(...draw(null, n));
+      fb.textContent = `ผ่าน! "${sentenceText(dock)}" ${TYPE[res.type].sym} ได้${name} 1 และบล็อกคำ ${n} ใบ${res.bonus ? ' (โบนัสเวลาและสถานที่)' : ''}`;
+      owlSlot.innerHTML = ''; owlSlot.append(owlEl(coachQ(attempt ? 'ทำถูกแล้ว' : 'ทำถูกเร็วมาก', 0)));
+      if (helper) { helper.res.helper++; helper.res.hint++; log(`${helper.name} ช่วยถามเพื่อนจนสำเร็จ ได้มือช่วย 1`); }
+      log(`${p.name} ทอยประโยค: "${sentenceText(dock)}" ได้${name} 1 และบล็อกคำ ${n} ใบ`);
+      actions.innerHTML = '';
+      actions.append(h('button', { class: 'btn primary', type: 'button', onclick: () => { closeModal(); lessonNudge(glassType || k); } }, 'รับรางวัล'));
+      return;
+    }
+    fb.textContent = res.msg || 'ยังไม่ผ่าน ลองอ่านออกเสียงแล้วตรวจอีกครั้งนะ';
+    owlSlot.innerHTML = ''; owlSlot.append(owlEl(coachQ(res.issue, attempt)));
+    attempt++;
+    if (attempt >= 2 && !hints.length) drawHint();
+    skip.hidden = false;
+  };
+  const skip = h('button', { class: 'btn', type: 'button', hidden: true, onclick: () => { const name = gainRes(); done(`${p.name} ยังทอยประโยคไม่ผ่าน ได้${name} 1 (ไม่ได้บล็อกคำ)`); } }, 'พักไว้ก่อน (รับเฉพาะทรัพยากร)');
+  const helperSel = h('div', { class: 'row' }, h('span', { class: 'muted', style: 'font-size:14px' }, 'เพื่อนช่วยถาม (ไม่บอกคำตอบ):'),
+    S.players.filter((x) => x !== p).map((x) => h('button', { class: 'btn small', type: 'button', onclick: (e) => { helper = x; [...helperSel.querySelectorAll('button')].forEach((b) => b.classList.toggle('primary', b === e.currentTarget)); } }, h('span', { class: 'emoji' }, x.animal), x.name)));
+  const actions = h('div', { class: 'row' }, h('button', { class: 'btn primary', type: 'button', onclick: check }, 'ตรวจประโยค'), h('button', { class: 'btn', type: 'button', onclick: drawHint }, '💡 คำใบ้'), skip);
+  openModal({
+    title: `🎲 ทอยประโยค · ${DATA.SPACE_KINDS[k].name} ช่อง ${p.pos}`, color: 'var(--ink)', closable: false,
+    body: [dice, owlSlot, dockSlot, h('div', { class: 'row' }, cardBtn), cardSlot, fb, hintSlot, S.players.length > 1 ? helperSel : null, actions],
+  });
 }
 function lessonNudge(id) {
   const name = id.length > 5 ? TYPE[id].glass : { wood: 'ไม้', brick: 'อิฐ', stone: 'หิน' }[id];
@@ -1109,6 +1199,7 @@ function openRules() {
   openModal({ title: 'กติกาย่อ', color: 'var(--ink)', onClose: () => (S ? render() : null),
     body: [h('ol', { style: 'margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px' },
       h('li', {}, h('b', {}, 'สำรวจ: '), 'ทอยเต๋า เดินตามเข็มนาฬิกา ทำตามช่องที่หยุด'),
+      h('li', {}, h('b', {}, 'ทอยประโยค 🎲: '), 'หยุดที่ช่องทรัพยากร ทอยลูกเต๋าใครและลูกเต๋าประเภทประโยค แล้วต่อประโยคด้วยกริยาบนช่อง ผ่าน = ทรัพยากร + บล็อกคำ 2 ใบ ใส่การ์ดเวลาและสถานที่ได้ถูก = บล็อกเพิ่ม 1 ยังไม่ผ่านก็ยังได้ทรัพยากร'),
       h('li', {}, h('b', {}, 'สร้าง/อัปเกรด: '), 'ต่อบล็อกคำบนแท่นวาง ปักธงประเภท ผู้ตรวจป้ายถาม ใคร? ทำอะไร? กับอะไร? แล้วจ่ายทรัพยากร (ไม้ อิฐ หิน แก้วสีของย่าน และประกายคิดสำหรับหอคอย)'),
       h('li', {}, h('b', {}, 'ระดับ: '), DATA.COST.map((c) => `${c.name} = ${c.parts} (${c.points} แต้ม)`).join(' · ')),
       h('li', {}, h('b', {}, 'ยุ่งเหยิง: '), 'ทอยได้ 1 หรือเจอพายุ มาตรวัดขึ้น ถึง 4 และ 8 ทุกคนเลือกบ้านให้พัง 1 หลัง (ซ่อมได้ในเทิร์นตัวเอง) ถึง 12 ทุกคนแพ้'),
