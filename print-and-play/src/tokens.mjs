@@ -1,6 +1,6 @@
-// โทเคนวงกลม 22 มม. ดาวสร้างสรรค์ 4 รูปทรง หมุดผู้เล่น ธงประเภทประโยค และลูกเต๋าประเภทประโยค
+// โทเคนวงกลม 22 มม. ดาวสร้างสรรค์ 4 รูปทรง หมุดผู้เล่น ธงประเภทประโยค ลูกเต๋าประเภทประโยค และลูกเต๋าใคร
 import { doc, esc, chunk } from './lib.mjs';
-import { TYPES, PLAYERS, STORY_CUBES, CUBE_RULES } from './data.mjs';
+import { TYPES, PLAYERS, STORY_CUBES, CUBE_RULES, WHO_DIE, BUILDERS } from './data.mjs';
 
 const css = `
 @page{size:210mm 297mm;margin:0}
@@ -12,9 +12,9 @@ h2{margin:0 0 3mm;font:500 12pt var(--font-display)}
 .tk .i{position:relative;font-size:8mm;line-height:1}
 .tk .l{position:relative;font:500 6.6pt/1.1 var(--font-display);margin-top:.6mm}
 .row{display:flex;gap:6mm;align-items:flex-start;flex-wrap:wrap}
-.pawn{width:30mm;height:84mm;border:.3mm dashed #999;display:grid;grid-template-rows:38mm 38mm 8mm;text-align:center}
-.pawn div{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font:500 8pt var(--font-display)}
-.pawn .e{font-size:14mm;line-height:1}
+.pawn{width:22mm;height:68mm;border:.3mm dashed #999;display:grid;grid-template-rows:30mm 30mm 8mm;text-align:center}
+.pawn div{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font:500 6.6pt/1.15 var(--font-display);padding:0 1mm}
+.pawn .e{font-size:13mm;line-height:1}
 .pawn .up{transform:rotate(180deg)}
 .pawn .base{background:#eee;color:var(--ink-muted);font:400 6pt var(--font-body)}
 .flag{width:46mm;height:16mm;display:grid;grid-template-columns:1fr 1fr;border:.3mm dashed #999}
@@ -59,17 +59,23 @@ export function tokensHtml() {
     circle('#4a2a5e', '#fff', '👾', 'มาตรวัด'),
     ...Array(9).fill(circle('#fff', '#17767a', '✓', 'มหัศจรรย์', false)),
     ...Array(12).fill(circle('#fff', '#b47513', '✓', 'สร้างสรรค์', false)),
+    ...Array(4).fill(circle('#1f2a44', '#fff', '🦉', 'ปรึกษาครู')),
   ];
   const tokenPages = chunk(tokens, 88).map((p, i, a) => `<div class="page"><h2>โทเคน ${i + 1}/${a.length}</h2><div class="grid">${p.join('')}</div>
 <div class="pnote">ตัดตามวงกลม/รูปทรง · ติดบนกระดาษแข็งหรือใช้ตัวเจาะกระดาษ 1 นิ้ว</div></div>`);
 
-  const pawns = PLAYERS.map((p) => `<div class="pawn"><div class="up" style="background:${p.hex}"><span class="e emoji">${p.animal}</span>${esc(p.name)}</div><div style="background:${p.hex}"><span class="e emoji">${p.animal}</span>${esc(p.name)}</div><div class="base">พับ + เสียบฐานดินน้ำมัน</div></div>`).join('');
+  // นักสร้างเมืองตัวจิ๋ว 8 ตัว ให้ผู้เล่นเลือก (สีพื้นวนตามสีผู้เล่น)
+  const pawns = BUILDERS.map(([e, name], k) => { const p = PLAYERS[k % PLAYERS.length]; return `<div class="pawn"><div class="up" style="background:${p.hex}"><span class="e emoji">${e}</span>${esc(name)}</div><div style="background:${p.hex}"><span class="e emoji">${e}</span>${esc(name)}</div><div class="base">พับ + เสียบฐาน</div></div>`; }).join('');
   const flags = TYPES.flatMap((t) => Array(6).fill(`<div class="flag"><div style="background:${t.color}">${t.sym} ${t.name}</div><div style="background:${t.color}">${t.sym} ${t.name}</div></div>`));
   const face = (t) => (t ? `<div class="face" style="background:${t.color}">${t.sym}<small>${t.name}</small></div>` : '<div class="face" style="background:#e8a33d;color:#2a2233">★<small>เลือกเอง</small></div>');
   const [a, b, c, d, e] = TYPES;
   const net = `<div class="net"><div></div>${face(a)}<div></div><div></div>${face(b)}${face(c)}${face(d)}${face(e)}<div></div>${face(null)}<div></div><div></div></div>`;
-  const extra = `<div class="page"><h2>หมุดผู้เล่น</h2><div class="note">ตัด พับครึ่งตามเส้นกลาง ทากาวสองด้านเข้าหากัน แล้วเสียบฐานด้วยดินน้ำมันหรือคลิปหนีบกระดาษ</div><div class="row">${pawns}</div>
-<h2 style="margin-top:6mm">ลูกเต๋าประเภทประโยค</h2><div class="note">ตัดตามเส้นนอก พับตามขอบหน้าแต่ละช่อง แล้วติดเทปเป็นลูกบาศก์ (หรือติดสติกเกอร์บนลูกเต๋าจริง)</div>${net}
+  const who = (w) => (w ? `<div class="face" style="background:var(--role-subject)">${esc(w)}<small>ใคร</small></div>` : '<div class="face" style="background:#e8a33d;color:#2a2233">★<small>เลือกเอง</small></div>');
+  const [w0, w1, w2, w3, w4, w5] = WHO_DIE.map(who);
+  const whoNet = `<div class="net"><div></div>${w0}<div></div><div></div>${w1}${w2}${w3}${w4}<div></div>${w5}<div></div><div></div></div>`;
+  const extra = `<div class="page"><h2>หมุดนักสร้างเมืองตัวจิ๋ว (เลือกคนละ 1 ตัว)</h2><div class="note">ตัด พับครึ่งตามเส้นกลาง ทากาวสองด้านเข้าหากัน แล้วเสียบฐานด้วยดินน้ำมันหรือคลิปหนีบกระดาษ</div><div class="row" style="gap:2mm;flex-wrap:nowrap">${pawns}</div>
+<h2 style="margin-top:6mm">ลูกเต๋าทอยประโยค: ประเภทประโยค + ใคร</h2><div class="note">ตัดตามเส้นนอก พับตามขอบหน้าแต่ละช่อง แล้วติดเทปเป็นลูกบาศก์ (หรือติดสติกเกอร์บนลูกเต๋าจริง) · ใช้คู่กันเมื่อหยุดที่ช่องทรัพยากร และใช้ลูกเต๋าประเภทประโยคในภารกิจอื่นได้ตามเดิม</div>
+<div class="row" style="gap:14mm">${net}${whoNet}</div>
 <div class="pnote">หมุด และลูกเต๋า</div></div>
 <div class="page"><h2>ธงประเภทประโยค (5 ประเภท × 6 ผืน)</h2><div class="note">ตัดเป็นแถบ พับครึ่ง หุ้มไม้จิ้มฟันหรือไม้ลูกชิ้นไว้ตรงรอยพับ แล้วทากาว — ใช้ปักบนแท่นวางประโยค</div>
 <div class="flags">${flags.join('')}</div><div class="pnote">ธงประเภทประโยค</div></div>`;

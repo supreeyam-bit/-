@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as D from '../print-and-play/src/data.mjs';
 import { DIGITAL_MISSIONS, CHAOS_PUZZLES, COOP_CHECKS } from './src/missions.mjs';
+import * as G from '../print-and-play/src/design.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const data = {
@@ -11,7 +12,10 @@ const data = {
   CHANGERS: D.CHANGERS, RESOURCES: D.RESOURCES, MISSIONS: D.MISSIONS, MISSION_REWARD: D.MISSION_REWARD, CHAOS: D.CHAOS,
   STAGES: D.STAGES, CREATIVE: D.CREATIVE, ELAB_BROKEN: D.ELAB_BROKEN, WONDERS: D.WONDERS, ROLES_JIGSAW: D.ROLES_JIGSAW,
   TEMPLATES: D.TEMPLATES, HINT_LEVELS: D.HINT_LEVELS, COACH: D.COACH, SPACE_KINDS: D.SPACE_KINDS, PATH: D.PATH, COST: D.COST,
-  PLAYERS: D.PLAYERS, STORY_CUBES: D.STORY_CUBES, TABLE2_FACES: D.TABLE2_FACES, CUBE_RULES: D.CUBE_RULES, DIGITAL_MISSIONS, CHAOS_PUZZLES, COOP_CHECKS,
+  PLAYERS: D.PLAYERS, STORY_CUBES: D.STORY_CUBES, TABLE2_FACES: D.TABLE2_FACES, CUBE_RULES: D.CUBE_RULES,
+  SPACE_VERBS: D.SPACE_VERBS, WHO_DIE: D.WHO_DIE, TIME_CARDS: D.TIME_CARDS, EXTRA_CARDS: D.EXTRA_CARDS, TENSES: D.TENSES, ROLL_RULES: D.ROLL_RULES,
+  CREATIVE_PROCESS: G.CREATIVE_PROCESS, PROCESS_RULE: G.PROCESS_RULE, SCAFFOLDS: G.SCAFFOLDS, MINDMAP: G.MINDMAP, COACH_ROLES: G.COACH_ROLES, ZONES: G.ZONES, TOWER: G.TOWER, VILLAGE: G.VILLAGE, LOOP: G.LOOP, BUILDERS: D.BUILDERS, BOARD_ART: G.BOARD_ART,
+  BOARD_IMG: 'data:image/webp;base64,' + readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'print-and-play', 'assets', 'board-art.webp')).toString('base64'), DIGITAL_MISSIONS, CHAOS_PUZZLES, COOP_CHECKS,
 };
 // ตรวจว่าทุกภารกิจในชุดพิมพ์มีฉบับดิจิทัล
 for (const m of D.MISSIONS) if (!DIGITAL_MISSIONS[m.id]) throw new Error(`missing digital mission #${m.id}`);

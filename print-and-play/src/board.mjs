@@ -1,110 +1,102 @@
 // กระดานหลัก 594 × 420 มม. พิมพ์เป็น A3 แนวตั้ง 2 แผ่นต่อกัน
+// ใช้ภาพต้นแบบ BLOCK WORLD เป็นภาพกระดาน แล้ววางเลขช่องและสัญลักษณ์ช่อง 36 ช่องทับบนช่องถนนในภาพ
+// มาตรวัด สิ่งมหัศจรรย์ และตารางภารกิจสร้างสรรค์ย้ายไปอยู่ที่แผ่นติดตามเกม (trackerPage)
 import { doc, esc } from './lib.mjs';
-import { TITLE, PATH, SPACE_KINDS, WONDERS, CREATIVE } from './data.mjs';
+import { PATH, SPACE_KINDS, WONDERS, CREATIVE, SPACE_VERBS } from './data.mjs';
+import { BOARD_ART, TOWER } from './design.mjs';
 
-const W = 594, H = 420, M = 10, COLS = 11, ROWS = 9;
-const CW = (W - 2 * M) / COLS, CH = (H - 2 * M) / ROWS;
+const W = 594, H = 420;
+const S = H / BOARD_ART.h; // มม. ต่อ px
+const OX = (W - BOARD_ART.w * S) / 2;
+const mm = (px) => px * S;
 
-function cellPos(i) {
-  if (i <= 10) return [i, 0];
-  if (i <= 18) return [10, i - 10];
-  if (i <= 28) return [10 - (i - 18), 8];
-  return [0, 8 - (i - 28)];
-}
+export const KIND_TILE = {
+  wood: '#5fae3a', brick: '#d8483a', stone: '#3c78d0', glass: '#f2b705',
+  mission: '#ffffff', challenge: '#1f2a44', creative: '#e8a33d', market: '#fff3c4', coop: '#17767a',
+  hint: '#dcebf7', storm: '#4a2a5e', start: '#ffffff', bigmarket: '#fff3c4', observatory: '#1f2a44', cave: '#4a2a5e',
+};
+export const DARK = new Set(['wood', 'brick', 'stone', 'challenge', 'coop', 'storm', 'observatory', 'cave']);
+export const SHORT = { start: 'จั่วบล็อก 1', wood: 'ทอยประโยค → ไม้', brick: 'ทอยประโยค → อิฐ', stone: 'ทอยประโยค → หิน', glass: 'ทอยประโยค → แก้วสี + คำเปลี่ยนร่าง', mission: 'ซ่อมป้าย ★–★★★', challenge: 'ภารกิจ ★★★ + ครูฮูก', creative: 'ทุกคนเล่นด่านถัดไป', market: 'แลก 1:1 · ธนาคาร 2:1', coop: 'ภารกิจร่วม', hint: 'โทเคนคำใบ้ 2', storm: 'เปิดการ์ดภัย', bigmarket: 'แลกไม่จำกัด', observatory: '★★★ + แก้วส้ม', cave: 'การ์ดภัย + มาตรวัด +1' };
 
 const css = `
 @page{size:594mm 420mm;margin:0}
-.page{width:594mm;height:420mm}
-.board{position:absolute;top:0;width:${W}mm;height:${H}mm;background:var(--paper)}
-.sp{position:absolute;width:${CW - 1.6}mm;height:${CH - 1.6}mm;border-radius:3mm;padding:2.2mm 2.4mm;display:flex;flex-direction:column;justify-content:space-between;background:var(--paper-raised);border:.5mm solid var(--line);box-shadow:0 .6mm 0 var(--line)}
-.sp .ic{font-size:17mm;line-height:1;text-align:center;margin-top:1mm}
-.sp .ic.t{font-family:var(--font-display);font-weight:600;font-size:15mm}
-.sp .nm{font:500 11pt/1.15 var(--font-display)}
-.sp .tx{font-size:7.8pt;line-height:1.25}
-.sp .no{position:absolute;top:1.6mm;right:2.4mm;font-size:7pt;color:var(--ink-muted)}
-.sp.creative{background:var(--spark-gold);border-color:var(--spark-gold);color:var(--role-on-light)}
-.sp.coop{background:var(--coop-teal);border-color:var(--coop-teal);color:#fff}
-.sp.challenge{background:var(--type-command);border-color:var(--type-command);color:#fff}
-.sp.chaos{background:var(--chaos);border-color:var(--chaos);color:#fff}
-.sp.hint{background:var(--hint-sky);border-color:#b8d2ea}
-.sp.market{border-color:var(--role-verb);border-width:1mm}
-.sp.res .nm{color:var(--ink)}
-.sp.corner{border-width:1mm}
-.sp.corner .ic{font-size:20mm}
-.sp .no{color:inherit;opacity:.75}
-.inner{position:absolute;left:${M + CW + 4}mm;top:${M + CH + 4}mm;width:${W - 2 * M - 2 * CW - 8}mm;height:${H - 2 * M - 2 * CH - 8}mm;border-radius:6mm;background:#fff;border:.6mm solid var(--line);padding:7mm;display:grid;grid-template-rows:auto auto 1fr;gap:6mm}
-.top{display:flex;justify-content:space-between;gap:8mm}
-.title h1{margin:0;font:600 30pt/1.05 var(--font-display)}
-.title p{margin:2mm 0 0;font-size:11pt;color:var(--ink-muted)}
-.title .strip{display:flex;margin-top:4mm}
-.title .strip span{display:inline-block;height:7mm;color:#fff;font:500 10pt/7mm var(--font-display);padding:0 6mm 0 4mm}
-.turn{background:var(--paper);border-radius:4mm;padding:3mm 5mm;font-size:9.5pt;line-height:1.45;width:150mm}
-.turn b{font-family:var(--font-display);font-weight:500}
-.turn ol{margin:1mm 0 0;padding-left:5mm}
-.meter h3,.panel h3{margin:0 0 2mm;font:500 12pt/1.2 var(--font-display)}
-.track{display:flex;gap:1.6mm}
-.track div{flex:1;height:22mm;border-radius:2.5mm;border:.5mm solid var(--line);background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;font:600 16pt/1 var(--font-display);color:var(--ink-muted)}
-.track div small{font:400 6.8pt/1.2 var(--font-body);margin-top:1mm;text-align:center}
-.track .atk{background:#e7dcef;border-color:var(--chaos);color:var(--chaos)}
-.track .end{background:var(--chaos);border-color:var(--chaos);color:#fff}
-.track .st{border-style:dashed;border-color:var(--ink-muted)}
-.lower{display:grid;grid-template-columns:1fr 1fr 1fr 1.35fr;gap:5mm}
-.panel{border-radius:4mm;padding:4mm;background:var(--paper);display:flex;flex-direction:column;gap:2mm}
-.panel .big{font-size:16mm;line-height:1;text-align:center}
-.panel .goal{font-size:8.5pt;color:var(--ink-muted);text-align:center;min-height:9mm}
-.steps{display:flex;flex-direction:column;gap:2mm;flex:1}
-.steps div{flex:1;border:.5mm dashed var(--coop-teal);border-radius:2.5mm;padding:2mm 3mm;font-size:8.6pt;line-height:1.35;display:flex;gap:2.5mm;align-items:flex-start;background:#fff}
-.steps div b{white-space:nowrap}
-.steps .mk{margin-left:auto;flex:none;width:10mm;height:10mm;border-radius:50%;border:.5mm dashed var(--coop-teal);align-self:center}
-.steps div b{font-family:var(--font-display);font-weight:500;color:var(--coop-teal)}
-.panel.w{border:.6mm solid var(--coop-teal)}
-.panel.cr{border:.6mm solid var(--spark-gold)}
-.grid4{display:grid;grid-template-columns:auto repeat(3,1fr);gap:2.4mm;flex:1;align-content:space-evenly;font-size:8pt;align-items:center}
-.grid4 .h{font:500 8pt/1.1 var(--font-display);text-align:center}
-.grid4 .c{height:24mm;border:.5mm dashed #c98a20;border-radius:2mm;background:#fff}
-.grid4 .r{font:500 9.5pt/1.15 var(--font-display)}
-.grid4 .h{font-size:9pt!important}
-.reward{font-size:8pt;color:var(--ink);background:#fff;border-radius:2mm;padding:1.5mm 2.5mm}
-.join{position:absolute;top:0;bottom:0;width:0;border-left:.3mm dashed #999}
+.page{width:594mm;height:420mm;background:#fff}
+.art{position:absolute;left:${OX}mm;top:0;width:${mm(BOARD_ART.w)}mm;height:${H}mm}
+.art img{width:100%;height:100%;display:block}
+.sp{position:absolute;width:13.5mm;height:13.5mm;transform:translate(-50%,-50%);border-radius:50%;border:1.1mm solid #fff;box-shadow:0 .8mm 1.4mm rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink);z-index:2}
+.sp.dk{color:#fff}
+.sp .ic{font-size:6.4mm;line-height:1}
+.sp .ic.t{font:600 6.2mm/1 var(--font-display)}
+.sp .no{position:absolute;bottom:-3.2mm;left:50%;transform:translateX(-50%);background:#2a2233;color:#fff;border-radius:2mm;padding:0 1.4mm;font:600 6.4pt/1.4 var(--font-display)}
+.sp .vb{position:absolute;top:-4.6mm;left:50%;transform:translateX(-50%);background:var(--role-verb);color:var(--ink);border:.4mm solid #b88a00;border-radius:1.6mm;padding:0 1.6mm;font:600 7pt/1.35 var(--font-display);white-space:nowrap}
+.fix{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;border-radius:1.4mm;font-family:var(--font-display);font-weight:600;line-height:1.12;white-space:pre-line;z-index:1}
+.boat{position:absolute;z-index:2;background:#fff;border:.5mm solid #1f2a44;border-radius:3mm;padding:.8mm 2.4mm;font:500 7.4pt/1.3 var(--font-display);box-shadow:0 .6mm 0 #1f2a44}
+.join{position:absolute;top:0;bottom:0;width:0;border-left:.3mm dashed #999;z-index:9}
 `;
 
 function spaces() {
   return PATH.map((k, i) => {
     const s = SPACE_KINDS[k];
-    const [c, r] = cellPos(i);
+    const [px, py] = BOARD_ART.spaces[i];
     const isText = s.icon === '?' || s.icon === '★' || s.icon === '⇄';
-    return `<div class="sp ${s.cls}" style="left:${M + c * CW + 0.8}mm;top:${M + r * CH + 0.8}mm">
-<span class="no">${i === 0 ? 'เริ่ม' : i}</span>
-<div class="ic ${isText ? 't disp' : 'emoji'}">${s.icon}</div>
-<div><div class="nm">${esc(s.name)}</div><div class="tx">${esc(s.text)}</div></div></div>`;
+    return `<div class="sp${DARK.has(k) ? ' dk' : ''}" style="left:${OX + mm(px)}mm;top:${mm(py)}mm;background:${KIND_TILE[k]}">
+${SPACE_VERBS[i] ? `<span class="vb">➜ ${esc(SPACE_VERBS[i][0])}</span>` : ''}<span class="ic ${isText ? 't' : 'emoji'}">${s.icon}</span><span class="no">${i === 0 ? 'เริ่ม' : i}</span></div>`;
   }).join('');
 }
 
-function inner() {
-  const strip = [['ประธาน ▲', 'var(--role-subject)'], ['กริยา ➜', 'var(--role-verb)'], ['กรรม ●', 'var(--role-object)']]
-    .map(([t, c], i) => `<span style="background:${c};${i === 1 ? 'color:var(--ink)' : ''};clip-path:polygon(${i ? '3mm 50%,' : ''}0 0,calc(100% - 3mm) 0,100% 50%,calc(100% - 3mm) 100%,0 100%${i ? '' : ''});margin-left:${i ? '-2.4mm' : 0}">${t}</span>`).join('');
-  const track = Array.from({ length: 13 }, (_, n) => {
-    const cls = n === 12 ? 'end' : (n === 4 || n === 8) ? 'atk' : n === 2 ? 'st' : '';
-    const lab = n === 12 ? 'ทุกคนแพ้!' : (n === 4 || n === 8) ? 'ยุ่งเหยิงโจมตี' : n === 2 ? 'เริ่มเกม' : '';
-    return `<div class="${cls}">${n}<small>${lab}</small></div>`;
-  }).join('');
-  const wonders = WONDERS.map((w) => `<div class="panel w"><h3>${esc(w.name)}</h3><div class="big emoji">${w.icon}</div><div class="goal">${esc(w.goal)}</div>
-<div class="steps">${w.stages.map((t, n) => `<div><b>ด่าน ${n + 1}</b><span>${esc(t)}</span><span class="mk"></span></div>`).join('')}</div>
-<div class="reward">ครบ 3 ด่าน: มาตรวัด −3 · ผู้ร่วมได้ 2 แต้ม</div></div>`).join('');
-  const crGrid = `<div class="grid4"><span></span>${['ด่าน 1 สร้าง', 'ด่าน 2 ขยาย', 'ด่าน 3 ใช้ภาษา'].map((h) => `<span class="h">${h}</span>`).join('')}
-${CREATIVE.map((c) => `<span class="r">${c.id}. ${esc(c.area.replace('การคิด', ''))}<br><small style="font:400 7.5pt var(--font-body);color:var(--ink-muted)">${esc(c.scene)}</small></span><span class="c"></span><span class="c"></span><span class="c"></span>`).join('')}</div>`;
-  return `<div class="inner">
-<div class="top"><div class="title"><h1>${TITLE}</h1><p>ซ่อมป้าย สร้างเมือง และขับไล่ยุ่งเหยิงด้วยประโยคที่ถูกต้อง</p><div class="strip">${strip}</div></div>
-<div class="turn"><b>ลำดับเทิร์น</b><ol><li><b>สำรวจ</b> ทอยเต๋าเดินตามเข็มนาฬิกา ทำตามช่องที่หยุด</li><li><b>สร้าง/อัปเกรด</b> ต่อบล็อกบนแท่นวาง ปักธง อ่านออกเสียง</li><li><b>ตรวจป้าย</b> คนทางซ้ายถาม: ใคร? ทำอะไร? กับอะไร? ธงถูกไหม?</li><li><b>จ่ายทรัพยากร</b> เขียนประโยคลงที่ดินในกระดานเมือง</li><li><b>จบเทิร์น</b> ทอยเต๋าได้ 1 → มาตรวัดความสับสน +1</li></ol></div></div>
-<div class="meter"><h3>มาตรวัดความสับสน</h3><div class="track">${track}</div></div>
-<div class="lower">${wonders}<div class="panel cr"><h3>ภารกิจสร้างสรรค์ ★</h3>${crGrid}<div class="reward">ผ่านด่าน: ประกายคิด 1 + ดาวของด้านนั้น · ผู้หยุดที่ ★ ได้ประกายคิดเพิ่ม 1 · ครบ 3 ด่าน +2 แต้มเมือง</div></div></div>
-</div>`;
+function fixes() {
+  return BOARD_ART.fixes.map(([x0, y0, x1, y1, t, bg, c]) => `<div class="fix" style="left:${OX + mm(x0)}mm;top:${mm(y0)}mm;width:${mm(x1 - x0)}mm;height:${mm(y1 - y0)}mm;background:${bg};color:${c};font-size:${t.includes('\n') ? 8.2 : (y1 - y0 > 40 ? 24 : 9.2)}pt">${esc(t)}</div>`).join('');
 }
 
 export function boardHtml() {
-  // พิมพ์เป็นหน้าเดียว 594 × 420 มม. แล้ว build.mjs ตัดเป็น A3 สองแผ่นด้วย split-a3.py (ภาพเวกเตอร์ไม่เสียความคม)
-  return doc('กระดาน A3', css, `<div class="page"><div class="board" style="left:0">${spaces()}${inner()}</div>
+  // พิมพ์เป็นหน้าเดียว 594 × 420 มม. แล้ว build.mjs ตัดเป็น A3 สองแผ่นด้วย split-a3.py
+  const boat = `<div class="boat" style="left:${OX + mm(20)}mm;top:${mm(1000)}mm">⚓ ท่าเรือ (ช่อง 0) · เลยช่อง 35 นั่งเรือกลับมาที่นี่</div>`;
+  return doc('กระดาน A3', css, `<div class="page"><div class="art"><img src="../assets/board-art.jpg" alt=""></div>${fixes()}${spaces()}${boat}
 <div class="join" style="left:297mm"></div>
-<div class="pnote" style="bottom:1.5mm;left:0;width:297mm">กระดานแผ่นที่ 1 (ซ้าย) · ต่อขอบขวากับแผ่นที่ 2</div>
-<div class="pnote" style="bottom:1.5mm;left:297mm;width:297mm">กระดานแผ่นที่ 2 (ขวา) · ต่อขอบซ้ายกับแผ่นที่ 1</div></div>`);
+<div class="pnote" style="bottom:1.5mm;left:0;width:297mm;z-index:9">กระดานแผ่นที่ 1 (ซ้าย) · ต่อขอบขวากับแผ่นที่ 2</div>
+<div class="pnote" style="bottom:1.5mm;left:297mm;width:297mm;z-index:9">กระดานแผ่นที่ 2 (ขวา) · ต่อขอบซ้ายกับแผ่นที่ 1</div></div>`);
+}
+
+// แผ่นติดตามเกม (A4 แนวนอน ในไฟล์ 02): มาตรวัด · สิ่งมหัศจรรย์ · ภารกิจสร้างสรรค์ · คำอธิบายช่อง
+export const trackerCss = `
+.trk{display:grid;grid-template-columns:1.1fr 1fr;gap:5mm;height:176mm}
+.tp{border:.6mm solid var(--sand-edge);border-radius:4mm;background:#fffaf0;padding:3.4mm}
+.tp h3{margin:0 0 2mm;font:500 12pt/1.2 var(--font-display)}
+.track{display:flex;gap:1.2mm}
+.track div{flex:1;height:15mm;border-radius:2mm;border:.4mm solid var(--line);background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font:600 12pt/1 var(--font-display);color:var(--ink-muted)}
+.track div small{font:400 5.6pt/1.1 var(--font-body);margin-top:.6mm}
+.track .atk{background:#e7dcef;border-color:var(--chaos);color:var(--chaos)}
+.track .end{background:var(--chaos);border-color:var(--chaos);color:#fff}
+.track .st{border-style:dashed;border-color:var(--ink-muted)}
+.won{display:grid;grid-template-columns:repeat(3,1fr);gap:2.4mm}
+.won div{border:.5mm solid var(--coop-teal);border-radius:2mm;padding:1.6mm;text-align:center;font:500 8.6pt/1.2 var(--font-display)}
+.won .e{font-size:9mm;line-height:1}
+.won .mk{display:flex;justify-content:center;gap:1.6mm;margin-top:1.2mm}
+.won .mk span{width:8mm;height:8mm;border-radius:50%;border:.4mm dashed var(--coop-teal)}
+.grid4{display:grid;grid-template-columns:auto repeat(3,1fr);gap:1.8mm;align-items:center}
+.grid4 .h{font:500 8.4pt/1.1 var(--font-display);text-align:center}
+.grid4 .r{font:500 9pt/1.1 var(--font-display);white-space:nowrap}
+.grid4 .c{height:13mm;border:.4mm dashed #c98a20;border-radius:1.6mm;background:#fff}
+.leg{display:grid;grid-template-columns:1fr 1fr;gap:1.6mm 3mm;font-size:8pt;line-height:1.25}
+.leg div{display:flex;gap:1.6mm;align-items:center}
+.leg i{flex:none;width:7mm;height:7mm;border-radius:50%;border:.5mm solid #fff;box-shadow:0 0 0 .3mm rgba(0,0,0,.35);font-style:normal;font-size:4.2mm;line-height:6mm;text-align:center}
+`;
+export function trackerPage() {
+  const track = Array.from({ length: 13 }, (_, n) => {
+    const cls = n === 12 ? 'end' : (n === 4 || n === 8) ? 'atk' : n === 2 ? 'st' : '';
+    const lab = n === 12 ? 'ทุกคนแพ้' : (n === 4 || n === 8) ? 'โจมตี' : n === 2 ? 'เริ่ม' : '';
+    return `<div class="${cls}">${n}<small>${lab}</small></div>`;
+  }).join('');
+  const won = WONDERS.map((w) => `<div><span class="e emoji">${w.icon}</span><br>${esc(w.name)}<div class="mk"><span></span><span></span><span></span></div></div>`).join('');
+  const grid = `<div class="grid4"><span></span>${['ด่าน 1 สร้าง', 'ด่าน 2 ขยาย', 'ด่าน 3 ใช้ภาษา'].map((t) => `<span class="h">${t}</span>`).join('')}
+${CREATIVE.map((c) => `<span class="r"><span class="emoji">${TOWER.badges[c.id - 1][0]}</span> ${esc(c.area.replace('การคิด', 'คิด'))}</span><span class="c"></span><span class="c"></span><span class="c"></span>`).join('')}</div>`;
+  const leg = Object.entries(SPACE_KINDS).map(([k, sp]) => `<div><i class="${['?', '★', '⇄'].includes(sp.icon) ? '' : 'emoji'}" style="background:${KIND_TILE[k]};${DARK.has(k) ? 'color:#fff' : ''}">${sp.icon}</i><span><b>${esc(sp.name)}</b> · ${SHORT[k]}</span></div>`).join('');
+  return `<div class="page"><div class="head"><h1>แผ่นติดตามเกม</h1><div class="who" style="border:0">วางข้างกระดาน BLOCK WORLD · ใช้โทเคนวางบนช่อง</div></div>
+<div class="trk"><div style="display:flex;flex-direction:column;gap:4mm">
+<div class="tp"><h3>👾 มาตรวัดความสับสน</h3><div class="track">${track}</div></div>
+<div class="tp"><h3>🤝 สิ่งก่อสร้างมหัศจรรย์ (ด่าน 1–3) · ครบ 3 ด่าน มาตรวัด −3</h3><div class="won">${won}</div></div>
+<div class="tp" style="flex:1"><h3>⭐ ${TOWER.name}: ภารกิจสร้างสรรค์ (วางเครื่องหมาย ✓)</h3>${grid}</div></div>
+<div class="tp"><h3>ช่องบนถนน (36 ช่อง)</h3><div class="leg">${leg}</div>
+<p style="font-size:8.4pt;margin:3mm 0 0">เดินตามเลขช่อง เริ่มที่ท่าเรือ (ช่อง 0) มุมซ้ายล่าง · เลยช่อง 35 นั่งเรือกลับท่าเรือแล้วเดินต่อ (ผ่านท่าเรือจั่วบล็อก 1) · ช่องที่มีป้ายเหลือง ➜ คือกริยาสำหรับทอยประโยค</p></div></div>
+<div class="pnote">แผ่นติดตามเกม — มาตรวัด สิ่งมหัศจรรย์ ภารกิจสร้างสรรค์ และคำอธิบายช่อง</div></div>`;
 }

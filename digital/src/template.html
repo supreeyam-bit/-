@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>ดินแดนมหัศจรรย์แห่งคำ</title>
+<title>Block World</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Sarabun:wght@400;600;700&display=swap">
@@ -11,20 +11,23 @@
   --t-statement:#2e7d4f;--t-negative:#5b4b8a;--t-question:#b4541a;--t-command:#1f2a44;--t-request:#b03a72;
   --chaos:#4a2a5e;--gold:#e8a33d;--teal:#17767a;--sky:#dcebf7;--focus:#1d4a9e;--good:#2e7d4f;--bad:#b4341a;
   --shadow:0 2px 0 #d9cfb8;--scrim:rgba(42,34,51,.55);
+  --water:#a8e6df;--wave:#7fd6cc;--grass:#d4ec9f;--grass-edge:#8fbf4f;--sand:#f3dfb0;--sand-edge:#d2a862;
   --display:Mitr,"Noto Sans Thai",system-ui,sans-serif;--body:Sarabun,"Noto Sans Thai",system-ui,sans-serif;
   --emoji:"Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --paper:#1b1a24;--raised:#262433;--ink:#f4efe3;--muted:#b8b0c4;--line:#3d3a4d;--subj:#d23d34;--obj:#3a6fc9;--mod:#5d82c6;
   --t-negative:#6a5a9c;--t-command:#4a5a85;--chaos:#7a4a96;--teal:#1f8a8e;--sky:#24364a;--focus:#8aa0d6;--good:#4caf78;--bad:#e0714f;
-  --shadow:0 2px 0 #0e0d14;--scrim:rgba(0,0,0,.6);color-scheme:dark}}
+  --shadow:0 2px 0 #0e0d14;--scrim:rgba(0,0,0,.6);color-scheme:dark;
+  --water:#0f3a3a;--wave:#155050;--grass:#34502a;--grass-edge:#1f3318;--sand:#4a3c25;--sand-edge:#2e2516}}
 :root[data-theme="dark"]{
   --paper:#1b1a24;--raised:#262433;--ink:#f4efe3;--muted:#b8b0c4;--line:#3d3a4d;--subj:#d23d34;--obj:#3a6fc9;--mod:#5d82c6;
   --t-negative:#6a5a9c;--t-command:#4a5a85;--chaos:#7a4a96;--teal:#1f8a8e;--sky:#24364a;--focus:#8aa0d6;--good:#4caf78;--bad:#e0714f;
-  --shadow:0 2px 0 #0e0d14;--scrim:rgba(0,0,0,.6);color-scheme:dark}
+  --shadow:0 2px 0 #0e0d14;--scrim:rgba(0,0,0,.6);color-scheme:dark;
+  --water:#0f3a3a;--wave:#155050;--grass:#34502a;--grass-edge:#1f3318;--sand:#4a3c25;--sand-edge:#2e2516}
 *{box-sizing:border-box}
 html,body{height:100%}
-body{background:var(--paper);color:var(--ink);font:16px/1.55 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body{background-color:var(--water);background-image:radial-gradient(ellipse 34px 8px at 50% 100%,transparent 70%,var(--wave) 72%,var(--wave) 84%,transparent 86%);background-size:96px 48px;color:var(--ink);font:16px/1.55 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 h1,h2,h3{font-family:var(--display);font-weight:500;margin:0;text-wrap:balance;line-height:1.25}
 button{font:500 15px/1.2 var(--display);color:inherit;cursor:pointer;border:0;background:none}
 button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
@@ -56,8 +59,8 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus
 /* พื้นที่หลัก */
 .main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr);gap:16px;align-items:start}
 @media (max-width:980px){.main{grid-template-columns:minmax(0,1fr)}}
-.board{position:relative;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(9,1fr);gap:3px;aspect-ratio:11/9;width:100%;max-width:100%}
-.cell{position:relative;border-radius:8px;background:var(--raised);border:1.5px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:2px;min-width:0}
+.board{position:relative;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(9,1fr);gap:4px;aspect-ratio:11/9;width:100%;max-width:100%;background:#f6e6bf;border:2px solid var(--sand-edge);border-radius:18px;padding:8px;box-shadow:0 6px 0 var(--sand-edge)}
+.cell{position:relative;border-radius:8px;background:var(--grass);border:1.5px solid var(--grass-edge);box-shadow:0 3px 0 var(--grass-edge);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:2px;min-width:0}
 .cell .ic{font-size:clamp(14px,2.4vw,28px);line-height:1}
 .cell .ic.t{font-family:var(--display);font-weight:600}
 .cell .nm{font:500 clamp(8px,.85vw,11px)/1.1 var(--display);text-align:center;margin-top:2px}
@@ -66,14 +69,61 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus
 .cell.coop{background:var(--teal);border-color:var(--teal);color:#fff}
 .cell.challenge{background:var(--t-command);border-color:var(--t-command);color:#fff}
 .cell.chaos{background:var(--chaos);border-color:var(--chaos);color:#fff}
-.cell.hint{background:var(--sky)}
-.cell.market{border-color:var(--verb);border-width:2.5px}
+.cell.hint{background:var(--sky);border-color:#8fb4d6;box-shadow:0 3px 0 #8fb4d6}
+.cell.creative,.cell.coop,.cell.challenge,.cell.chaos{box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.cell.corner:not(.challenge):not(.chaos){background:var(--raised);border-color:var(--sand-edge);box-shadow:0 3px 0 var(--sand-edge)}
+.cell.market{border-color:var(--verb);border-width:2.5px;box-shadow:0 3px 0 #c99a06}
 .cell.corner{border-width:2.5px}
 .cell .no{position:absolute;top:1px;right:4px;font-size:9px;opacity:.7}
+.cell .vb{position:absolute;top:1px;left:3px;background:var(--verb);color:var(--on-light);border-radius:5px;padding:0 4px;font:500 clamp(7px,.8vw,10px)/1.4 var(--display)}
+@media (max-width:640px){.cell .vb{display:none}}
+.rolldie{min-width:78px;height:78px;padding:0 8px;border-radius:14px;border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font:600 20px/1.1 var(--display);text-align:center}
+.artboard{position:relative;width:100%;aspect-ratio:1448/1086;container-type:inline-size;border-radius:14px;overflow:hidden;background:#fff}
+.artboard img{position:absolute;inset:0;width:100%;height:100%;display:block}
+.artboard .fix{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;border-radius:4px;font-family:var(--display);font-weight:600;line-height:1.12;white-space:pre-line;pointer-events:none}
+.artboard .hot{position:absolute;border-radius:14px;background:transparent;border:2px solid transparent}
+.artboard .hot:hover,.artboard .hot:focus-visible{border-color:#fff;background:rgba(255,255,255,.18);box-shadow:0 0 0 3px var(--focus)}
+.spc{position:absolute;transform:translate(-50%,-50%);width:3.3cqw;height:3.3cqw;min-width:15px;min-height:15px;border-radius:50%;border:max(2px,.28cqw) solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;background:#fff;color:var(--on-light);z-index:2}
+.spc .ic{font-size:max(9px,1.7cqw);line-height:1}
+.spc .ic.t{font-family:var(--display);font-weight:600}
+.spc .no{position:absolute;bottom:-1.25cqw;left:50%;transform:translateX(-50%);background:#2a2233;color:#fff;border-radius:6px;padding:0 4px;font:600 max(8px,.85cqw)/1.35 var(--display)}
+.spc .vb{position:absolute;top:-1.5cqw;left:50%;transform:translateX(-50%);background:var(--verb);color:var(--on-light);border-radius:5px;padding:0 4px;font:600 max(8px,.8cqw)/1.35 var(--display);white-space:nowrap}
+.spc .pawns{position:absolute;bottom:auto;top:-2.6cqw;left:50%;right:auto;transform:translateX(-50%);display:flex;gap:1px;flex-wrap:nowrap}
+.k-wood{background:#5fae3a;color:#fff}.k-brick{background:#d8483a;color:#fff}.k-stone{background:#3c78d0;color:#fff}.k-glass{background:#f2b705}
+.k-challenge,.k-observatory{background:#1f2a44;color:#fff}.k-creative{background:#e8a33d}.k-market,.k-bigmarket{background:#fff3c4}
+.k-coop{background:#17767a;color:#fff}.k-hint{background:#dcebf7}.k-storm,.k-cave{background:#4a2a5e;color:#fff}
+.turncard,.below2{display:flex;flex-direction:column;gap:8px;background:var(--raised);border:1.5px solid var(--sand-edge);border-radius:14px;padding:10px 12px}
+.turncard .turnline{flex-wrap:wrap}
+.turncard .tower{width:auto;margin-left:auto}
+.below2 .log{max-height:150px}
+@media (max-width:700px){.turncard .tower{display:none}}
+.tower{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tower .tn{font:500 13px var(--display);color:var(--muted);width:100%}
+.tb{display:inline-flex;align-items:center;gap:2px;padding:2px 9px;border-radius:999px;border:2px solid var(--bc);background:color-mix(in srgb,var(--bc) 14%,var(--raised));font:500 13px var(--display)}
+
+.zones{display:flex;flex-wrap:wrap;gap:6px}
+.zone{display:inline-flex;align-items:center;gap:4px;padding:3px 12px;border-radius:10px;background:var(--zc);color:#fff;font:500 14px var(--display)}
+.zone small{opacity:.85;font-size:12px}
+.village{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;background:var(--grass);border:2px solid var(--grass-edge);border-radius:16px;padding:10px 8px;box-shadow:0 0 0 5px var(--sand),0 7px 0 5px var(--sand-edge);margin:6px 5px 12px}
+.vil{display:flex;flex-direction:column;align-items:center;gap:0;min-width:0}
+.vil .roof{width:0;height:0;border-left:24px solid transparent;border-right:24px solid transparent;border-bottom:16px solid var(--vc)}
+.vil .house{width:40px;height:28px;background:var(--raised);border:2px solid #8a5a2b;border-top:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+.vil .lab{margin-top:4px;background:var(--vc);color:#fff;border-radius:7px;padding:2px 6px;font:500 12px/1.2 var(--display);text-align:center}
+.vil:hover .house,.vil:focus-visible .house{transform:translateY(-2px)}
+@media (max-width:640px){.village{grid-template-columns:repeat(4,1fr)}}
+.picker{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px 44px}
+.pk{width:40px;height:40px;border-radius:12px;border:2px solid var(--line);background:var(--raised);font-size:22px;display:flex;align-items:center;justify-content:center}
+.pk.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--gold)}
+.pk:disabled{opacity:.3}
+.mmap{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.mmb{border:2px solid var(--bc);border-left-width:8px;border-radius:10px;padding:8px 10px;font-size:14px}
+.mmb b{color:var(--bc);font-family:var(--display);font-weight:500;font-size:15px}
+.mmb ul{margin:4px 0;padding-left:18px}
+.rolldie small{font:400 12px var(--body);opacity:.9}
 .pawns{position:absolute;bottom:2px;left:2px;right:2px;display:flex;flex-wrap:wrap;gap:1px;justify-content:center}
 .pawn{width:clamp(14px,1.9vw,22px);height:clamp(14px,1.9vw,22px);border-radius:50%;border:2px solid #fff;font-size:clamp(9px,1.1vw,13px);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,.35);transition:transform .2s}
 .pawn.cur{transform:scale(1.25);z-index:2}
-.center{grid-column:2/11;grid-row:2/9;border-radius:14px;background:var(--raised);border:1.5px solid var(--line);padding:clamp(8px,1.5vw,18px);display:flex;flex-direction:column;gap:10px;min-width:0;overflow:hidden}
+.center{grid-column:2/11;grid-row:2/9;border-radius:14px;background:var(--raised);border:1.5px solid var(--sand-edge);box-shadow:0 0 0 6px var(--water),0 0 0 8px var(--sand-edge);margin:8px;padding:clamp(8px,1.5vw,18px);display:flex;flex-direction:column;gap:10px;min-width:0;overflow:hidden}
 .turnline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .turnline h2{font-size:clamp(16px,2vw,22px)}
 .die{width:clamp(44px,6vw,64px);height:clamp(44px,6vw,64px);border-radius:14px;background:var(--paper);border:2px solid var(--line);font:600 clamp(22px,3.4vw,34px)/1 var(--display);display:flex;align-items:center;justify-content:center}
@@ -99,6 +149,7 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus
 .panel h3{font-size:16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .panel h3 small{font:400 13px var(--body);color:var(--muted)}
 .res{display:flex;flex-wrap:wrap;gap:6px}
+.cell.res{flex-wrap:nowrap;gap:0}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:var(--paper);border:1.5px solid var(--line);font:500 14px var(--display);font-variant-numeric:tabular-nums}
 .chip.btnish{cursor:pointer}
 .chip .g{width:12px;height:12px;border-radius:50%}
@@ -294,10 +345,10 @@ const SAVE_KEY = 'wordland-save-v1';
 let S = null; // game state
 let ui = { view: null, modal: null };
 
-function newPlayer(i, name) {
+function newPlayer(i, name, pick) {
   const p = DATA.PLAYERS[i];
   return {
-    i, name: name || p.name, hex: p.hex, animal: p.animal, pos: 0,
+    i, name: name || p.name, hex: p.hex, animal: pick || p.animal, pos: 0,
     hand: [...draw('S', 2), ...draw('V', 2), ...draw('O', 2)],
     res: { wood: 1, brick: 1, stone: 0, spark: 0, hint: 3, helper: 0, wow: 2 },
     glass: { statement: 0, negative: 0, question: 0, command: 0, request: 0 },
@@ -318,9 +369,9 @@ function draw(role, n = 1) {
   }
   return out;
 }
-function startGame(names) {
+function startGame(names, picks = []) {
   S = {
-    players: names.map((n, i) => newPlayer(i, n)), cur: 0, meter: 2, phase: 'roll', die: null,
+    players: names.map((n, i) => newPlayer(i, n, picks[i])), cur: 0, meter: 2, phase: 'roll', die: null,
     wonders: { bridge: 0, clock: 0, lighthouse: 0 }, creative: { m: 0, s: 0 }, built: false,
     log: ['เริ่มเกม! ยุ่งเหยิงตื่นแล้ว มาตรวัดความสับสนอยู่ที่ 2'], ended: null, finalRound: false, sel: 0, turns: 0,
   };
@@ -343,6 +394,7 @@ function renderSetup() {
   const saved = store.get(SAVE_KEY);
   let count = 3;
   const names = DATA.PLAYERS.map((p) => p.name);
+  const picks = DATA.PLAYERS.map((p) => p.animal);
   const app = $('#app'); app.innerHTML = '';
   const list = h('div', { class: 'card' });
   const drawList = () => {
@@ -350,9 +402,13 @@ function renderSetup() {
     list.append(h('h3', {}, 'ผู้เล่น'));
     for (let i = 0; i < count; i++) {
       const p = DATA.PLAYERS[i];
-      list.append(h('div', { class: 'prow' }, h('div', { class: 'dot emoji', style: `background:${p.hex}` }, p.animal),
+      list.append(h('div', { class: 'prow' }, h('div', { class: 'dot emoji', style: `background:${p.hex}` }, picks[i]),
         h('input', { type: 'text', id: `pname${i}`, value: names[i], 'aria-label': `ชื่อผู้เล่นที่ ${i + 1}`, oninput: (e) => { names[i] = e.target.value; } }),
-        h('span', { class: 'muted', style: 'font-size:13px' }, i === 0 ? 'เริ่มก่อน' : '')));
+        h('span', { class: 'muted', style: 'font-size:13px' }, i === 0 ? 'เริ่มก่อน' : '')),
+        h('div', { class: 'picker', role: 'radiogroup', 'aria-label': `เลือกนักสร้างของผู้เล่นที่ ${i + 1}` }, DATA.BUILDERS.map(([e, nm]) => {
+          const taken = picks.slice(0, count).some((x, k) => k !== i && x === e);
+          return h('button', { type: 'button', class: `pk emoji${picks[i] === e ? ' on' : ''}`, role: 'radio', 'aria-checked': picks[i] === e ? 'true' : 'false', title: nm, 'aria-label': nm, disabled: taken, onclick: () => { picks[i] = e; drawList(); } }, e);
+        })));
     }
   };
   drawList();
@@ -361,12 +417,13 @@ function renderSetup() {
   app.append(h('div', { class: 'setup' },
     h('div', { class: 'hero' }, h('span', { class: 'muted', style: 'font:500 14px var(--display)' }, 'บอร์ดเกมการเรียนรู้ภาษาไทย ป.3 · ฉบับดิจิทัล'),
       h('h1', {}, DATA.TITLE),
-      h('p', {}, 'ยุ่งเหยิง สัตว์ประหลาดความสับสน กินลำดับของคำจนป้ายในเมืองพังหมด ผลัดกันทอยเต๋า ซ่อมป้าย ต่อประโยคสร้างเมือง และช่วยกันสร้างสิ่งก่อสร้างมหัศจรรย์ก่อนมาตรวัดความสับสนถึง 12'),
+      h('p', {}, 'เกาะสี่เหลี่ยมกลางแม่น้ำ มี 3 โซน: การสร้างประโยค · การขยายประโยค · การใช้ภาษา รอบหอคอยความคิดสร้างสรรค์ แต่ยุ่งเหยิงกินลำดับคำจนป้ายพัง เลือกนักสร้างเมืองตัวจิ๋วของเรา แล้วช่วยกันซ่อมเมือง!'),
+      h('div', { class: 'row', style: 'gap:6px' }, DATA.LOOP.map(([e, t], k) => h('span', { class: 'chip' }, h('span', { class: 'emoji' }, e), ` ${k + 1}. ${t}`))),
       blocks),
     h('div', { class: 'row' }, h('span', { style: 'font:500 16px var(--display)' }, 'จำนวนผู้เล่น'), seg),
     list,
     h('div', { class: 'row' },
-      h('button', { class: 'btn primary', type: 'button', onclick: () => startGame(names.slice(0, count).map((n, i) => n.trim() || DATA.PLAYERS[i].name)) }, 'เริ่มผจญภัย'),
+      h('button', { class: 'btn primary', type: 'button', onclick: () => startGame(names.slice(0, count).map((n, i) => n.trim() || DATA.PLAYERS[i].name), picks.slice(0, count)) }, 'เริ่มผจญภัย'),
       saved && saved.S && !saved.S.ended ? h('button', { class: 'btn', type: 'button', onclick: () => { S = saved.S; uid = saved.uid || 1000; render(); } }, 'เล่นเกมที่ค้างไว้ต่อ') : null,
       h('button', { class: 'btn', type: 'button', onclick: openRules }, 'กติกาย่อ'),
       h('button', { class: 'btn', type: 'button', onclick: () => openLibrary() }, 'คลังความรู้')),
@@ -374,12 +431,14 @@ function renderSetup() {
 }
 
 // ====================== หน้าจอเกม ======================
+// เริ่มมุมซ้ายล่าง เดินขึ้นตามเข็มนาฬิกา (ตรงกับกระดานชุดพิมพ์) · ช่อง 0–11 โซน 1 · 12–23 โซน 2 · 24–35 โซน 3
 function cellPos(i) {
-  if (i <= 10) return [i, 0];
-  if (i <= 18) return [10, i - 10];
-  if (i <= 28) return [10 - (i - 18), 8];
-  return [0, 8 - (i - 28)];
+  if (i <= 8) return [0, 8 - i];
+  if (i <= 18) return [i - 8, 0];
+  if (i <= 26) return [10, i - 18];
+  return [10 - (i - 26), 8];
 }
+const zoneOf = (i) => DATA.ZONES[Math.min(2, Math.floor(i / 12))];
 function render() {
   if (!S) return renderSetup();
   save();
@@ -395,6 +454,9 @@ function render() {
       wonders,
       h('div', { class: 'menu' },
         h('button', { class: 'btn small', type: 'button', onclick: () => openLibrary() }, '📚 คลังความรู้'),
+        h('button', { class: 'btn small', type: 'button', onclick: () => openScaffolds() }, '🛟 ฐานช่วยเหลือ'),
+        h('button', { class: 'btn small', type: 'button', onclick: () => openBoard() }, `🗣 กระดานแลกเปลี่ยน${S.board && S.board.length ? ` (${S.board.length})` : ''}`),
+        h('button', { class: 'btn small', type: 'button', onclick: () => openConsult() }, '🦉 ปรึกษาครูฮูก'),
         h('button', { class: 'btn small', type: 'button', onclick: openRules }, 'กติกา'),
         h('button', { class: 'btn small', type: 'button', onclick: confirmEnd }, 'จบเกม'))),
     h('div', { class: 'main' }, boardEl(cur), sideEl())));
@@ -402,14 +464,21 @@ function render() {
 }
 
 function boardEl(cur) {
-  const b = h('div', { class: 'board', role: 'img', 'aria-label': 'กระดานหลัก' });
+  // กระดานภาพ BLOCK WORLD: ช่อง 36 ช่องวางตามตำแหน่งช่องถนนในภาพ
+  const A = DATA.BOARD_ART;
+  const pct = (x, y) => `left:${(x / A.w) * 100}%;top:${(y / A.h) * 100}%`;
+  const b = h('div', { class: 'artboard' }, h('img', { src: DATA.BOARD_IMG, alt: 'กระดาน BLOCK WORLD อาณาจักรนักสร้างโลกแห่งคำ: 3 โซน หอคอยความคิดสร้างสรรค์ และหมู่บ้าน 7 องค์ประกอบ' }));
+  A.fixes.forEach(([x0, y0, x1, y1, t, bg, col]) => b.append(h('div', { class: 'fix', 'aria-hidden': 'true', style: `${pct(x0, y0)};width:${((x1 - x0) / A.w) * 100}%;height:${((y1 - y0) / A.h) * 100}%;background:${bg};color:${col};font-size:max(${t.includes('\n') ? 5 : 6}px,${t.includes('\n') ? 0.52 : (y1 - y0 > 40 ? 1.5 : 0.58)}cqw)` }, t)));
+  const act = { story: openStory, library: () => openLibrary(), tools: openTools, board: () => openBoard(), creative: openCreativeCenter, scaffolds: () => openScaffolds(), consult: () => openConsult() };
+  A.hotspots.forEach(([x, y, w, hh, name, k]) => b.append(h('button', { class: 'hot', type: 'button', title: name, 'aria-label': `เปิด${name}`, style: `${pct(x, y)};width:${(w / A.w) * 100}%;height:${(hh / A.h) * 100}%`, onclick: act[k] })));
   DATA.PATH.forEach((k, i) => {
     const s = DATA.SPACE_KINDS[k];
-    const [c, r] = cellPos(i);
+    const [x, y] = A.spaces[i];
     const isText = ['?', '★', '⇄'].includes(s.icon);
     const pawns = S.players.filter((p) => p.pos === i).map((p) => h('span', { class: `pawn emoji${p === cur ? ' cur' : ''}`, style: `background:${p.hex}`, title: p.name }, p.animal));
-    b.append(h('div', { class: `cell ${s.cls}`, style: `grid-column:${c + 1};grid-row:${r + 1}`, title: `${s.name}: ${s.text}` },
-      h('span', { class: 'no' }, i || ''), h('span', { class: `ic ${isText ? 't' : 'emoji'}` }, s.icon), h('span', { class: 'nm' }, s.name),
+    b.append(h('div', { class: `spc k-${k}`, style: pct(x, y), title: `ช่อง ${i} ${s.name}: ${s.text}` },
+      h('span', { class: `ic ${isText ? 't' : 'emoji'}` }, s.icon), h('span', { class: 'no' }, i === 0 ? 'เริ่ม' : i),
+      DATA.SPACE_VERBS[i] ? h('span', { class: 'vb' }, `➜ ${DATA.SPACE_VERBS[i][0]}`) : null,
       pawns.length ? h('div', { class: 'pawns' }, pawns) : null));
   });
   const die = h('div', { class: 'die', id: 'die', 'aria-live': 'polite' }, S.die ?? '🎲');
@@ -425,13 +494,13 @@ function boardEl(cur) {
     return acts;
   };
   const logEl = () => h('div', { class: 'log' }, S.log.slice(0, 12).map((l) => h('div', {}, l)));
-  b.append(h('div', { class: 'center' },
+  const turn = h('div', { class: 'turncard' },
     h('div', { class: 'turnline' }, die,
       h('div', {}, h('div', { class: 'muted', style: 'font-size:13px' }, `เทิร์นของ`), h('h2', {}, h('span', { class: 'emoji' }, cur.animal), ' ', cur.name)),
-      S.finalRound ? h('span', { class: 'chip', style: 'border-color:var(--gold)' }, 'รอบสุดท้าย!') : null),
-    makeActs(), logEl()));
-  // จอแคบ: ปุ่มและบันทึกเหตุการณ์ย้ายมาอยู่ใต้กระดาน
-  return h('div', { class: 'boardwrap' }, b, h('div', { class: 'below' }, makeActs(), logEl()));
+      S.finalRound ? h('span', { class: 'chip', style: 'border-color:var(--gold)' }, 'รอบสุดท้าย!') : null,
+      h('div', { class: 'tower' }, DATA.TOWER.badges.map(([e, en, th, col], k) => h('span', { class: 'tb', style: `--bc:${col}`, title: `${en} ${th}` }, h('span', { class: 'emoji' }, e), ` ${th} `, h('b', {}, cur.stars[k]))))),
+    makeActs());
+  return h('div', { class: 'boardwrap' }, turn, b, h('div', { class: 'below2' }, h('span', { class: 'muted', style: 'font-size:13px' }, '⚓ เริ่มที่ท่าเรือ (ช่อง 0) · เลยช่อง 35 นั่งเรือกลับท่าเรือ · แตะอาคารหรือหอคอยบนภาพเพื่อเปิดองค์ประกอบนั้น'), logEl()));
 }
 
 function sideEl() {
@@ -518,10 +587,7 @@ function resolveSpace(k) {
   const gain = (key, label) => { p.res[key]++; log(`${p.name} ได้${label} 1`); };
   switch (k) {
     case 'start': p.hand.push(...draw()); log(`${p.name} จั่วบล็อกคำ 1 ใบที่ท่าเรือ`); return afterResolve();
-    case 'wood': gain('wood', 'ไม้'); p.hand.push(...draw(null, 2)); return lessonNudge('wood');
-    case 'brick': gain('brick', 'อิฐ'); p.hand.push(...draw(null, 2)); return lessonNudge('brick');
-    case 'stone': gain('stone', 'หิน'); p.hand.push(...draw(null, 2)); return lessonNudge('stone');
-    case 'glass': { const t = pick(DATA.TYPES); p.glass[t.id]++; p.hand.push(...draw(null, 2)); log(`${p.name} ได้${t.glass} 1 และบล็อกคำ 2 ใบ`); return lessonNudge(t.id); }
+    case 'wood': case 'brick': case 'stone': case 'glass': return openRoll(k);
     case 'hint': p.res.hint += 2; log(`${p.name} ได้โทเคนคำใบ้ 2`); return afterResolve();
     case 'mission': return chooseMission();
     case 'challenge': return openMission(drawMission(3), { challenge: true });
@@ -534,6 +600,111 @@ function resolveSpace(k) {
     case 'bigmarket': return openMarket(true);
   }
   afterResolve();
+}
+// ====================== ทอยประโยค (ช่องทรัพยากร) ======================
+const RES_LABEL = { wood: 'ไม้', brick: 'อิฐ', stone: 'หิน' };
+function openRoll(k) {
+  const p = P();
+  const [verb, objs] = DATA.SPACE_VERBS[p.pos];
+  const who = pick(DATA.WHO_DIE); // null = เลือกเอง
+  const typeIds = [...DATA.TYPES.map((t) => t.id), null];
+  const want = pick(typeIds); // null = เลือกเอง
+  const glassType = k === 'glass' ? pick(DATA.TYPES).id : null;
+  const whoTiles = who ? [tile('S:' + who)] : shuffle(DATA.WHO_DIE.filter(Boolean)).slice(0, 3).map((w) => tile('S:' + w));
+  const verbTile = tile('V:' + verb);
+  const tiles = shuffle([...whoTiles, verbTile, ...objs.map((o) => tile('O:' + o)), ...['ไม่', 'ไหม', 'จง', 'ห้าม', 'ช่วย', 'หน่อย'].map((w) => tile('C:' + w))]);
+  // การ์ดเวลา (บังคับ): คำสั่ง/ขอร้องใช้ได้เฉพาะ จะทำ หรือ ทำเป็นประจำ
+  const polite = want === 'command' || want === 'request';
+  const time = pick(DATA.TIME_CARDS.filter((c) => !polite || c.tense === 'future' || c.tense === 'habit'));
+  const tense = DATA.TENSES[time.tense];
+  const timeTile = tile('M:' + time.word);
+  const auxTile = time.aux && !polite ? tile('M:' + time.aux) : null;
+  let extra = null, extraTile = null, attempt = 0, helper = null; const hints = [];
+  const allTiles = [...tiles, timeTile, ...(auxTile ? [auxTile] : [])];
+  let ui2 = dockUI({ tiles: shuffle(allTiles), placeholder: 'แตะบล็อกเพื่อต่อประโยค: ใคร + ➜ ' + verb + ' + ' + time.word });
+  const dockSlot = h('div', {}, ui2.el);
+  const fb = h('div', { 'aria-live': 'polite' });
+  const owlSlot = h('div', {}, owlEl(`ประโยคนี้ต้องมี ${who || 'ใครก็ได้ 1 คน'} กริยา "${verb}" และคำว่า "${time.word}" ${want ? `เป็นประโยค${TYPE[want].name}` : 'เป็นประโยคประเภทไหนก็ได้'} ลองพูดออกเสียงก่อนวางบล็อกนะ`));
+  const hintSlot = h('div');
+  const drawHint = () => { hintSlot.innerHTML = ''; hintSlot.append(hintBox(want || ui2.get().flag || 'statement', hints, () => { P().res.hint--; hints.push(hints.length); drawHint(); })); };
+  const die = (txt, sub, bg, light) => h('div', { class: 'rolldie', style: `background:${bg}${light ? ';color:var(--on-light)' : ''}` }, txt, h('small', {}, sub));
+  const plus = () => h('span', { style: 'font:600 22px var(--display)' }, '+');
+  const dice = h('div', { class: 'row', style: 'gap:10px;align-items:center' },
+    who ? die(who, 'ใคร', 'var(--subj)') : die('★', 'เลือกใครเอง', 'var(--gold)', true),
+    plus(), die('➜ ' + verb, 'กริยาบนช่อง', 'var(--verb)', true),
+    plus(), die('🕒 ' + time.word, tense.name, tense.color),
+    plus(), want ? die(TYPE[want].sym, TYPE[want].name, TCOL(want)) : die('★', 'เลือกประเภทเอง', 'var(--gold)', true));
+  const timeNote = h('div', { class: 'card', style: 'background:var(--sky);border-color:transparent' }, h('h3', {}, `🕒 การ์ดเวลา · ${tense.name}: ${time.word}`),
+    h('span', { style: 'font-size:14px' }, auxTile ? `ใส่คำช่วย "${time.aux}" หน้ากริยา (ถ้ามีคำว่า ไม่ ให้วางหน้า ไม่) เช่น ฉัน${time.aux}${verb}…${time.word}`
+      : polite ? `คำสั่งและขอร้องไม่ต้องใส่คำช่วย เช่น ช่วย${verb}…${time.word}หน่อย` : `ไม่ต้องใส่คำช่วย เช่น ฉัน${verb}…${time.word}`));
+  const extraSlot = h('div');
+  const drawExtra = () => {
+    extra = pick(DATA.EXTRA_CARDS); extraTile = tile('M:' + extra.word);
+    const { dock, tray } = ui2.get();
+    ui2 = dockUI({ tiles: [...dock, ...tray, extraTile], placeholder: 'แตะบล็อกเพื่อต่อประโยค' });
+    dockSlot.innerHTML = ''; dockSlot.append(ui2.el);
+    extraSlot.append(h('div', { class: 'card', style: 'border-color:var(--grass-edge)' }, h('h3', {}, `➕ การ์ดขยายเพิ่ม (${extra.kind}): ${extra.word}`), h('span', { style: 'font-size:14px' }, 'ใส่คำนี้ลงในประโยคให้ยาวขึ้นและชัดขึ้น ได้บล็อกคำเพิ่ม 1')));
+  };
+  const extraBtn = h('button', { class: 'btn', type: 'button', onclick: () => { extraBtn.remove(); drawExtra(); } }, '➕ จั่วการ์ดขยายเพิ่ม (โบนัส)');
+  const judge = (dock, flag) => {
+    if (!dock.length) return { ok: false, issue: 'บล็อกเรียงสลับ', msg: 'แท่นยังว่างอยู่ แตะบล็อกเพื่อวางก่อนนะ' };
+    if (!dock.includes(verbTile)) return { ok: false, issue: 'ขาดกริยา', msg: `ยังไม่ได้ใช้กริยา "${verb}" จากช่องที่หยุด` };
+    const pr = parse(dock);
+    const isPolite = pr.ok && (pr.type === 'command' || pr.type === 'request');
+    // คำสั่ง/ขอร้อง: ประธานคือคนที่เราพูดด้วย ละได้ (ประธานล่องหน) แต่จะเป็น "ฉัน" ไม่ได้
+    if (isPolite && dock.some((t) => t.r === 'S' && t.w === 'ฉัน')) return { ok: false, issue: 'สับสนคำสั่ง/ขอร้อง', msg: `ประโยค${TYPE[pr.type].name}พูดกับคนอื่น ใช้ "ฉัน" ไม่ได้ ละประธานไว้ หรือใช้คนที่เราพูดด้วย` };
+    if (!isPolite && !dock.some((t) => t.r === 'S' && whoTiles.includes(t))) return { ok: false, issue: 'ขาดประธาน', msg: `ยังไม่มี ${who || 'ประธานจากลูกเต๋า'} ในประโยค` };
+    if (!pr.ok) return { ok: false, issue: pr.issue };
+    if (!flag) return { ok: false, issue: 'ปักธงผิด', msg: 'ยังไม่ได้ปักธงประเภทประโยค' };
+    if (want && pr.type !== want) return { ok: false, issue: 'ปักธงผิด', msg: `ลูกเต๋าให้แต่งประโยค${TYPE[want].name} ลองดูคำสังเกต: ${TYPE[want].cue}` };
+    if (pr.type !== flag) return { ok: false, issue: 'ปักธงผิด', msg: 'ประโยคถูกแล้ว แต่ธงยังไม่ตรงกับคำสังเกต' };
+    if (!dock.includes(timeTile)) return { ok: false, issue: 'ขยายแล้วความหมายเปลี่ยน', msg: `ยังไม่ได้ใส่คำบอกเวลา "${time.word}" จากการ์ด` };
+    if (isPolite && (time.tense === 'past' || time.tense === 'now')) return { ok: false, issue: 'สับสนคำสั่ง/ขอร้อง', msg: `คำว่า "${time.word}" ใช้กับประโยค${TYPE[pr.type].name}ไม่ได้ ลองเลือกประเภทอื่นนะ` };
+    if (auxTile) {
+      if (isPolite) { if (dock.includes(auxTile)) return { ok: false, issue: 'สับสนคำสั่ง/ขอร้อง', msg: `ประโยค${TYPE[pr.type].name}ไม่ต้องใส่ "${time.aux}"` }; }
+      else {
+        if (!dock.includes(auxTile)) return { ok: false, issue: 'ขยายแล้วความหมายเปลี่ยน', msg: `"${time.word}" ต้องใช้คู่กับคำช่วย "${time.aux}" หน้ากริยา` };
+        const at = dock.indexOf(auxTile); const nx = dock[at + 1];
+        const okAux = nx && (nx === verbTile || (nx.r === 'C' && tileType(nx) === 'negative' && dock[at + 2] === verbTile));
+        if (!okAux) return { ok: false, issue: 'บล็อกเรียงสลับ', msg: `คำช่วย "${time.aux}" ต้องวางหน้ากริยา (หรือหน้าคำว่า ไม่)` };
+      }
+    }
+    return { ok: true, bonus: !!extraTile && dock.includes(extraTile), type: pr.type };
+  };
+  const gainRes = () => {
+    if (glassType) { gainGlass(p, glassType); return TYPE[glassType].glass; }
+    p.res[k]++; return RES_LABEL[k];
+  };
+  const check = () => {
+    const { dock, flag } = ui2.get();
+    const res = judge(dock, flag);
+    fb.className = `feedback ${res.ok ? 'ok' : 'no'}`;
+    if (res.ok) {
+      const name = gainRes(); const n = res.bonus ? 3 : 2;
+      p.hand.push(...draw(null, n));
+      fb.textContent = `ผ่าน! "${sentenceText(dock)}" ${TYPE[res.type].sym} ได้${name} 1 และบล็อกคำ ${n} ใบ${res.bonus ? ' (โบนัสการ์ดขยายเพิ่ม)' : ''}`;
+      owlSlot.innerHTML = ''; owlSlot.append(owlEl(coachQ(attempt ? 'ทำถูกแล้ว' : 'ทำถูกเร็วมาก', 0)));
+      if (helper) { helper.res.helper++; helper.res.hint++; log(`${helper.name} ช่วยถามเพื่อนจนสำเร็จ ได้มือช่วย 1`); }
+      log(`${p.name} ทอยประโยค: "${sentenceText(dock)}" ได้${name} 1 และบล็อกคำ ${n} ใบ`);
+      postBoard(p.name, sentenceText(dock), '🎲 ทอยประโยค');
+      actions.innerHTML = '';
+      actions.append(h('button', { class: 'btn primary', type: 'button', onclick: () => { closeModal(); lessonNudge(glassType || k); } }, 'รับรางวัล'));
+      return;
+    }
+    fb.textContent = res.msg || 'ยังไม่ผ่าน ลองอ่านออกเสียงแล้วตรวจอีกครั้งนะ';
+    owlSlot.innerHTML = ''; owlSlot.append(owlEl(coachQ(res.issue, attempt)));
+    attempt++;
+    if (attempt >= 2 && !hints.length) drawHint();
+    skip.hidden = false;
+  };
+  const skip = h('button', { class: 'btn', type: 'button', hidden: true, onclick: () => { const name = gainRes(); done(`${p.name} ยังทอยประโยคไม่ผ่าน ได้${name} 1 (ไม่ได้บล็อกคำ)`); } }, 'พักไว้ก่อน (รับเฉพาะทรัพยากร)');
+  const helperSel = h('div', { class: 'row' }, h('span', { class: 'muted', style: 'font-size:14px' }, 'เพื่อนช่วยถาม (ไม่บอกคำตอบ):'),
+    S.players.filter((x) => x !== p).map((x) => h('button', { class: 'btn small', type: 'button', onclick: (e) => { helper = x; [...helperSel.querySelectorAll('button')].forEach((b) => b.classList.toggle('primary', b === e.currentTarget)); } }, h('span', { class: 'emoji' }, x.animal), x.name)));
+  const actions = h('div', { class: 'row' }, h('button', { class: 'btn primary', type: 'button', onclick: check }, 'ตรวจประโยค'), h('button', { class: 'btn', type: 'button', onclick: drawHint }, '💡 คำใบ้'), skip);
+  openModal({
+    title: `🎲 ทอยประโยค · ${DATA.SPACE_KINDS[k].name} ช่อง ${p.pos}`, color: 'var(--ink)', closable: false,
+    body: [dice, timeNote, owlSlot, dockSlot, h('div', { class: 'row' }, extraBtn), extraSlot, fb, hintSlot, S.players.length > 1 ? helperSel : null, actions],
+  });
 }
 function lessonNudge(id) {
   const name = id.length > 5 ? TYPE[id].glass : { wood: 'ไม้', brick: 'อิฐ', stone: 'หิน' }[id];
@@ -678,6 +849,12 @@ function missingIssue(dock, dm) {
   if (have.length > need.size) return 'บล็อกเรียงสลับ';
   return 'บล็อกเรียงสลับ';
 }
+// แก้วสีมาพร้อมบล็อกคำเปลี่ยนร่างของประเภทนั้น (บอกเล่าไม่ต้องใช้) เพื่อให้สร้างบ้านได้จริง
+const GLASS_CUE = { negative: 'ไม่', question: 'ไหม', command: 'จง', request: 'ช่วย' };
+function gainGlass(p, type) {
+  p.glass[type]++;
+  if (GLASS_CUE[type]) p.hand.push({ id: uid++, r: 'C', w: GLASS_CUE[type] });
+}
 function reward(level, flag, ctx) {
   const p = P();
   if (level === 1) { const k = p.res.wood <= p.res.brick ? 'wood' : 'brick'; p.res[k]++; p.hand.push(...draw()); log(`${p.name} ได้${k === 'wood' ? 'ไม้' : 'อิฐ'} 1 และบล็อกคำ 1`); }
@@ -685,8 +862,8 @@ function reward(level, flag, ctx) {
     const ks = ['wood', 'brick', 'stone'].sort((a, b) => p.res[a] - p.res[b]).slice(0, 2);
     ks.forEach((k) => p.res[k]++); log(`${p.name} ได้${ks.map((k) => ({ wood: 'ไม้', brick: 'อิฐ', stone: 'หิน' })[k]).join(' และ ')}`);
   }
-  if (level === 3) { p.glass[flag]++; log(`${p.name} ได้${TYPE[flag].glass} 1`); }
-  if (ctx.bonusGlass) { p.glass[ctx.bonusGlass]++; log(`${p.name} ได้${TYPE[ctx.bonusGlass].glass}เพิ่มจากหอดูดาว`); }
+  if (level === 3) { gainGlass(p, flag); log(`${p.name} ได้${TYPE[flag].glass} 1`); }
+  if (ctx.bonusGlass) { gainGlass(p, ctx.bonusGlass); log(`${p.name} ได้${TYPE[ctx.bonusGlass].glass}เพิ่มจากหอดูดาว`); }
 }
 
 // ====================== สร้าง / อัปเกรด ======================
@@ -884,7 +1061,7 @@ function openCreative() {
     title: `★ ภารกิจที่ ${c.id} ${c.area} · ${DATA.STAGES[s]}`, color: 'var(--gold)', closable: false,
     body: [
       h('div', { class: 'row' }, h('span', { class: 'emoji', style: 'font-size:42px;white-space:nowrap' }, c.emoji), h('div', {}, h('b', { style: 'font-family:var(--display);font-weight:500' }, c.scene), h('div', { class: 'muted', style: 'font-size:14px' }, c.sceneText))),
-      h('p', { class: 'task', style: 'margin:0' }, task), extraNote, c.roll ? cubesUI(c, s) : null,
+      processEl(S.creative.m), h('p', { class: 'task', style: 'margin:0' }, task), extraNote, c.roll ? cubesUI(c, s) : null,
       h('div', { class: 'row', style: 'justify-content:space-between' }, h('span', { class: 'chip' }, `ตัวบ่งชี้ ${ind}`), h('div', { class: 'row' }, tm, startBtn)),
       owlEl('ทุกคนเขียนพร้อมกันนะ! จำไว้ว่า "ถูกก่อน แล้วค่อยแปลก" นับเฉพาะประโยคที่มีภาคประธานและภาคแสดงครบ และได้ใจความ'),
       h('div', { class: 'grid2' }, cards),
@@ -912,6 +1089,7 @@ function openCreative() {
       p.crPass[c.id] = (p.crPass[c.id] || 0) + 1;
       lines.push(`${p.name}: ผ่าน! ประกายคิด +${spark} ดาว${c.shape} +1${x.dup ? ' (มีประโยคซ้ำกับเพื่อน จึงไม่ได้โบนัสริเริ่ม)' : ''}`);
     });
+    per.forEach((x) => postBoard(x.p.name, x.text, `★ ${c.area.replace('การคิด', '')} ด่าน ${s + 1}`));
     S.creative.s++;
     if (S.creative.s >= 3) { S.creative.s = 0; S.creative.m++; }
     log(`ภารกิจสร้างสรรค์ ${c.area} ${DATA.STAGES[s]} จบแล้ว`);
@@ -1098,9 +1276,111 @@ function lessonType(t) {
     },
   ];
 }
+// ====================== ศูนย์การเรียนรู้: แผนผังความคิด / ศูนย์ส่งเสริมการคิดสร้างสรรค์: กระบวนการคิด ======================
+function mindmapEl() {
+  const m = DATA.MINDMAP;
+  return h('div', { class: 'card' }, h('h3', {}, `🗺️ แผนผังความคิด: ${m.root}`),
+    h('div', { class: 'mmap' }, m.branches.map((b, i) => h('div', { class: 'mmb', style: `--bc:${b.color}` }, h('b', {}, `${i + 1}. ${b.name}`),
+      h('ul', {}, b.items.map((x) => h('li', {}, x))), h('small', { class: 'muted' }, `ในเกม: ${b.game}`)))));
+}
+function processEl(only) {
+  const list = only == null ? DATA.CREATIVE_PROCESS : [DATA.CREATIVE_PROCESS[only]];
+  return h('div', { class: 'card', style: 'background:color-mix(in srgb,var(--gold) 12%,var(--raised))' },
+    h('h3', {}, only == null ? '★ กระบวนการคิดสร้างสรรค์ 4 ขั้น (Guilford · จารุณี ซามาตย์)' : `★ กระบวนการคิดขั้นที่ ${only + 1}: ${list[0].step}`),
+    list.map((c) => h('div', {}, h('b', { style: `color:${c.color}` }, `${c.shape} ${c.step} — ${c.area}`), only == null ? h('div', { class: 'muted', style: 'font-size:14px' }, c.def) : null,
+      h('ul', { style: 'margin:4px 0 0;padding-left:20px' }, c.ask.map((q) => h('li', {}, q))))),
+    h('div', { style: 'font-size:14px' }, h('b', {}, 'ถูกก่อน แล้วค่อยแปลก: '), DATA.PROCESS_RULE.split(':')[1]));
+}
+// ====================== ฐานการช่วยเหลือ 4 ด้าน ======================
+function openScaffolds() {
+  openModal({ title: '🛟 ฐานการช่วยเหลือ 4 ด้าน', color: 'var(--ink)', onClose: () => render(),
+    body: [h('p', { style: 'margin:0' }, 'เปิดอ่านได้ทุกเมื่อ ไม่ต้องใช้โทเคน ถ้ายังติด เปิดการ์ดคำใบ้ในภารกิจ หรือกด "ปรึกษาครูฮูก"'),
+      h('div', { class: 'grid2' }, DATA.SCAFFOLDS.map((sc) => h('div', { class: 'card', style: `border-color:${sc.color}` },
+        h('h3', { style: `color:${sc.color}` }, h('span', { class: 'emoji' }, sc.icon), ` ${sc.name}`), h('span', { class: 'muted', style: 'font-size:13px' }, sc.en),
+        sc.cards.map(([t, b]) => h('div', { style: 'font-size:15px' }, h('b', {}, t), h('div', {}, b.split(' · ').map((x) => h('div', {}, '• ' + x)))))))) ] });
+}
+// ====================== ศูนย์แลกเปลี่ยนเรียนรู้: กระดานแลกเปลี่ยน ======================
+function postBoard(who, text, src) {
+  if (!text || !text.trim()) return;
+  S.board = S.board || [];
+  S.board.unshift({ id: uid++, who, text: text.trim(), src, wow: [], replies: [] });
+  S.board = S.board.slice(0, 60);
+}
+function openBoard() {
+  S.board = S.board || [];
+  const list = h('div', { class: 'col', style: 'display:flex;flex-direction:column;gap:10px' });
+  const people = [...S.players.map((p) => p.name), 'ครู (ผู้เชี่ยวชาญ)'];
+  const draw = () => {
+    list.innerHTML = '';
+    if (!S.board.length) list.append(h('p', { class: 'muted', style: 'margin:0' }, 'ยังไม่มีโพสต์ ประโยคจากทอยประโยคและภารกิจสร้างสรรค์จะขึ้นที่นี่อัตโนมัติ หรือโพสต์เองด้านบน'));
+    S.board.forEach((post) => {
+      let kind = 'ถาม'; let by = people[0];
+      const inp = h('input', { type: 'text', placeholder: 'พิมพ์คำถามหรือข้อเสนอแนะ', style: 'flex:1;min-width:160px;font:inherit;padding:8px 10px;border-radius:10px;border:2px solid var(--line);background:var(--raised);color:var(--ink)' });
+      const sel = h('select', { 'aria-label': 'ผู้ตอบ', style: 'font:inherit;padding:6px;border-radius:10px;border:2px solid var(--line);background:var(--raised);color:var(--ink)', onchange: (e) => { by = e.target.value; } }, people.map((n) => h('option', {}, n)));
+      const kindSel = h('select', { 'aria-label': 'ชนิด', style: 'font:inherit;padding:6px;border-radius:10px;border:2px solid var(--line);background:var(--raised);color:var(--ink)', onchange: (e) => { kind = e.target.value; } }, ['ถาม', 'เสนอแนะ', 'ครูชี้แนะ'].map((n) => h('option', {}, n)));
+      list.append(h('div', { class: 'card' },
+        h('div', { class: 'row', style: 'justify-content:space-between' }, h('b', {}, `${post.who}`), h('span', { class: 'chip' }, post.src)),
+        h('div', { style: 'font:500 18px var(--display);white-space:pre-line' }, post.text),
+        post.replies.map((r) => h('div', { style: 'font-size:15px' }, h('b', {}, { 'ถาม': '🙋 ', 'เสนอแนะ': '💡 ', 'ครูชี้แนะ': '🦉 ' }[r.kind] + r.by + ': '), r.text)),
+        h('div', { class: 'row' },
+          h('button', { class: 'btn small', type: 'button', onclick: () => { post.wow.push(by); save(); draw(); } }, `🌟 ว้าว ${post.wow.length || ''}`),
+          sel, kindSel, inp,
+          h('button', { class: 'btn small primary', type: 'button', onclick: () => { if (!inp.value.trim()) return; post.replies.push({ by, kind, text: inp.value.trim() }); save(); draw(); } }, 'ตอบ'))));
+    });
+  };
+  const newText = h('textarea', { placeholder: 'โพสต์ประโยคหรือความคิดของเรา', 'aria-label': 'โพสต์ใหม่', style: 'min-height:60px' });
+  const poster = h('select', { 'aria-label': 'ผู้โพสต์', style: 'font:inherit;padding:6px;border-radius:10px;border:2px solid var(--line);background:var(--raised);color:var(--ink)' }, people.map((n) => h('option', {}, n)));
+  draw();
+  openModal({ title: '🗣 กระดานแลกเปลี่ยนความคิด', color: 'var(--teal)', onClose: () => render(),
+    body: [h('p', { style: 'margin:0' }, 'ตอบเพื่อนด้วยประโยคที่สุภาพ: ชอบตรงไหน (ว้าว) · สงสัยอะไร (ถาม) · เพิ่มอะไรให้ชัดขึ้น (เสนอแนะ) · ครูในฐานะผู้เชี่ยวชาญเขียนชี้แนะได้'),
+      h('div', { class: 'row' }, poster, newText, h('button', { class: 'btn teal', type: 'button', onclick: () => { postBoard(poster.value, newText.value, 'โพสต์เอง'); newText.value = ''; save(); draw(); } }, 'โพสต์')),
+      list] });
+}
+// ====================== การโค้ช: ปรึกษาครูฮูก (แนะนำด้านกลยุทธ์ตามสถานะผู้เล่น) ======================
+function openConsult() {
+  const p = P(); const tips = [];
+  const empty = DATA.TYPES.filter((t) => !p.city[t.id].some(Boolean));
+  const roles = { S: 0, V: 0, O: 0 }; p.hand.forEach((t) => { if (roles[t.r] != null) roles[t.r]++; });
+  const missing = Object.entries(roles).filter(([, n]) => n === 0).map(([r]) => ({ S: 'ประธาน', V: 'กริยา', O: 'กรรม' })[r]);
+  if (missing.length) tips.push(`ในมือยังไม่มีบล็อก${missing.join(' และ ')} ลองไปตลาดแลกคำ หรือขอแลกด้วยประโยคขอร้อง`);
+  if (empty.length) tips.push(`ย่านที่ยังไม่มีบ้าน: ${empty.map((t) => t.name).join(' · ')} เก็บแก้วสีของย่านนั้นที่ร้านแก้วสี แล้วแต่งประโยคประเภทนั้น`);
+  if (p.res.wood < 1 || p.res.brick < 1) tips.push('กระท่อมต้องใช้ไม้ 1 อิฐ 1 และแก้วสีของย่าน ลองทอยประโยคที่ป่าไม้หรือเตาอิฐ');
+  if (p.builtLv2 >= 3 && !p.plainDock) tips.push('สร้างบ้านระดับ 2 ได้หลายหลังแล้ว ลองพลิกแท่นวางเป็นด้านเปล่าเพื่อท้าทายตัวเอง');
+  if (p.res.spark >= 1) tips.push('มีประกายคิดแล้ว สร้างหอคอย (ประธาน + กริยา + กรรม + ส่วนขยาย 2 ส่วน) เพื่อฝึกคิดให้ละเอียด');
+  const next = DATA.CREATIVE_PROCESS[Math.min(S.creative.m, 3)];
+  tips.push(`ภารกิจสร้างสรรค์ถัดไปฝึก "${next.step}" ลองถามตัวเอง: ${next.ask[0]}`);
+  openModal({ title: `🦉 ปรึกษาครูฮูก · ${p.name}`, color: 'var(--t-command)', onClose: () => render(),
+    body: [owlEl('มาวางแผนกันนะ ครูจะไม่เฉลย แต่ช่วยคิดว่าขั้นต่อไปควรทำอะไร'),
+      h('div', { class: 'card' }, h('h3', {}, 'คำแนะนำสำหรับตอนนี้'), h('ol', { style: 'margin:0;padding-left:20px' }, tips.map((t) => h('li', {}, t)))),
+      h('div', { class: 'card' }, h('h3', {}, 'ลองตอบครูฮูกในใจ'), h('ul', { style: 'margin:0;padding-left:20px' }, DATA.SCAFFOLDS.find((x) => x.id === 'metacognitive').cards.map(([t, b]) => h('li', {}, h('b', {}, t + ': '), b)))),
+      h('p', { class: 'muted', style: 'margin:0;font-size:14px' }, 'การโค้ช 3 บทบาท: ' + DATA.COACH_ROLES.map(([r]) => r).join(' · '))] });
+}
+function openStory() {
+  openModal({ title: '❗ สถานการณ์ปัญหา', color: 'var(--subj)', onClose: () => render(),
+    body: [h('p', { class: 'task', style: 'margin:0' }, 'Block World อาณาจักรนักสร้างโลกแห่งคำ มี 3 โซน คือ โซน 1 การสร้างประโยค (เกาะโรงเรียน) โซน 2 การขยายประโยค (ทุ่งนา) และโซน 3 การใช้ภาษา (ตลาด) ทุกสิ่งต่อขึ้นจากบล็อกคำ แต่สัตว์ประหลาด "ยุ่งเหยิง" กินลำดับคำและธงประเภทประโยค ป้ายจึงอ่านไม่รู้เรื่อง บ้านพัง สะพานขาด'),
+      h('div', { class: 'sign' }, 'ปลา · แมว · กิน'), owlEl('ป้ายนี้ผิดตรงไหน? ใครเป็นคนทำ ทำอะไร กับอะไร? ช่วยกันซ่อมป้ายและต่อเมืองให้กลับมาสวยงามนะ'),
+      h('div', { class: 'card' }, h('h3', {}, `มาตรวัดความสับสนตอนนี้: ${S.meter} / 12`), h('span', { style: 'font-size:15px' }, 'ถึง 4 และ 8 ยุ่งเหยิงโจมตี ถึง 12 ทุกคนแพ้ สร้างสิ่งมหัศจรรย์สำเร็จ 1 แห่ง มาตรวัด −3'))] });
+}
+function openTools() {
+  openModal({ title: '🧠 เครื่องมือทางปัญญา', color: '#7a4a96', onClose: () => render(),
+    body: [houseOf(['S:แมว', 'V:กิน', 'O:ปลา']),
+      h('ul', { style: 'margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px' },
+        h('li', {}, h('b', {}, 'บล็อกคำ 3 สี: '), 'แดง ▲ ประธาน · เหลือง ➜ กริยา · น้ำเงิน ● กรรม · ส่วนขยาย · คำเปลี่ยนร่าง'),
+        h('li', {}, h('b', {}, 'แท่นวางประโยค + ธงประเภท: '), 'วางเรียงซ้ายไปขวา ลองสลับ แล้วกดตรวจ'),
+        h('li', {}, h('b', {}, 'ทอยประโยค: '), 'ลูกเต๋าใคร + กริยาบนช่อง + การ์ดเวลา 4 กาล + ลูกเต๋าประเภทประโยค'),
+        h('li', {}, h('b', {}, 'ลูกเต๋าเรื่องเล่า: '), 'ภาพ 9 ลูกสำหรับภารกิจคิดริเริ่ม')),
+      S.phase === 'act' && !S.built ? h('button', { class: 'btn gold', type: 'button', onclick: () => { closeModal(); openBuild(); } }, '🏗 ไปต่อบล็อกสร้างบ้าน') : null] });
+}
+function openCreativeCenter() {
+  const p = P();
+  openModal({ title: '🎨 ศูนย์ส่งเสริมการคิดสร้างสรรค์', color: 'var(--gold)', onClose: () => render(),
+    body: [processEl(), h('div', { class: 'card' }, h('h3', {}, `ความก้าวหน้าของ${p.name}`),
+      h('div', { class: 'tower' }, DATA.TOWER.badges.map(([e, en, th, col], k) => h('span', { class: 'tb', style: `--bc:${col}` }, h('span', { class: 'emoji' }, e), ` ${th} ดาว `, h('b', {}, p.stars[k])))),
+      h('span', { class: 'muted', style: 'font-size:14px' }, `ภารกิจถัดไป: ${S.creative.m < 4 ? `${DATA.CREATIVE[S.creative.m].area} · ${DATA.STAGES[S.creative.s]}` : 'ครบทุกด่านแล้ว'} — หยุดที่ช่อง ★ เพื่อเล่น`))] });
+}
 function openLibrary() {
   openModal({ title: '📚 คลังความรู้: ประโยคและบ้านประโยค', color: 'var(--ink)', onClose: () => render(),
-    body: [houseOf(['S:ประธาน · ใคร?', 'V:กริยา · ทำอะไร?', 'O:กรรม · กับอะไร?']),
+    body: [mindmapEl(), processEl(), houseOf(['S:ประธาน · ใคร?', 'V:กริยา · ทำอะไร?', 'O:กรรม · กับอะไร?']),
       h('p', { style: 'margin:0' }, 'ประโยคต้องได้ใจความ มี "ใคร" (ภาคประธาน) และ "ทำอะไร" (ภาคแสดง) ถ้ากริยาต้องมีผู้ถูกกระทำ ให้เติม "กับอะไร" (กรรม) ส่วนขยายบอก ลักษณะ การกระทำ เวลา และสถานที่ เช่น แมวสีส้ม กินปลา บนโต๊ะ'),
       h('div', { class: 'grid2' }, [...DATA.RESOURCES.map((r) => h('button', { class: 'card', type: 'button', style: 'text-align:left;cursor:pointer', onclick: () => openLesson(r.id) }, h('h3', {}, h('span', { class: 'emoji' }, r.icon), ` เรื่อง${r.teaches}`), h('span', { class: 'muted', style: 'font-size:14px' }, r.chunk))),
         ...DATA.TYPES.map((t) => h('button', { class: 'card', type: 'button', style: 'text-align:left;cursor:pointer', onclick: () => openLesson(t.id) }, h('h3', {}, h('span', { style: `color:${TCOL(t.id)}` }, t.sym), ` ประโยค${t.name}`), h('span', { class: 'muted', style: 'font-size:14px' }, `คำสังเกต: ${t.cue}`)))])] });
@@ -1108,13 +1388,16 @@ function openLibrary() {
 function openRules() {
   openModal({ title: 'กติกาย่อ', color: 'var(--ink)', onClose: () => (S ? render() : null),
     body: [h('ol', { style: 'margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px' },
+      h('li', {}, h('b', {}, 'วงจรการเล่น: '), DATA.LOOP.map(([, t]) => t).join(' → ')),
       h('li', {}, h('b', {}, 'สำรวจ: '), 'ทอยเต๋า เดินตามเข็มนาฬิกา ทำตามช่องที่หยุด'),
+      h('li', {}, h('b', {}, 'ทอยประโยค 🎲: '), 'หยุดที่ช่องทรัพยากร ทอยลูกเต๋าใคร + ลูกเต๋าประเภทประโยค และจั่วการ์ดเวลา (ทำไปแล้ว · ทำเป็นประจำ · กำลังทำ · จะทำ) แล้วต่อประโยคด้วยกริยาบนช่อง ผ่าน = ทรัพยากร + บล็อกคำ 2 ใบ ใส่การ์ดขยายเพิ่มได้ถูก = บล็อกเพิ่ม 1 ยังไม่ผ่านก็ยังได้ทรัพยากร'),
       h('li', {}, h('b', {}, 'สร้าง/อัปเกรด: '), 'ต่อบล็อกคำบนแท่นวาง ปักธงประเภท ผู้ตรวจป้ายถาม ใคร? ทำอะไร? กับอะไร? แล้วจ่ายทรัพยากร (ไม้ อิฐ หิน แก้วสีของย่าน และประกายคิดสำหรับหอคอย)'),
       h('li', {}, h('b', {}, 'ระดับ: '), DATA.COST.map((c) => `${c.name} = ${c.parts} (${c.points} แต้ม)`).join(' · ')),
       h('li', {}, h('b', {}, 'ยุ่งเหยิง: '), 'ทอยได้ 1 หรือเจอพายุ มาตรวัดขึ้น ถึง 4 และ 8 ทุกคนเลือกบ้านให้พัง 1 หลัง (ซ่อมได้ในเทิร์นตัวเอง) ถึง 12 ทุกคนแพ้'),
       h('li', {}, h('b', {}, 'ภารกิจสร้างสรรค์ ★: '), 'ทุกคนเล่นพร้อมกันตามตารางที่ 2 (4 ด้าน × 3 ด่าน) ผ่านด่านได้ประกายคิดและดาว'),
       h('li', {}, h('b', {}, 'ภารกิจร่วม 🤝: '), 'ช่วยกันสร้างสิ่งมหัศจรรย์ ครบ 3 ด่าน มาตรวัด −3 สร้างครบ 3 แห่ง ทุกคนชนะยุ่งเหยิง!'),
       h('li', {}, h('b', {}, 'จบเกม: '), 'สิ่งมหัศจรรย์ครบ 3 แห่ง · มีคนสร้างครบ 5 ย่าน (เล่นจนจบรอบ) · หรือกด "จบเกม" เมื่อหมดคาบ แล้วเล่านิทานเมืองของฉัน')),
+      h('p', { style: 'margin:0' }, h('b', {}, '7 องค์ประกอบ: '), 'สถานการณ์ปัญหา · ศูนย์การเรียนรู้ (คลังความรู้ แผนผังความคิด) · เครื่องมือทางปัญญา (บล็อกคำ แท่นวาง ลูกเต๋า) · ศูนย์แลกเปลี่ยนเรียนรู้ (ภารกิจร่วม ตลาด กระดานแลกเปลี่ยน) · ศูนย์ส่งเสริมการคิดสร้างสรรค์ (ช่อง ★) · ฐานการช่วยเหลือ (คำใบ้ และฐานช่วยเหลือ 4 ด้าน) · การโค้ช (ครูฮูก ปรึกษาครูฮูก)'),
       owlEl('ติดเมื่อไหร่ ครูฮูกจะถามคำถามช่วยคิด และเปิดการ์ดคำใบ้ได้ด้วยโทเคนคำใบ้ การขอความช่วยเหลือไม่เสียแต้มนะ')] });
 }
 
