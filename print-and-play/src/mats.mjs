@@ -1,6 +1,7 @@
 // กระดานเมืองส่วนตัว 4 แผ่น + แท่นวางประโยค (ด้านมีสี/ด้านเปล่า) + แท่นยักษ์ร่วม — A4 แนวนอน
 import { doc, esc, arMarker } from './lib.mjs';
-import { TYPES, PLAYERS, COST } from './data.mjs';
+import { TYPES, PLAYERS, COST, TITLE } from './data.mjs';
+import { MINDMAP, CREATIVE_PROCESS } from './design.mjs';
 
 const css = `
 @page{size:297mm 210mm;margin:0}
@@ -76,9 +77,44 @@ function coopDock(part) {
 <div class="lvls"><span>บทบาท: <b>นักหาประธาน · นักหากริยา · นักหากรรม · ผู้ตรวจธง</b> (หมุนเวียนทุกภารกิจ)</span></div></div>`;
 }
 
+// แผนผังความคิด (ศูนย์การเรียนรู้) และกระดานแลกเปลี่ยนความคิด (ศูนย์แลกเปลี่ยนเรียนรู้)
+const posterCss = `
+.mm{position:relative;height:178mm}
+.mm .root{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:62mm;height:30mm;border-radius:15mm;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font:600 17pt var(--font-display);z-index:2}
+.mm svg{position:absolute;inset:0;width:100%;height:100%}
+.mm .br{position:absolute;width:76mm;border-radius:4mm;border:.7mm solid;background:#fff;padding:2.4mm 3mm;transform:translate(-50%,-50%)}
+.mm .br b{display:block;font:500 12pt/1.2 var(--font-display);margin-bottom:1mm}
+.mm .br li{font-size:9pt;line-height:1.35}
+.mm .br ul{margin:0;padding-left:4mm}
+.mm .br small{display:block;margin-top:1.2mm;font-size:7.4pt;color:var(--ink-muted)}
+.xb{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;height:150mm}
+.xb .col{border:.5mm solid var(--line);border-radius:3mm;display:flex;flex-direction:column;overflow:hidden}
+.xb .col h3{margin:0;color:#fff;padding:2mm 3mm;font:500 11pt/1.2 var(--font-display)}
+.xb .col .q{font-size:7.6pt;color:var(--ink-muted);padding:1.4mm 3mm;border-bottom:.3mm dashed var(--line)}
+.xb .col .slots{flex:1;display:grid;grid-template-rows:repeat(4,1fr);gap:2mm;padding:2mm}
+.xb .col .slots div{border:.4mm dashed #c9bfa8;border-radius:2mm;font-size:6.6pt;color:var(--ink-muted);padding:1mm 1.6mm}
+.legend2{display:flex;gap:5mm;font-size:9pt;margin-top:3mm;align-items:center;flex-wrap:wrap}
+.legend2 span{border:.4mm solid var(--line);border-radius:9mm;padding:.6mm 3mm}
+`;
+function mindmapPage() {
+  const pos = [[18, 22], [50, 13], [82, 22], [18, 78], [50, 87], [82, 78]];
+  const lines = MINDMAP.branches.map((b, i) => `<line x1="50" y1="50" x2="${pos[i][0]}" y2="${pos[i][1]}" stroke="${b.color}" stroke-width=".9"/>`).join('');
+  const brs = MINDMAP.branches.map((b, i) => `<div class="br" style="left:${pos[i][0]}%;top:${pos[i][1]}%;border-color:${b.color}"><b style="color:${b.color}">${i + 1}. ${esc(b.name)}</b><ul>${b.items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul><small>ในเกม: ${esc(b.game)}</small></div>`).join('');
+  return `<div class="page"><div class="head"><h1>แผนผังความคิด: การแต่งประโยค</h1><div class="who" style="border:0">ศูนย์การเรียนรู้ · ${esc(TITLE)}</div></div>
+<div class="mm"><svg viewBox="0 0 100 100" preserveAspectRatio="none">${lines}</svg><div class="root">${esc(MINDMAP.root)}</div>${brs}</div>
+<div class="pnote">โปสเตอร์แผนผังความคิด — ติดไว้ข้างกระดาน ใช้ค้นหาความรู้เมื่อแก้สถานการณ์ปัญหา</div></div>`;
+}
+function exchangePage() {
+  const cols = [['📝 ประโยคของฉัน', '#2a2233', 'ติดกระดาษโน้ต: ประโยคจากภารกิจ + ชื่อ'], ['🌟 ว้าว!', '#b03a72', 'เพื่อนชอบตรงไหน? ใหม่ ไม่ซ้ำใคร?'], ['🙋 คำถาม', '#b4541a', 'เพื่อนสงสัยอะไร? ใคร ทำอะไร เมื่อไร ที่ไหน?'], ['💡 ข้อเสนอแนะ / ครูชี้แนะ', '#1d4a9e', 'เพิ่มอะไรให้ชัดขึ้น? ครู (ผู้เชี่ยวชาญ) เขียนชี้แนะ']];
+  return `<div class="page"><div class="head"><h1>กระดานแลกเปลี่ยนความคิด</h1><div class="who" style="border:0">ศูนย์แลกเปลี่ยนเรียนรู้ · ใช้หลังภารกิจสร้างสรรค์ทุกด่าน</div></div>
+<div class="xb">${cols.map(([t, c, q]) => `<div class="col"><h3 style="background:${c}">${t}</h3><div class="q">${q}</div><div class="slots">${'<div>ติดโน้ตที่นี่</div>'.repeat(4)}</div></div>`).join('')}</div>
+<div class="legend2"><b>คิดแบบไหน?</b>${CREATIVE_PROCESS.map((c) => `<span style="border-color:${c.color}">${c.shape} ${esc(c.step)}</span>`).join('')}<span>ตอบเพื่อนด้วยประโยคที่สุภาพ</span></div>
+<div class="pnote">กระดานแลกเปลี่ยนความคิด — พิมพ์ A4 หรือขยาย A3 ติดผนัง ใช้กระดาษโน้ตกาวในตัว</div></div>`;
+}
+
 export function matsHtml() {
   const mats = PLAYERS.map(cityMat).join('');
   const docks = [1, 3].map((n) => `<div class="page">${dock(false, n)}${dock(false, n + 1)}<div class="pnote">แท่นวางประโยค ด้านมีสี — พิมพ์สองหน้าคู่กับหน้าถัดไป (พลิกขอบยาว) หรือพิมพ์แยกแล้วติดหลังชนกัน</div></div>
 <div class="page">${dock(true, n)}${dock(true, n + 1)}<div class="pnote">แท่นวางประโยค ด้านไม่มีสี (ด้านหลัง)</div></div>`).join('');
-  return doc('กระดานเมืองและแท่นวางประโยค', css, mats + docks + `<div class="page">${coopDock(1)}${coopDock(2)}<div class="pnote">แท่นยักษ์ร่วม</div></div>`);
+  return doc('กระดานเมืองและแท่นวางประโยค', css + posterCss, mats + docks + `<div class="page">${coopDock(1)}${coopDock(2)}<div class="pnote">แท่นยักษ์ร่วม</div></div>` + mindmapPage() + exchangePage());
 }

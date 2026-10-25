@@ -59,6 +59,7 @@ export function tokensHtml() {
     circle('#4a2a5e', '#fff', '👾', 'มาตรวัด'),
     ...Array(9).fill(circle('#fff', '#17767a', '✓', 'มหัศจรรย์', false)),
     ...Array(12).fill(circle('#fff', '#b47513', '✓', 'สร้างสรรค์', false)),
+    ...Array(4).fill(circle('#1f2a44', '#fff', '🦉', 'ปรึกษาครู')),
   ];
   const tokenPages = chunk(tokens, 88).map((p, i, a) => `<div class="page"><h2>โทเคน ${i + 1}/${a.length}</h2><div class="grid">${p.join('')}</div>
 <div class="pnote">ตัดตามวงกลม/รูปทรง · ติดบนกระดาษแข็งหรือใช้ตัวเจาะกระดาษ 1 นิ้ว</div></div>`);

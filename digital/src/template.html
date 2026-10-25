@@ -78,6 +78,10 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus
 .cell .vb{position:absolute;top:1px;left:3px;background:var(--verb);color:var(--on-light);border-radius:5px;padding:0 4px;font:500 clamp(7px,.8vw,10px)/1.4 var(--display)}
 @media (max-width:640px){.cell .vb{display:none}}
 .rolldie{min-width:78px;height:78px;padding:0 8px;border-radius:14px;border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font:600 20px/1.1 var(--display);text-align:center}
+.mmap{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.mmb{border:2px solid var(--bc);border-left-width:8px;border-radius:10px;padding:8px 10px;font-size:14px}
+.mmb b{color:var(--bc);font-family:var(--display);font-weight:500;font-size:15px}
+.mmb ul{margin:4px 0;padding-left:18px}
 .rolldie small{font:400 12px var(--body);opacity:.9}
 .pawns{position:absolute;bottom:2px;left:2px;right:2px;display:flex;flex-wrap:wrap;gap:1px;justify-content:center}
 .pawn{width:clamp(14px,1.9vw,22px);height:clamp(14px,1.9vw,22px);border-radius:50%;border:2px solid #fff;font-size:clamp(9px,1.1vw,13px);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,.35);transition:transform .2s}
@@ -404,6 +408,9 @@ function render() {
       wonders,
       h('div', { class: 'menu' },
         h('button', { class: 'btn small', type: 'button', onclick: () => openLibrary() }, '📚 คลังความรู้'),
+        h('button', { class: 'btn small', type: 'button', onclick: () => openScaffolds() }, '🛟 ฐานช่วยเหลือ'),
+        h('button', { class: 'btn small', type: 'button', onclick: () => openBoard() }, `🗣 กระดานแลกเปลี่ยน${S.board && S.board.length ? ` (${S.board.length})` : ''}`),
+        h('button', { class: 'btn small', type: 'button', onclick: () => openConsult() }, '🦉 ปรึกษาครูฮูก'),
         h('button', { class: 'btn small', type: 'button', onclick: openRules }, 'กติกา'),
         h('button', { class: 'btn small', type: 'button', onclick: confirmEnd }, 'จบเกม'))),
     h('div', { class: 'main' }, boardEl(cur), sideEl())));
@@ -627,6 +634,7 @@ function openRoll(k) {
       owlSlot.innerHTML = ''; owlSlot.append(owlEl(coachQ(attempt ? 'ทำถูกแล้ว' : 'ทำถูกเร็วมาก', 0)));
       if (helper) { helper.res.helper++; helper.res.hint++; log(`${helper.name} ช่วยถามเพื่อนจนสำเร็จ ได้มือช่วย 1`); }
       log(`${p.name} ทอยประโยค: "${sentenceText(dock)}" ได้${name} 1 และบล็อกคำ ${n} ใบ`);
+      postBoard(p.name, sentenceText(dock), '🎲 ทอยประโยค');
       actions.innerHTML = '';
       actions.append(h('button', { class: 'btn primary', type: 'button', onclick: () => { closeModal(); lessonNudge(glassType || k); } }, 'รับรางวัล'));
       return;
@@ -995,7 +1003,7 @@ function openCreative() {
     title: `★ ภารกิจที่ ${c.id} ${c.area} · ${DATA.STAGES[s]}`, color: 'var(--gold)', closable: false,
     body: [
       h('div', { class: 'row' }, h('span', { class: 'emoji', style: 'font-size:42px;white-space:nowrap' }, c.emoji), h('div', {}, h('b', { style: 'font-family:var(--display);font-weight:500' }, c.scene), h('div', { class: 'muted', style: 'font-size:14px' }, c.sceneText))),
-      h('p', { class: 'task', style: 'margin:0' }, task), extraNote, c.roll ? cubesUI(c, s) : null,
+      processEl(S.creative.m), h('p', { class: 'task', style: 'margin:0' }, task), extraNote, c.roll ? cubesUI(c, s) : null,
       h('div', { class: 'row', style: 'justify-content:space-between' }, h('span', { class: 'chip' }, `ตัวบ่งชี้ ${ind}`), h('div', { class: 'row' }, tm, startBtn)),
       owlEl('ทุกคนเขียนพร้อมกันนะ! จำไว้ว่า "ถูกก่อน แล้วค่อยแปลก" นับเฉพาะประโยคที่มีภาคประธานและภาคแสดงครบ และได้ใจความ'),
       h('div', { class: 'grid2' }, cards),
@@ -1023,6 +1031,7 @@ function openCreative() {
       p.crPass[c.id] = (p.crPass[c.id] || 0) + 1;
       lines.push(`${p.name}: ผ่าน! ประกายคิด +${spark} ดาว${c.shape} +1${x.dup ? ' (มีประโยคซ้ำกับเพื่อน จึงไม่ได้โบนัสริเริ่ม)' : ''}`);
     });
+    per.forEach((x) => postBoard(x.p.name, x.text, `★ ${c.area.replace('การคิด', '')} ด่าน ${s + 1}`));
     S.creative.s++;
     if (S.creative.s >= 3) { S.creative.s = 0; S.creative.m++; }
     log(`ภารกิจสร้างสรรค์ ${c.area} ${DATA.STAGES[s]} จบแล้ว`);
@@ -1209,9 +1218,88 @@ function lessonType(t) {
     },
   ];
 }
+// ====================== ศูนย์การเรียนรู้: แผนผังความคิด / ศูนย์ส่งเสริมการคิดสร้างสรรค์: กระบวนการคิด ======================
+function mindmapEl() {
+  const m = DATA.MINDMAP;
+  return h('div', { class: 'card' }, h('h3', {}, `🗺️ แผนผังความคิด: ${m.root}`),
+    h('div', { class: 'mmap' }, m.branches.map((b, i) => h('div', { class: 'mmb', style: `--bc:${b.color}` }, h('b', {}, `${i + 1}. ${b.name}`),
+      h('ul', {}, b.items.map((x) => h('li', {}, x))), h('small', { class: 'muted' }, `ในเกม: ${b.game}`)))));
+}
+function processEl(only) {
+  const list = only == null ? DATA.CREATIVE_PROCESS : [DATA.CREATIVE_PROCESS[only]];
+  return h('div', { class: 'card', style: 'background:color-mix(in srgb,var(--gold) 12%,var(--raised))' },
+    h('h3', {}, only == null ? '★ กระบวนการคิดสร้างสรรค์ 4 ขั้น (Guilford · จารุณี ซามาตย์)' : `★ กระบวนการคิดขั้นที่ ${only + 1}: ${list[0].step}`),
+    list.map((c) => h('div', {}, h('b', { style: `color:${c.color}` }, `${c.shape} ${c.step} — ${c.area}`), only == null ? h('div', { class: 'muted', style: 'font-size:14px' }, c.def) : null,
+      h('ul', { style: 'margin:4px 0 0;padding-left:20px' }, c.ask.map((q) => h('li', {}, q))))),
+    h('div', { style: 'font-size:14px' }, h('b', {}, 'ถูกก่อน แล้วค่อยแปลก: '), DATA.PROCESS_RULE.split(':')[1]));
+}
+// ====================== ฐานการช่วยเหลือ 4 ด้าน ======================
+function openScaffolds() {
+  openModal({ title: '🛟 ฐานการช่วยเหลือ 4 ด้าน', color: 'var(--ink)', onClose: () => render(),
+    body: [h('p', { style: 'margin:0' }, 'เปิดอ่านได้ทุกเมื่อ ไม่ต้องใช้โทเคน ถ้ายังติด เปิดการ์ดคำใบ้ในภารกิจ หรือกด "ปรึกษาครูฮูก"'),
+      h('div', { class: 'grid2' }, DATA.SCAFFOLDS.map((sc) => h('div', { class: 'card', style: `border-color:${sc.color}` },
+        h('h3', { style: `color:${sc.color}` }, h('span', { class: 'emoji' }, sc.icon), ` ${sc.name}`), h('span', { class: 'muted', style: 'font-size:13px' }, sc.en),
+        sc.cards.map(([t, b]) => h('div', { style: 'font-size:15px' }, h('b', {}, t), h('div', {}, b.split(' · ').map((x) => h('div', {}, '• ' + x)))))))) ] });
+}
+// ====================== ศูนย์แลกเปลี่ยนเรียนรู้: กระดานแลกเปลี่ยน ======================
+function postBoard(who, text, src) {
+  if (!text || !text.trim()) return;
+  S.board = S.board || [];
+  S.board.unshift({ id: uid++, who, text: text.trim(), src, wow: [], replies: [] });
+  S.board = S.board.slice(0, 60);
+}
+function openBoard() {
+  S.board = S.board || [];
+  const list = h('div', { class: 'col', style: 'display:flex;flex-direction:column;gap:10px' });
+  const people = [...S.players.map((p) => p.name), 'ครู (ผู้เชี่ยวชาญ)'];
+  const draw = () => {
+    list.innerHTML = '';
+    if (!S.board.length) list.append(h('p', { class: 'muted', style: 'margin:0' }, 'ยังไม่มีโพสต์ ประโยคจากทอยประโยคและภารกิจสร้างสรรค์จะขึ้นที่นี่อัตโนมัติ หรือโพสต์เองด้านบน'));
+    S.board.forEach((post) => {
+      let kind = 'ถาม'; let by = people[0];
+      const inp = h('input', { type: 'text', placeholder: 'พิมพ์คำถามหรือข้อเสนอแนะ', style: 'flex:1;min-width:160px;font:inherit;padding:8px 10px;border-radius:10px;border:2px solid var(--line);background:var(--raised);color:var(--ink)' });
+      const sel = h('select', { 'aria-label': 'ผู้ตอบ', style: 'font:inherit;padding:6px;border-radius:10px;border:2px solid var(--line);background:var(--raised);color:var(--ink)', onchange: (e) => { by = e.target.value; } }, people.map((n) => h('option', {}, n)));
+      const kindSel = h('select', { 'aria-label': 'ชนิด', style: 'font:inherit;padding:6px;border-radius:10px;border:2px solid var(--line);background:var(--raised);color:var(--ink)', onchange: (e) => { kind = e.target.value; } }, ['ถาม', 'เสนอแนะ', 'ครูชี้แนะ'].map((n) => h('option', {}, n)));
+      list.append(h('div', { class: 'card' },
+        h('div', { class: 'row', style: 'justify-content:space-between' }, h('b', {}, `${post.who}`), h('span', { class: 'chip' }, post.src)),
+        h('div', { style: 'font:500 18px var(--display);white-space:pre-line' }, post.text),
+        post.replies.map((r) => h('div', { style: 'font-size:15px' }, h('b', {}, { 'ถาม': '🙋 ', 'เสนอแนะ': '💡 ', 'ครูชี้แนะ': '🦉 ' }[r.kind] + r.by + ': '), r.text)),
+        h('div', { class: 'row' },
+          h('button', { class: 'btn small', type: 'button', onclick: () => { post.wow.push(by); save(); draw(); } }, `🌟 ว้าว ${post.wow.length || ''}`),
+          sel, kindSel, inp,
+          h('button', { class: 'btn small primary', type: 'button', onclick: () => { if (!inp.value.trim()) return; post.replies.push({ by, kind, text: inp.value.trim() }); save(); draw(); } }, 'ตอบ'))));
+    });
+  };
+  const newText = h('textarea', { placeholder: 'โพสต์ประโยคหรือความคิดของเรา', 'aria-label': 'โพสต์ใหม่', style: 'min-height:60px' });
+  const poster = h('select', { 'aria-label': 'ผู้โพสต์', style: 'font:inherit;padding:6px;border-radius:10px;border:2px solid var(--line);background:var(--raised);color:var(--ink)' }, people.map((n) => h('option', {}, n)));
+  draw();
+  openModal({ title: '🗣 กระดานแลกเปลี่ยนความคิด', color: 'var(--teal)', onClose: () => render(),
+    body: [h('p', { style: 'margin:0' }, 'ตอบเพื่อนด้วยประโยคที่สุภาพ: ชอบตรงไหน (ว้าว) · สงสัยอะไร (ถาม) · เพิ่มอะไรให้ชัดขึ้น (เสนอแนะ) · ครูในฐานะผู้เชี่ยวชาญเขียนชี้แนะได้'),
+      h('div', { class: 'row' }, poster, newText, h('button', { class: 'btn teal', type: 'button', onclick: () => { postBoard(poster.value, newText.value, 'โพสต์เอง'); newText.value = ''; save(); draw(); } }, 'โพสต์')),
+      list] });
+}
+// ====================== การโค้ช: ปรึกษาครูฮูก (แนะนำด้านกลยุทธ์ตามสถานะผู้เล่น) ======================
+function openConsult() {
+  const p = P(); const tips = [];
+  const empty = DATA.TYPES.filter((t) => !p.city[t.id].some(Boolean));
+  const roles = { S: 0, V: 0, O: 0 }; p.hand.forEach((t) => { if (roles[t.r] != null) roles[t.r]++; });
+  const missing = Object.entries(roles).filter(([, n]) => n === 0).map(([r]) => ({ S: 'ประธาน', V: 'กริยา', O: 'กรรม' })[r]);
+  if (missing.length) tips.push(`ในมือยังไม่มีบล็อก${missing.join(' และ ')} ลองไปตลาดแลกคำ หรือขอแลกด้วยประโยคขอร้อง`);
+  if (empty.length) tips.push(`ย่านที่ยังไม่มีบ้าน: ${empty.map((t) => t.name).join(' · ')} เก็บแก้วสีของย่านนั้นที่ร้านแก้วสี แล้วแต่งประโยคประเภทนั้น`);
+  if (p.res.wood < 1 || p.res.brick < 1) tips.push('กระท่อมต้องใช้ไม้ 1 อิฐ 1 และแก้วสีของย่าน ลองทอยประโยคที่ป่าไม้หรือเตาอิฐ');
+  if (p.builtLv2 >= 3 && !p.plainDock) tips.push('สร้างบ้านระดับ 2 ได้หลายหลังแล้ว ลองพลิกแท่นวางเป็นด้านเปล่าเพื่อท้าทายตัวเอง');
+  if (p.res.spark >= 1) tips.push('มีประกายคิดแล้ว สร้างหอคอย (ประธาน + กริยา + กรรม + ส่วนขยาย 2 ส่วน) เพื่อฝึกคิดให้ละเอียด');
+  const next = DATA.CREATIVE_PROCESS[Math.min(S.creative.m, 3)];
+  tips.push(`ภารกิจสร้างสรรค์ถัดไปฝึก "${next.step}" ลองถามตัวเอง: ${next.ask[0]}`);
+  openModal({ title: `🦉 ปรึกษาครูฮูก · ${p.name}`, color: 'var(--t-command)', onClose: () => render(),
+    body: [owlEl('มาวางแผนกันนะ ครูจะไม่เฉลย แต่ช่วยคิดว่าขั้นต่อไปควรทำอะไร'),
+      h('div', { class: 'card' }, h('h3', {}, 'คำแนะนำสำหรับตอนนี้'), h('ol', { style: 'margin:0;padding-left:20px' }, tips.map((t) => h('li', {}, t)))),
+      h('div', { class: 'card' }, h('h3', {}, 'ลองตอบครูฮูกในใจ'), h('ul', { style: 'margin:0;padding-left:20px' }, DATA.SCAFFOLDS.find((x) => x.id === 'metacognitive').cards.map(([t, b]) => h('li', {}, h('b', {}, t + ': '), b)))),
+      h('p', { class: 'muted', style: 'margin:0;font-size:14px' }, 'การโค้ช 3 บทบาท: ' + DATA.COACH_ROLES.map(([r]) => r).join(' · '))] });
+}
 function openLibrary() {
   openModal({ title: '📚 คลังความรู้: ประโยคและบ้านประโยค', color: 'var(--ink)', onClose: () => render(),
-    body: [houseOf(['S:ประธาน · ใคร?', 'V:กริยา · ทำอะไร?', 'O:กรรม · กับอะไร?']),
+    body: [mindmapEl(), processEl(), houseOf(['S:ประธาน · ใคร?', 'V:กริยา · ทำอะไร?', 'O:กรรม · กับอะไร?']),
       h('p', { style: 'margin:0' }, 'ประโยคต้องได้ใจความ มี "ใคร" (ภาคประธาน) และ "ทำอะไร" (ภาคแสดง) ถ้ากริยาต้องมีผู้ถูกกระทำ ให้เติม "กับอะไร" (กรรม) ส่วนขยายบอก ลักษณะ การกระทำ เวลา และสถานที่ เช่น แมวสีส้ม กินปลา บนโต๊ะ'),
       h('div', { class: 'grid2' }, [...DATA.RESOURCES.map((r) => h('button', { class: 'card', type: 'button', style: 'text-align:left;cursor:pointer', onclick: () => openLesson(r.id) }, h('h3', {}, h('span', { class: 'emoji' }, r.icon), ` เรื่อง${r.teaches}`), h('span', { class: 'muted', style: 'font-size:14px' }, r.chunk))),
         ...DATA.TYPES.map((t) => h('button', { class: 'card', type: 'button', style: 'text-align:left;cursor:pointer', onclick: () => openLesson(t.id) }, h('h3', {}, h('span', { style: `color:${TCOL(t.id)}` }, t.sym), ` ประโยค${t.name}`), h('span', { class: 'muted', style: 'font-size:14px' }, `คำสังเกต: ${t.cue}`)))])] });
@@ -1227,6 +1315,7 @@ function openRules() {
       h('li', {}, h('b', {}, 'ภารกิจสร้างสรรค์ ★: '), 'ทุกคนเล่นพร้อมกันตามตารางที่ 2 (4 ด้าน × 3 ด่าน) ผ่านด่านได้ประกายคิดและดาว'),
       h('li', {}, h('b', {}, 'ภารกิจร่วม 🤝: '), 'ช่วยกันสร้างสิ่งมหัศจรรย์ ครบ 3 ด่าน มาตรวัด −3 สร้างครบ 3 แห่ง ทุกคนชนะยุ่งเหยิง!'),
       h('li', {}, h('b', {}, 'จบเกม: '), 'สิ่งมหัศจรรย์ครบ 3 แห่ง · มีคนสร้างครบ 5 ย่าน (เล่นจนจบรอบ) · หรือกด "จบเกม" เมื่อหมดคาบ แล้วเล่านิทานเมืองของฉัน')),
+      h('p', { style: 'margin:0' }, h('b', {}, '7 องค์ประกอบ: '), 'สถานการณ์ปัญหา · ศูนย์การเรียนรู้ (คลังความรู้ แผนผังความคิด) · เครื่องมือทางปัญญา (บล็อกคำ แท่นวาง ลูกเต๋า) · ศูนย์แลกเปลี่ยนเรียนรู้ (ภารกิจร่วม ตลาด กระดานแลกเปลี่ยน) · ศูนย์ส่งเสริมการคิดสร้างสรรค์ (ช่อง ★) · ฐานการช่วยเหลือ (คำใบ้ และฐานช่วยเหลือ 4 ด้าน) · การโค้ช (ครูฮูก ปรึกษาครูฮูก)'),
       owlEl('ติดเมื่อไหร่ ครูฮูกจะถามคำถามช่วยคิด และเปิดการ์ดคำใบ้ได้ด้วยโทเคนคำใบ้ การขอความช่วยเหลือไม่เสียแต้มนะ')] });
 }
 

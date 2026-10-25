@@ -5,6 +5,7 @@ import {
   TITLE, TYPES, RESOURCES, GLASS_PER_TYPE, MISSIONS, MISSION_REWARD, CHAOS, TEMPLATES, HINT_LEVELS,
   CREATIVE, STAGES, ELAB_BROKEN, WONDERS, ROLES_JIGSAW, COACH, STORY_CUBES, TIME_CARDS, EXTRA_CARDS, TENSES,
 } from './data.mjs';
+import { SCAFFOLDS, CREATIVE_PROCESS, PROCESS_RULE } from './design.mjs';
 
 const css = `
 @page{size:210mm 297mm;margin:0}
@@ -122,6 +123,20 @@ const extraFront = (c) => card({ style: 'background:#fff;border:.4mm solid var(-
 <div class="foot"><span>โบนัส: ใส่ได้ถูกต้อง = บล็อกคำเพิ่ม 1</span><span class="pill">#${c.id}</span></div></div>` });
 const extraBack = () => card({ style: 'background:#2e7d4f', html: `<div class="bd back"><div class="big emoji">➕</div><div class="t">การ์ดขยายเพิ่ม</div><div class="s">ที่ไหน? · อย่างไร?</div><div class="ttl">${TITLE}</div></div>` });
 
+// ---------- ฐานการช่วยเหลือ 4 ด้าน + กระบวนการคิดสร้างสรรค์ 4 ขั้น ----------
+const scItems = SCAFFOLDS.flatMap((sc) => sc.cards.map(([title, body], k) => ({ sc, title, body, k })));
+const scFront = ({ sc, title, body, k }) => card({ style: 'background:#fff;border:.4mm solid var(--line)', html: `<div class="band" style="background:${sc.color}"><span>🛟 ฐานการช่วยเหลือ</span><span>${k + 1}/${sc.cards.length}</span></div>
+<div class="bd"><span class="pill" style="align-self:flex-start">${sc.icon} ${esc(sc.name)}</span><h2>${esc(title)}</h2>
+<p style="font-size:9.4pt;line-height:1.5">${body.split(' · ').map(esc).join('<br>')}</p>
+<div class="foot"><span>หยิบอ่านได้ทุกเมื่อ ไม่ต้องใช้โทเคน</span><span class="pill">${sc.en.split(' ')[0]}</span></div></div>` });
+const scBack = ({ sc }) => card({ style: `background:${sc.color}`, html: `<div class="bd back"><div class="big emoji">${sc.icon}</div><div class="t">ฐานการช่วยเหลือ</div><div class="s">${esc(sc.name)}</div><div class="ttl">${TITLE}</div></div>` });
+const prFront = (c, i) => card({ style: 'background:#fff;border:.4mm solid var(--line)', html: `<div class="band" style="background:${c.color}"><span>★ กระบวนการคิดสร้างสรรค์</span><span>ขั้น ${i + 1}/4</span></div>
+<div class="bd"><span class="pill" style="align-self:flex-start">${c.shape} ${esc(c.area)}</span><h2>${esc(c.step)}</h2>
+<p style="font-size:7.6pt;color:var(--ink-muted)">${esc(c.def)}</p>
+<ol class="steps" style="font-size:8.6pt">${c.ask.map((q) => `<li>${esc(q)}</li>`).join('')}</ol>
+<div class="foot"><span>${esc(PROCESS_RULE.split(':')[0])}</span><span class="pill">Guilford · จารุณี</span></div></div>` });
+const prBack = (c) => card({ style: 'background:var(--spark-gold)', html: `<div class="bd back" style="color:var(--ink)"><div class="big" style="font:600 22mm/1 var(--font-display)">${c.shape}</div><div class="t">กระบวนการคิดสร้างสรรค์</div><div class="s">${esc(c.step)}</div><div class="ttl">${TITLE}</div></div>` });
+
 export function cardsHtml() {
   return doc('การ์ดเกม', css,
     sheets(resItems, resFront, resBack, 'std', 3, 9, 'การ์ดทรัพยากร') +
@@ -129,7 +144,9 @@ export function cardsHtml() {
     sheets(CHAOS, chaosFront, chaosBack, 'std', 3, 9, 'การ์ดภัยยุ่งเหยิง') +
     sheets(hintItems, hintFront, hintBack, 'std', 3, 9, 'การ์ดคำใบ้') +
     sheets(TIME_CARDS, timeFront, timeBack, 'std', 3, 9, 'การ์ดเวลา') +
-    sheets(EXTRA_CARDS, extraFront, extraBack, 'std', 3, 9, 'การ์ดขยายเพิ่ม'));
+    sheets(EXTRA_CARDS, extraFront, extraBack, 'std', 3, 9, 'การ์ดขยายเพิ่ม') +
+    sheets(scItems, scFront, scBack, 'std', 3, 9, 'การ์ดฐานการช่วยเหลือ') +
+    sheets(CREATIVE_PROCESS, prFront, prBack, 'std', 3, 9, 'การ์ดกระบวนการคิดสร้างสรรค์'));
 }
 
 // ---------- การ์ดใหญ่ ----------
