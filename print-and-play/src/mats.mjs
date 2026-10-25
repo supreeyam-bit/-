@@ -2,6 +2,7 @@
 import { doc, esc, arMarker } from './lib.mjs';
 import { TYPES, PLAYERS, COST, TITLE } from './data.mjs';
 import { MINDMAP, CREATIVE_PROCESS } from './design.mjs';
+import { trackerPage, trackerCss } from './board.mjs';
 
 const css = `
 @page{size:297mm 210mm;margin:0}
@@ -116,5 +117,5 @@ export function matsHtml() {
   const mats = PLAYERS.map(cityMat).join('');
   const docks = [1, 3].map((n) => `<div class="page">${dock(false, n)}${dock(false, n + 1)}<div class="pnote">แท่นวางประโยค ด้านมีสี — พิมพ์สองหน้าคู่กับหน้าถัดไป (พลิกขอบยาว) หรือพิมพ์แยกแล้วติดหลังชนกัน</div></div>
 <div class="page">${dock(true, n)}${dock(true, n + 1)}<div class="pnote">แท่นวางประโยค ด้านไม่มีสี (ด้านหลัง)</div></div>`).join('');
-  return doc('กระดานเมืองและแท่นวางประโยค', css + posterCss, mats + docks + `<div class="page">${coopDock(1)}${coopDock(2)}<div class="pnote">แท่นยักษ์ร่วม</div></div>` + mindmapPage() + exchangePage());
+  return doc('กระดานเมืองและแท่นวางประโยค', css + posterCss + trackerCss, trackerPage() + mats + docks + `<div class="page">${coopDock(1)}${coopDock(2)}<div class="pnote">แท่นยักษ์ร่วม</div></div>` + mindmapPage() + exchangePage());
 }

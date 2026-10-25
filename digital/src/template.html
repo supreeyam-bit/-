@@ -78,10 +78,29 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus
 .cell .vb{position:absolute;top:1px;left:3px;background:var(--verb);color:var(--on-light);border-radius:5px;padding:0 4px;font:500 clamp(7px,.8vw,10px)/1.4 var(--display)}
 @media (max-width:640px){.cell .vb{display:none}}
 .rolldie{min-width:78px;height:78px;padding:0 8px;border-radius:14px;border:2px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font:600 20px/1.1 var(--display);text-align:center}
+.artboard{position:relative;width:100%;aspect-ratio:1448/1086;container-type:inline-size;border-radius:14px;overflow:hidden;background:#fff}
+.artboard img{position:absolute;inset:0;width:100%;height:100%;display:block}
+.artboard .fix{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;border-radius:4px;font-family:var(--display);font-weight:600;line-height:1.12;white-space:pre-line;pointer-events:none}
+.artboard .hot{position:absolute;border-radius:14px;background:transparent;border:2px solid transparent}
+.artboard .hot:hover,.artboard .hot:focus-visible{border-color:#fff;background:rgba(255,255,255,.18);box-shadow:0 0 0 3px var(--focus)}
+.spc{position:absolute;transform:translate(-50%,-50%);width:3.3cqw;height:3.3cqw;min-width:15px;min-height:15px;border-radius:50%;border:max(2px,.28cqw) solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;background:#fff;color:var(--on-light);z-index:2}
+.spc .ic{font-size:max(9px,1.7cqw);line-height:1}
+.spc .ic.t{font-family:var(--display);font-weight:600}
+.spc .no{position:absolute;bottom:-1.25cqw;left:50%;transform:translateX(-50%);background:#2a2233;color:#fff;border-radius:6px;padding:0 4px;font:600 max(8px,.85cqw)/1.35 var(--display)}
+.spc .vb{position:absolute;top:-1.5cqw;left:50%;transform:translateX(-50%);background:var(--verb);color:var(--on-light);border-radius:5px;padding:0 4px;font:600 max(8px,.8cqw)/1.35 var(--display);white-space:nowrap}
+.spc .pawns{position:absolute;bottom:auto;top:-2.6cqw;left:50%;right:auto;transform:translateX(-50%);display:flex;gap:1px;flex-wrap:nowrap}
+.k-wood{background:#5fae3a;color:#fff}.k-brick{background:#d8483a;color:#fff}.k-stone{background:#3c78d0;color:#fff}.k-glass{background:#f2b705}
+.k-challenge,.k-observatory{background:#1f2a44;color:#fff}.k-creative{background:#e8a33d}.k-market,.k-bigmarket{background:#fff3c4}
+.k-coop{background:#17767a;color:#fff}.k-hint{background:#dcebf7}.k-storm,.k-cave{background:#4a2a5e;color:#fff}
+.turncard,.below2{display:flex;flex-direction:column;gap:8px;background:var(--raised);border:1.5px solid var(--sand-edge);border-radius:14px;padding:10px 12px}
+.turncard .turnline{flex-wrap:wrap}
+.turncard .tower{width:auto;margin-left:auto}
+.below2 .log{max-height:150px}
+@media (max-width:700px){.turncard .tower{display:none}}
 .tower{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .tower .tn{font:500 13px var(--display);color:var(--muted);width:100%}
 .tb{display:inline-flex;align-items:center;gap:2px;padding:2px 9px;border-radius:999px;border:2px solid var(--bc);background:color-mix(in srgb,var(--bc) 14%,var(--raised));font:500 13px var(--display)}
-@media (max-width:700px){.tower{display:none}}
+
 .zones{display:flex;flex-wrap:wrap;gap:6px}
 .zone{display:inline-flex;align-items:center;gap:4px;padding:3px 12px;border-radius:10px;background:var(--zc);color:#fff;font:500 14px var(--display)}
 .zone small{opacity:.85;font-size:12px}
@@ -445,16 +464,21 @@ function render() {
 }
 
 function boardEl(cur) {
-  const b = h('div', { class: 'board', role: 'img', 'aria-label': 'กระดานหลัก' });
+  // กระดานภาพ BLOCK WORLD: ช่อง 36 ช่องวางตามตำแหน่งช่องถนนในภาพ
+  const A = DATA.BOARD_ART;
+  const pct = (x, y) => `left:${(x / A.w) * 100}%;top:${(y / A.h) * 100}%`;
+  const b = h('div', { class: 'artboard' }, h('img', { src: DATA.BOARD_IMG, alt: 'กระดาน BLOCK WORLD อาณาจักรนักสร้างโลกแห่งคำ: 3 โซน หอคอยความคิดสร้างสรรค์ และหมู่บ้าน 7 องค์ประกอบ' }));
+  A.fixes.forEach(([x0, y0, x1, y1, t, bg, col]) => b.append(h('div', { class: 'fix', 'aria-hidden': 'true', style: `${pct(x0, y0)};width:${((x1 - x0) / A.w) * 100}%;height:${((y1 - y0) / A.h) * 100}%;background:${bg};color:${col};font-size:max(${t.includes('\n') ? 5 : 6}px,${t.includes('\n') ? 0.52 : (y1 - y0 > 40 ? 1.5 : 0.58)}cqw)` }, t)));
+  const act = { story: openStory, library: () => openLibrary(), tools: openTools, board: () => openBoard(), creative: openCreativeCenter, scaffolds: () => openScaffolds(), consult: () => openConsult() };
+  A.hotspots.forEach(([x, y, w, hh, name, k]) => b.append(h('button', { class: 'hot', type: 'button', title: name, 'aria-label': `เปิด${name}`, style: `${pct(x, y)};width:${(w / A.w) * 100}%;height:${(hh / A.h) * 100}%`, onclick: act[k] })));
   DATA.PATH.forEach((k, i) => {
     const s = DATA.SPACE_KINDS[k];
-    const [c, r] = cellPos(i);
+    const [x, y] = A.spaces[i];
     const isText = ['?', '★', '⇄'].includes(s.icon);
     const pawns = S.players.filter((p) => p.pos === i).map((p) => h('span', { class: `pawn emoji${p === cur ? ' cur' : ''}`, style: `background:${p.hex}`, title: p.name }, p.animal));
-    const z = zoneOf(i);
-    b.append(h('div', { class: `cell ${s.cls}`, style: `grid-column:${c + 1};grid-row:${r + 1};border-top:5px solid ${z.color}`, title: `โซน ${z.n} ${z.name} · ${s.name}: ${s.text}` },
-      h('span', { class: 'no' }, i || ''), DATA.SPACE_VERBS[i] ? h('span', { class: 'vb' }, `➜ ${DATA.SPACE_VERBS[i][0]}`) : null,
-      h('span', { class: `ic ${isText ? 't' : 'emoji'}` }, s.icon), h('span', { class: 'nm' }, s.name),
+    b.append(h('div', { class: `spc k-${k}`, style: pct(x, y), title: `ช่อง ${i} ${s.name}: ${s.text}` },
+      h('span', { class: `ic ${isText ? 't' : 'emoji'}` }, s.icon), h('span', { class: 'no' }, i === 0 ? 'เริ่ม' : i),
+      DATA.SPACE_VERBS[i] ? h('span', { class: 'vb' }, `➜ ${DATA.SPACE_VERBS[i][0]}`) : null,
       pawns.length ? h('div', { class: 'pawns' }, pawns) : null));
   });
   const die = h('div', { class: 'die', id: 'die', 'aria-live': 'polite' }, S.die ?? '🎲');
@@ -470,19 +494,13 @@ function boardEl(cur) {
     return acts;
   };
   const logEl = () => h('div', { class: 'log' }, S.log.slice(0, 12).map((l) => h('div', {}, l)));
-  b.append(h('div', { class: 'center' },
+  const turn = h('div', { class: 'turncard' },
     h('div', { class: 'turnline' }, die,
       h('div', {}, h('div', { class: 'muted', style: 'font-size:13px' }, `เทิร์นของ`), h('h2', {}, h('span', { class: 'emoji' }, cur.animal), ' ', cur.name)),
-      S.finalRound ? h('span', { class: 'chip', style: 'border-color:var(--gold)' }, 'รอบสุดท้าย!') : null),
-    h('div', { class: 'tower', title: DATA.TOWER.name }, h('span', { class: 'tn' }, h('span', { class: 'emoji' }, '⭐'), ' ', DATA.TOWER.name),
-      DATA.TOWER.badges.map(([e, en, th, col], k) => h('span', { class: 'tb', style: `--bc:${col}`, title: `${en} ${th}` }, h('span', { class: 'emoji' }, e), ` ${th} `, h('b', {}, cur.stars[k])))),
-    makeActs(), logEl()));
-  // จอแคบ: ปุ่มและบันทึกเหตุการณ์ย้ายมาอยู่ใต้กระดาน
-  const zones = h('div', { class: 'zones' }, DATA.ZONES.map((z) => h('span', { class: 'zone', style: `--zc:${z.color}` }, h('span', { class: 'emoji' }, z.icon), ` โซน ${z.n} ${z.name}`, h('small', {}, ` ช่อง ${(z.n - 1) * 12}–${z.n * 12 - 1}`))));
-  const open = [openStory, () => openLibrary(), openTools, () => openBoard(), openCreativeCenter, () => openScaffolds(), () => openConsult()];
-  const village = h('div', { class: 'village', role: 'navigation', 'aria-label': 'หมู่บ้าน 7 องค์ประกอบ' }, DATA.VILLAGE.map(([e, name, col], k) => h('button', { class: 'vil', type: 'button', style: `--vc:${col}`, onclick: open[k] },
-    h('span', { class: 'roof' }), h('span', { class: 'house emoji' }, e), h('span', { class: 'lab' }, `${k + 1} ${name}`))));
-  return h('div', { class: 'boardwrap' }, zones, b, village, h('div', { class: 'below' }, makeActs(), logEl()));
+      S.finalRound ? h('span', { class: 'chip', style: 'border-color:var(--gold)' }, 'รอบสุดท้าย!') : null,
+      h('div', { class: 'tower' }, DATA.TOWER.badges.map(([e, en, th, col], k) => h('span', { class: 'tb', style: `--bc:${col}`, title: `${en} ${th}` }, h('span', { class: 'emoji' }, e), ` ${th} `, h('b', {}, cur.stars[k]))))),
+    makeActs());
+  return h('div', { class: 'boardwrap' }, turn, b, h('div', { class: 'below2' }, h('span', { class: 'muted', style: 'font-size:13px' }, '⚓ เริ่มที่ท่าเรือ (ช่อง 0) · เลยช่อง 35 นั่งเรือกลับท่าเรือ · แตะอาคารหรือหอคอยบนภาพเพื่อเปิดองค์ประกอบนั้น'), logEl()));
 }
 
 function sideEl() {
