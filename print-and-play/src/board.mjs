@@ -16,7 +16,7 @@ export const KIND_TILE = {
   hint: '#dcebf7', storm: '#4a2a5e', start: '#ffffff', bigmarket: '#fff3c4', observatory: '#1f2a44', cave: '#4a2a5e',
 };
 export const DARK = new Set(['wood', 'brick', 'stone', 'challenge', 'coop', 'storm', 'observatory', 'cave']);
-export const SHORT = { start: 'จั่วบล็อก 1', wood: 'ทอยประโยค → ไม้', brick: 'ทอยประโยค → อิฐ', stone: 'ทอยประโยค → หิน', glass: 'ทอยประโยค → แก้วสี', mission: 'ซ่อมป้าย ★–★★★', challenge: 'ภารกิจ ★★★ + ครูฮูก', creative: 'ทุกคนเล่นด่านถัดไป', market: 'แลก 1:1 · ธนาคาร 2:1', coop: 'ภารกิจร่วม', hint: 'โทเคนคำใบ้ 2', storm: 'เปิดการ์ดภัย', bigmarket: 'แลกไม่จำกัด', observatory: '★★★ + แก้วส้ม', cave: 'การ์ดภัย + มาตรวัด +1' };
+export const SHORT = { start: 'จั่วบล็อก 1', wood: 'ทอยประโยค → ไม้', brick: 'ทอยประโยค → อิฐ', stone: 'ทอยประโยค → หิน', glass: 'ทอยประโยค → แก้วสี + คำเปลี่ยนร่าง', mission: 'ซ่อมป้าย ★–★★★', challenge: 'ภารกิจ ★★★ + ครูฮูก', creative: 'ทุกคนเล่นด่านถัดไป', market: 'แลก 1:1 · ธนาคาร 2:1', coop: 'ภารกิจร่วม', hint: 'โทเคนคำใบ้ 2', storm: 'เปิดการ์ดภัย', bigmarket: 'แลกไม่จำกัด', observatory: '★★★ + แก้วส้ม', cave: 'การ์ดภัย + มาตรวัด +1' };
 
 const css = `
 @page{size:594mm 420mm;margin:0}

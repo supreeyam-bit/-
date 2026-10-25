@@ -672,7 +672,7 @@ function openRoll(k) {
     return { ok: true, bonus: !!extraTile && dock.includes(extraTile), type: pr.type };
   };
   const gainRes = () => {
-    if (glassType) { p.glass[glassType]++; return TYPE[glassType].glass; }
+    if (glassType) { gainGlass(p, glassType); return TYPE[glassType].glass; }
     p.res[k]++; return RES_LABEL[k];
   };
   const check = () => {
@@ -849,6 +849,12 @@ function missingIssue(dock, dm) {
   if (have.length > need.size) return 'บล็อกเรียงสลับ';
   return 'บล็อกเรียงสลับ';
 }
+// แก้วสีมาพร้อมบล็อกคำเปลี่ยนร่างของประเภทนั้น (บอกเล่าไม่ต้องใช้) เพื่อให้สร้างบ้านได้จริง
+const GLASS_CUE = { negative: 'ไม่', question: 'ไหม', command: 'จง', request: 'ช่วย' };
+function gainGlass(p, type) {
+  p.glass[type]++;
+  if (GLASS_CUE[type]) p.hand.push({ id: uid++, r: 'C', w: GLASS_CUE[type] });
+}
 function reward(level, flag, ctx) {
   const p = P();
   if (level === 1) { const k = p.res.wood <= p.res.brick ? 'wood' : 'brick'; p.res[k]++; p.hand.push(...draw()); log(`${p.name} ได้${k === 'wood' ? 'ไม้' : 'อิฐ'} 1 และบล็อกคำ 1`); }
@@ -856,8 +862,8 @@ function reward(level, flag, ctx) {
     const ks = ['wood', 'brick', 'stone'].sort((a, b) => p.res[a] - p.res[b]).slice(0, 2);
     ks.forEach((k) => p.res[k]++); log(`${p.name} ได้${ks.map((k) => ({ wood: 'ไม้', brick: 'อิฐ', stone: 'หิน' })[k]).join(' และ ')}`);
   }
-  if (level === 3) { p.glass[flag]++; log(`${p.name} ได้${TYPE[flag].glass} 1`); }
-  if (ctx.bonusGlass) { p.glass[ctx.bonusGlass]++; log(`${p.name} ได้${TYPE[ctx.bonusGlass].glass}เพิ่มจากหอดูดาว`); }
+  if (level === 3) { gainGlass(p, flag); log(`${p.name} ได้${TYPE[flag].glass} 1`); }
+  if (ctx.bonusGlass) { gainGlass(p, ctx.bonusGlass); log(`${p.name} ได้${TYPE[ctx.bonusGlass].glass}เพิ่มจากหอดูดาว`); }
 }
 
 // ====================== สร้าง / อัปเกรด ======================
