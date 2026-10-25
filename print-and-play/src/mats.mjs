@@ -53,7 +53,7 @@ function cityMat(p, i) {
   const foot = `<div class="foot"><div><b>แต้มสิ่งก่อสร้าง</b>กระท่อม 1 · บ้าน 3 · หอคอย 6</div>
 <div><b>● คล่อง</b>ดาว ×</div><div><b>■ ยืดหยุ่น</b>ดาว ×</div><div><b>▲ ริเริ่ม</b>ดาว ×</div><div><b>⬢ ละเอียดลออ</b>ดาว ×</div>
 <div><b>มือช่วย</b>× 1 แต้ม</div><div><b>สิ่งมหัศจรรย์</b>× 2 แต้ม · นิทาน (≤3)</div><div class="tot"><b>รวมแต้มเมือง</b></div></div>`;
-  return `<div class="page mat"><div class="head"><div class="pawn emoji" style="background:${p.hex}">${p.animal}</div><h1>เมืองของ${esc(p.name)}</h1><div class="who">ชื่อนักสำรวจ</div>
+  return `<div class="page mat"><div class="head"><div class="pawn emoji" style="background:${p.hex}">${p.animal}</div><h1>เมืองของ${esc(p.name)}</h1><div class="who">ชื่อนักสร้าง</div>
 <div style="font-size:8pt;color:var(--ink-muted);max-width:70mm">สร้างให้ครบ 5 ย่าน = ประโยคครบ 5 ประเภท · เขียนด้วยปากกาไวท์บอร์ดหลังเคลือบพลาสติก</div></div>
 <div class="dists">${dists}</div>${foot}<div class="pnote">กระดานเมือง ${i + 1}/4</div></div>`;
 }

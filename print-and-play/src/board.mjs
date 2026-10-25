@@ -1,6 +1,6 @@
 // กระดานหลัก 594 × 420 มม. พิมพ์เป็น A3 แนวตั้ง 2 แผ่นต่อกัน
 import { doc, esc } from './lib.mjs';
-import { TITLE, PATH, SPACE_KINDS, WONDERS, CREATIVE, SPACE_VERBS } from './data.mjs';
+import { SHORT_TITLE, PATH, SPACE_KINDS, WONDERS, CREATIVE, SPACE_VERBS } from './data.mjs';
 
 const W = 594, H = 420, M = 10, COLS = 11, ROWS = 9;
 const CW = (W - 2 * M) / COLS, CH = (H - 2 * M) / ROWS;
@@ -15,8 +15,9 @@ function cellPos(i) {
 const css = `
 @page{size:594mm 420mm;margin:0}
 .page{width:594mm;height:420mm}
-.board{position:absolute;top:0;width:${W}mm;height:${H}mm;background:var(--paper)}
-.sp{position:absolute;width:${CW - 1.6}mm;height:${CH - 1.6}mm;border-radius:3mm;padding:2.2mm 2.4mm;display:flex;flex-direction:column;justify-content:space-between;background:var(--paper-raised);border:.5mm solid var(--line);box-shadow:0 .6mm 0 var(--line)}
+.board{position:absolute;top:0;width:${W}mm;height:${H}mm;background-color:var(--water);background-image:radial-gradient(ellipse 9mm 2.2mm at 50% 100%,transparent 70%,var(--water-wave) 72%,var(--water-wave) 84%,transparent 86%);background-size:26mm 13mm}
+.plat{position:absolute;left:${M - 3}mm;top:${M - 3}mm;width:${W - 2 * M + 6}mm;height:${H - 2 * M + 6}mm;border-radius:6mm;background:var(--sand);border:.8mm solid var(--sand-edge);box-shadow:0 2.4mm 0 var(--sand-edge)}
+.sp{position:absolute;width:${CW - 1.6}mm;height:${CH - 2.6}mm;border-radius:3mm;padding:2.2mm 2.4mm;display:flex;flex-direction:column;justify-content:space-between;background:var(--grass);border:.5mm solid var(--grass-edge);box-shadow:0 1.4mm 0 var(--grass-edge)}
 .sp .ic{font-size:17mm;line-height:1;text-align:center;margin-top:1mm}
 .sp .ic.t{font-family:var(--font-display);font-weight:600;font-size:15mm}
 .sp .nm{font:500 11pt/1.15 var(--font-display)}
@@ -26,16 +27,19 @@ const css = `
 .sp.coop{background:var(--coop-teal);border-color:var(--coop-teal);color:#fff}
 .sp.challenge{background:var(--type-command);border-color:var(--type-command);color:#fff}
 .sp.chaos{background:var(--chaos);border-color:var(--chaos);color:#fff}
-.sp.hint{background:var(--hint-sky);border-color:#b8d2ea}
+.sp.hint{background:var(--hint-sky);border-color:#8fb4d6;box-shadow:0 1.4mm 0 #8fb4d6}
+.sp.creative{box-shadow:0 1.4mm 0 #b47513}.sp.coop{box-shadow:0 1.4mm 0 #0f5457}.sp.challenge{box-shadow:0 1.4mm 0 #0e1524}.sp.chaos{box-shadow:0 1.4mm 0 #2c1838}
+.sp.market{background:#fff6d6;box-shadow:0 1.4mm 0 #c99a06}.sp.corner:not(.challenge):not(.chaos){background:#fffaf0;border-color:var(--sand-edge);box-shadow:0 1.4mm 0 var(--sand-edge)}
 .sp.market{border-color:var(--role-verb);border-width:1mm}
 .sp.res .nm{color:var(--ink)}
 .sp.corner{border-width:1mm}
 .sp.corner .ic{font-size:20mm}
 .sp .no{color:inherit;opacity:.75}
 .sp .vb{position:absolute;top:1.6mm;left:2mm;background:var(--role-verb);color:var(--ink);border-radius:1.6mm;padding:.2mm 2mm;font:500 10pt/1.35 var(--font-display)}
-.inner{position:absolute;left:${M + CW + 4}mm;top:${M + CH + 4}mm;width:${W - 2 * M - 2 * CW - 8}mm;height:${H - 2 * M - 2 * CH - 8}mm;border-radius:6mm;background:#fff;border:.6mm solid var(--line);padding:7mm;display:grid;grid-template-rows:auto auto 1fr;gap:6mm}
+.inner{position:absolute;left:${M + CW + 4}mm;top:${M + CH + 4}mm;width:${W - 2 * M - 2 * CW - 8}mm;height:${H - 2 * M - 2 * CH - 8}mm;border-radius:6mm;background:#fffdf6;border:.6mm solid var(--sand-edge);padding:7mm;display:grid;grid-template-rows:auto auto 1fr;gap:6mm}
 .top{display:flex;justify-content:space-between;gap:8mm}
 .title h1{margin:0;font:600 30pt/1.05 var(--font-display)}
+.title .k{display:block;font:500 13pt/1.2 var(--font-display);color:var(--grass-edge);letter-spacing:.3mm}
 .title p{margin:2mm 0 0;font-size:11pt;color:var(--ink-muted)}
 .title .strip{display:flex;margin-top:4mm}
 .title .strip span{display:inline-block;height:7mm;color:#fff;font:500 10pt/7mm var(--font-display);padding:0 6mm 0 4mm}
@@ -96,7 +100,7 @@ function inner() {
   const crGrid = `<div class="grid4"><span></span>${['ด่าน 1 สร้าง', 'ด่าน 2 ขยาย', 'ด่าน 3 ใช้ภาษา'].map((h) => `<span class="h">${h}</span>`).join('')}
 ${CREATIVE.map((c) => `<span class="r">${c.id}. ${esc(c.area.replace('การคิด', ''))}<br><small style="font:400 7.5pt var(--font-body);color:var(--ink-muted)">${esc(c.scene)}</small></span><span class="c"></span><span class="c"></span><span class="c"></span>`).join('')}</div>`;
   return `<div class="inner">
-<div class="top"><div class="title"><h1>${TITLE}</h1><p>ซ่อมป้าย สร้างเมือง และขับไล่ยุ่งเหยิงด้วยประโยคที่ถูกต้อง</p><div class="strip">${strip}</div></div>
+<div class="top"><div class="title"><span class="k"><span class="emoji">🏝️</span> อาณาจักรนักสร้างโลก</span><h1>${SHORT_TITLE}</h1><p>ต่อบล็อกคำเป็นประโยค ซ่อมป้าย สร้างเมืองบนเกาะ และขับไล่ยุ่งเหยิง</p><div class="strip">${strip}</div></div>
 <div class="turn"><b>ลำดับเทิร์น</b><ol><li><b>สำรวจ</b> ทอยเต๋าเดินตามเข็มนาฬิกา ทำตามช่องที่หยุด · ช่องทรัพยากร: <b>ทอยประโยค</b> ใคร + ➜ กริยาบนช่อง + ประเภท</li><li><b>สร้าง/อัปเกรด</b> ต่อบล็อกบนแท่นวาง ปักธง อ่านออกเสียง</li><li><b>ตรวจป้าย</b> คนทางซ้ายถาม: ใคร? ทำอะไร? กับอะไร? ธงถูกไหม?</li><li><b>จ่ายทรัพยากร</b> เขียนประโยคลงที่ดินในกระดานเมือง</li><li><b>จบเทิร์น</b> ทอยเต๋าได้ 1 → มาตรวัดความสับสน +1</li></ol></div></div>
 <div class="meter"><h3>มาตรวัดความสับสน</h3><div class="track">${track}</div></div>
 <div class="lower">${wonders}<div class="panel cr"><h3>ภารกิจสร้างสรรค์ ★</h3>${crGrid}<div class="reward">ผ่านด่าน: ประกายคิด 1 + ดาวของด้านนั้น · ผู้หยุดที่ ★ ได้ประกายคิดเพิ่ม 1 · ครบ 3 ด่าน +2 แต้มเมือง</div></div></div>
@@ -105,7 +109,7 @@ ${CREATIVE.map((c) => `<span class="r">${c.id}. ${esc(c.area.replace('การ�
 
 export function boardHtml() {
   // พิมพ์เป็นหน้าเดียว 594 × 420 มม. แล้ว build.mjs ตัดเป็น A3 สองแผ่นด้วย split-a3.py (ภาพเวกเตอร์ไม่เสียความคม)
-  return doc('กระดาน A3', css, `<div class="page"><div class="board" style="left:0">${spaces()}${inner()}</div>
+  return doc('กระดาน A3', css, `<div class="page"><div class="board" style="left:0"><div class="plat"></div>${spaces()}${inner()}</div>
 <div class="join" style="left:297mm"></div>
 <div class="pnote" style="bottom:1.5mm;left:0;width:297mm">กระดานแผ่นที่ 1 (ซ้าย) · ต่อขอบขวากับแผ่นที่ 2</div>
 <div class="pnote" style="bottom:1.5mm;left:297mm;width:297mm">กระดานแผ่นที่ 2 (ขวา) · ต่อขอบซ้ายกับแผ่นที่ 1</div></div>`);

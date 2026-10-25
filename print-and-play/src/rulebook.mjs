@@ -1,7 +1,7 @@
 // คู่มือกติกา + คู่มือครู + เฉลย + แบบประเมินตัวบ่งชี้ 1.1–4.3 + ใบนับแต้ม (A4 แนวตั้ง)
 import { doc, esc } from './lib.mjs';
 import {
-  TITLE, TYPES, SUBJECTS, VERBS, OBJECTS, MODIFIERS, CHANGERS, GHOSTS, RESOURCES, GLASS_PER_TYPE,
+  TITLE, SHORT_TITLE, TYPES, SUBJECTS, VERBS, OBJECTS, MODIFIERS, CHANGERS, GHOSTS, RESOURCES, GLASS_PER_TYPE,
   MISSIONS, MISSION_REWARD, CHAOS, CREATIVE, STAGES, INDICATORS, STORY_CUBES, CUBE_RULES, WONDERS, COACH, SPACE_KINDS, PATH, COST, PLAYERS,
   SPACE_VERBS, WHO_DIE, TIME_PLACE, ROLL_RULES,
 } from './data.mjs';
@@ -48,9 +48,9 @@ const typeTag = (t) => `<span class="tag" style="background:${t.color}">${t.sym}
 function cover() {
   const bl = [['แมว', '#c8322b', '#fff'], ['กิน', '#f2b705', '#2a2233'], ['ปลา', '#1d4a9e', '#fff']]
     .map(([w, bg, c], i) => `<span style="background:${bg};color:${c};clip-path:polygon(${i ? '5mm 50%,' : ''}0 0,${i === 2 ? '100% 0,100% 100%' : 'calc(100% - 5mm) 0,100% 50%,calc(100% - 5mm) 100%'},0 100%);margin-left:${i ? '-4mm' : 0}">${w}</span>`).join('');
-  return `<div class="cover"><div class="band">${['#c8322b', '#f2b705', '#1d4a9e', '#4a2a5e'].map((c) => `<div style="background:${c}"></div>`).join('')}</div>
+  return `<div class="cover"><div class="band" style="background:var(--water);align-items:flex-end;gap:3mm;padding:0 20mm 0">${['#c8322b', '#f2b705', '#1d4a9e', '#8fbf4f', '#d2a862'].map((c, i) => `<div style="flex:none;width:22mm;height:${12 + i * 4}mm;background:${c};border-radius:2mm 2mm 0 0;box-shadow:inset 0 -2.4mm 0 rgba(0,0,0,.18)"></div>`).join('')}<div class="emoji" style="flex:1;text-align:right;font-size:16mm;line-height:1.1;white-space:nowrap">🏝️⛵</div></div>
 <div class="small" style="font:500 11pt var(--font-display);color:var(--ink-muted)">บอร์ดเกมการเรียนรู้ภาษาไทย ป.3</div>
-<h1>${TITLE}</h1><div class="sub">เกมผจญภัยสร้างเมืองด้วยประโยค — ซ่อมป้าย สร้างเมือง และขับไล่สัตว์ประหลาด "ยุ่งเหยิง"</div>
+<h1>${SHORT_TITLE}</h1><div style="font:500 22pt/1.2 var(--font-display);color:var(--grass-edge);margin-top:1mm">อาณาจักรนักสร้างโลก</div><div class="sub">เกมนักสร้างโลก ต่อบล็อกคำเป็นประโยค — ซ่อมป้าย สร้างเมืองบนเกาะ และขับไล่สัตว์ประหลาด "ยุ่งเหยิง"</div>
 <div class="blocks">${bl}</div>
 <div class="meta"><div>8–10 ปี<small>ประถมศึกษาปีที่ 3</small></div><div>2–4 คน<small>+ ครู 1 คนต่อ 2–3 โต๊ะ</small></div><div>45–60 นาที<small>1 คาบคู่</small></div></div>
 <div class="box" style="background:#fff;margin-top:12mm"><b>เล่มนี้มีอะไรบ้าง</b><br>คู่มือกติกา · การพิมพ์และประกอบ · คู่มือครูและบทบาทการโค้ช · ภารกิจสร้างสรรค์ 4 ด้าน × 3 ด่าน (ตารางที่ 2) · เฉลยภารกิจซ่อมป้าย · แบบบันทึกการประเมินตัวบ่งชี้ 1.1–4.3 · ใบนับแต้ม</div>
@@ -59,7 +59,7 @@ function cover() {
 
 function overview() {
   return `<h1><span class="n">1</span>ภาพรวมและเป้าหมายการเรียนรู้</h1>
-<p>ดินแดน <b>อักษรา</b> เป็นหมู่เกาะที่ทุกสิ่งสร้างขึ้นจากคำ บ้านยืนอยู่ได้เพราะประโยคที่มีประธาน กริยา และกรรมเรียงกันถูกที่ คืนหนึ่งสัตว์ประหลาดความสับสนชื่อ <b>"ยุ่งเหยิง"</b> ตื่นขึ้นมากินลำดับของคำและธงประเภทประโยค ป้ายในเมืองอ่านไม่รู้เรื่อง บ้านเอียง สะพานขาด ผู้เล่นคือนักสำรวจรุ่นเยาว์ที่ต้องซ่อมป้าย สร้างเมืองของตัวเองขึ้นใหม่ และช่วยกันสร้างสิ่งก่อสร้างมหัศจรรย์ 3 แห่งเพื่อขังยุ่งเหยิงกลับเข้าถ้ำ</p>
+<p><b>Block World อาณาจักรนักสร้างโลก</b> เป็นหมู่เกาะกลางทะเลสีฟ้าที่ทุกสิ่งต่อขึ้นจาก <b>บล็อกคำ</b> บ้าน หอคอย และสะพานยืนอยู่ได้เพราะบล็อกประธาน กริยา และกรรมต่อกันถูกที่ คืนหนึ่งสัตว์ประหลาดความสับสนชื่อ <b>"ยุ่งเหยิง"</b> ตื่นขึ้นมากินลำดับของบล็อกและธงประเภทประโยค ป้ายในอาณาจักรอ่านไม่รู้เรื่อง บ้านเอียง สะพานขาด ผู้เล่นคือ <b>นักสร้างโลก</b> รุ่นเยาว์ที่ต้องซ่อมป้าย ต่อเมืองของตัวเองขึ้นใหม่ทีละบล็อก และช่วยกันสร้างสิ่งก่อสร้างมหัศจรรย์ 3 แห่งเพื่อขังยุ่งเหยิงกลับเข้าถ้ำ</p>
 <h2>เป้าหมายการเรียนรู้</h2>
 <table><tr><th style="width:32%">ด้าน</th><th>นักเรียนสามารถ…</th></tr>
 <tr><td>ความรู้ (เรื่อง การแต่งประโยค ท 4.1 ป.3/4)</td><td>บอกส่วนประกอบของประโยค (ประธาน กริยา กรรม) จำแนกประโยค 5 ประเภท (บอกเล่า ปฏิเสธ คำถาม คำสั่ง ขอร้อง) แต่งและขยายประโยคได้ถูกต้อง และใช้ถ้อยคำเหมาะกับผู้ฟัง</td></tr>
@@ -227,7 +227,7 @@ ${STORY_CUBES.map((c) => `<tr><td><b>${esc(c.name)}</b> (${c.id})</td><td>${c.fa
 <ul><li><b>ทุกคนแพ้พร้อมกัน</b> ถ้ามาตรวัดถึง 12</li><li><b>เกมจบ</b> เมื่อสิ่งมหัศจรรย์ครบ 3 แห่ง หรือมีผู้เล่นสร้างครบ 5 ย่าน (เล่นต่อจนจบรอบ) หรือหมดเวลาคาบ</li>
 <li><b>นิทานเมืองของฉัน</b> — ทุกคนเล่าเรื่องเมืองตัวเองด้วยประโยคจากสิ่งก่อสร้างอย่างน้อย 3 ประโยคที่ต่างประเภทกัน เพื่อนให้ดาวเมื่อ เรื่องต่อเนื่อง (1) มีประโยคหลากประเภท (1) น่าตื่นเต้น (1)</li></ul>
 <table><tr><th>รายการ</th><th>แต้ม</th></tr><tr><td>กระท่อม / บ้าน / หอคอย (ไม่พัง)</td><td>1 / 3 / 6</td></tr><tr><td>ดาวสร้างสรรค์ทุกรูปทรง</td><td>1 ต่อดวง</td></tr><tr><td>ผ่านครบ 3 ด่านของภารกิจสร้างสรรค์</td><td>2 ต่อภารกิจ</td></tr><tr><td>มือช่วย</td><td>1 ต่ออัน</td></tr><tr><td>ร่วมสร้างสิ่งมหัศจรรย์สำเร็จ</td><td>2 ต่อแห่ง</td></tr><tr><td>นิทานเมืองของฉัน</td><td>สูงสุด 3</td></tr><tr><td>ประโยคครบ 5 ประเภท (ครบ 5 ย่าน)</td><td>3</td></tr></table>
-<p>แต้มเมืองสูงสุดชนะ ถ้าเท่ากัน ผู้ที่มีมือช่วยมากกว่าชนะ — เพราะในอักษรา คนที่ช่วยเพื่อนคือคนที่เก่งที่สุด</p>`;
+<p>แต้มเมืองสูงสุดชนะ ถ้าเท่ากัน ผู้ที่มีมือช่วยมากกว่าชนะ — เพราะใน Block World คนที่ช่วยเพื่อนคือคนที่เก่งที่สุด</p>`;
 }
 
 function teacher() {
