@@ -91,7 +91,7 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus
 .spc .pawns{position:absolute;bottom:auto;top:-2.6cqw;left:50%;right:auto;transform:translateX(-50%);display:flex;gap:1px;flex-wrap:nowrap}
 .k-wood{background:#5fae3a;color:#fff}.k-brick{background:#d8483a;color:#fff}.k-stone{background:#3c78d0;color:#fff}.k-glass{background:#f2b705}
 .k-challenge,.k-observatory{background:#1f2a44;color:#fff}.k-creative{background:#e8a33d}.k-market,.k-bigmarket{background:#fff3c4}
-.k-coop{background:#17767a;color:#fff}.k-hint{background:#dcebf7}.k-storm,.k-cave{background:#4a2a5e;color:#fff}
+.k-coop{background:#17767a;color:#fff}.k-gate{background:#fff;color:#c8322b}.k-hint{background:#dcebf7}.k-storm,.k-cave{background:#4a2a5e;color:#fff}
 .turncard,.below2{display:flex;flex-direction:column;gap:8px;background:var(--raised);border:1.5px solid var(--sand-edge);border-radius:14px;padding:10px 12px}
 .turncard .turnline{flex-wrap:wrap}
 .turncard .tower{width:auto;margin-left:auto}
@@ -438,7 +438,14 @@ function cellPos(i) {
   if (i <= 26) return [10, i - 18];
   return [10 - (i - 26), 8];
 }
-const zoneOf = (i) => DATA.ZONES[Math.min(2, Math.floor(i / 12))];
+// เดิน: 0–21 ทางจากท่าเรือ → ลานกลาง (LOOP_START) → วงรอบเกาะหอคอยวนซ้ำ · ผ่านลานกลางจั่วบล็อก 1
+function stepFrom(from, d) {
+  const n = DATA.PATH.length, L = DATA.LOOP_START, loop = n - L;
+  let to = from + d, passed = false;
+  if (from < L && to >= L) passed = true;
+  if (to >= n) { to = L + ((to - L) % loop); passed = true; }
+  return { to, passed };
+}
 function render() {
   if (!S) return renderSetup();
   save();
@@ -464,7 +471,7 @@ function render() {
 }
 
 function boardEl(cur) {
-  // กระดานภาพ BLOCK WORLD: ช่อง 36 ช่องวางตามตำแหน่งช่องถนนในภาพ
+  // กระดานภาพ BLOCK WORLD: ช่องเดินวางบนช่องถนนทุกช่องในภาพ
   const A = DATA.BOARD_ART;
   const pct = (x, y) => `left:${(x / A.w) * 100}%;top:${(y / A.h) * 100}%`;
   const b = h('div', { class: 'artboard' }, h('img', { src: DATA.BOARD_IMG, alt: 'กระดาน BLOCK WORLD อาณาจักรนักสร้างโลกแห่งคำ: 3 โซน หอคอยความคิดสร้างสรรค์ และหมู่บ้าน 7 องค์ประกอบ' }));
@@ -476,7 +483,7 @@ function boardEl(cur) {
     const [x, y] = A.spaces[i];
     const isText = ['?', '★', '⇄'].includes(s.icon);
     const pawns = S.players.filter((p) => p.pos === i).map((p) => h('span', { class: `pawn emoji${p === cur ? ' cur' : ''}`, style: `background:${p.hex}`, title: p.name }, p.animal));
-    b.append(h('div', { class: `spc k-${k}`, style: pct(x, y), title: `ช่อง ${i} ${s.name}: ${s.text}` },
+    b.append(h('div', { class: `spc k-${k} a-${DATA.SPACE_AREA[i]}`, style: pct(x, y), title: `ช่อง ${i} ${s.name} · ${DATA.AREA_NAMES[DATA.SPACE_AREA[i]]}: ${s.text}` },
       h('span', { class: `ic ${isText ? 't' : 'emoji'}` }, s.icon), h('span', { class: 'no' }, i === 0 ? 'เริ่ม' : i),
       DATA.SPACE_VERBS[i] ? h('span', { class: 'vb' }, `➜ ${DATA.SPACE_VERBS[i][0]}`) : null,
       pawns.length ? h('div', { class: 'pawns' }, pawns) : null));
@@ -500,7 +507,7 @@ function boardEl(cur) {
       S.finalRound ? h('span', { class: 'chip', style: 'border-color:var(--gold)' }, 'รอบสุดท้าย!') : null,
       h('div', { class: 'tower' }, DATA.TOWER.badges.map(([e, en, th, col], k) => h('span', { class: 'tb', style: `--bc:${col}`, title: `${en} ${th}` }, h('span', { class: 'emoji' }, e), ` ${th} `, h('b', {}, cur.stars[k]))))),
     makeActs());
-  return h('div', { class: 'boardwrap' }, turn, b, h('div', { class: 'below2' }, h('span', { class: 'muted', style: 'font-size:13px' }, '⚓ เริ่มที่ท่าเรือ (ช่อง 0) · เลยช่อง 35 นั่งเรือกลับท่าเรือ · แตะอาคารหรือหอคอยบนภาพเพื่อเปิดองค์ประกอบนั้น'), logEl()));
+  return h('div', { class: 'boardwrap' }, turn, b, h('div', { class: 'below2' }, h('span', { class: 'muted', style: 'font-size:13px' }, '⚓ เริ่มที่ท่าเรือ (ช่อง 0) เดินผ่านหมู่บ้านไปลานกลาง 🚩 (ช่อง 22) แล้ววนรอบเกาะหอคอย 22–52 · ภารกิจซ่อมป้าย: โซน 1 ★ · โซน 2 ★★ · โซน 3 ★★★ · แตะอาคารหรือหอคอยบนภาพเพื่อเปิดองค์ประกอบนั้น'), logEl()));
 }
 
 function sideEl() {
@@ -558,10 +565,10 @@ function roll() {
   S.die = d; S.phase = 'moving';
   const p = P();
   const from = p.pos;
-  const to = (from + d) % 36;
-  if (to < from && to !== 0) { p.hand.push(...draw()); log(`${p.name} ผ่านท่าเรือ ⚓ จั่วบล็อกคำ 1 ใบ`); }
+  const { to, passed } = stepFrom(from, d);
+  if (passed && to !== DATA.LOOP_START) { p.hand.push(...draw()); log(`${p.name} ผ่านลานกลาง 🚩 จั่วบล็อกคำ 1 ใบ`); }
   p.pos = to;
-  log(`${p.name} ทอยได้ ${d} เดินไปช่อง ${to}: ${DATA.SPACE_KINDS[DATA.PATH[to]].name}`);
+  log(`${p.name} ทอยได้ ${d} เดินไปช่อง ${to}: ${DATA.SPACE_KINDS[DATA.PATH[to]].name} (${DATA.AREA_NAMES[DATA.SPACE_AREA[to]]})`);
   if (d === 1) meter(1, 'ทอยได้ 1');
   S.sel = S.cur;
   render();
@@ -587,9 +594,10 @@ function resolveSpace(k) {
   const gain = (key, label) => { p.res[key]++; log(`${p.name} ได้${label} 1`); };
   switch (k) {
     case 'start': p.hand.push(...draw()); log(`${p.name} จั่วบล็อกคำ 1 ใบที่ท่าเรือ`); return afterResolve();
+    case 'gate': p.hand.push(...draw()); log(`${p.name} หยุดที่ลานกลาง 🚩 จั่วบล็อกคำ 1 ใบ`); return afterResolve();
     case 'wood': case 'brick': case 'stone': case 'glass': return openRoll(k);
     case 'hint': p.res.hint += 2; log(`${p.name} ได้โทเคนคำใบ้ 2`); return afterResolve();
-    case 'mission': return chooseMission();
+    case 'mission': { const lv = DATA.MISSION_LEVEL[DATA.SPACE_AREA[p.pos]]; return lv ? openMission(drawMission(lv)) : chooseMission(); }
     case 'challenge': return openMission(drawMission(3), { challenge: true });
     case 'observatory': return openMission(drawMission(3), { challenge: true, bonusGlass: 'question' });
     case 'storm': return openChaos();

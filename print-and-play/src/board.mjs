@@ -2,7 +2,7 @@
 // ใช้ภาพต้นแบบ BLOCK WORLD เป็นภาพกระดาน แล้ววางเลขช่องและสัญลักษณ์ช่อง 36 ช่องทับบนช่องถนนในภาพ
 // มาตรวัด สิ่งมหัศจรรย์ และตารางภารกิจสร้างสรรค์ย้ายไปอยู่ที่แผ่นติดตามเกม (trackerPage)
 import { doc, esc } from './lib.mjs';
-import { PATH, SPACE_KINDS, WONDERS, CREATIVE, SPACE_VERBS } from './data.mjs';
+import { PATH, SPACE_KINDS, WONDERS, CREATIVE, SPACE_VERBS, LOOP_START } from './data.mjs';
 import { BOARD_ART, TOWER } from './design.mjs';
 
 const W = 594, H = 420;
@@ -13,19 +13,19 @@ const mm = (px) => px * S;
 export const KIND_TILE = {
   wood: '#5fae3a', brick: '#d8483a', stone: '#3c78d0', glass: '#f2b705',
   mission: '#ffffff', challenge: '#1f2a44', creative: '#e8a33d', market: '#fff3c4', coop: '#17767a',
-  hint: '#dcebf7', storm: '#4a2a5e', start: '#ffffff', bigmarket: '#fff3c4', observatory: '#1f2a44', cave: '#4a2a5e',
+  hint: '#dcebf7', storm: '#4a2a5e', start: '#ffffff', gate: '#ffffff', bigmarket: '#fff3c4', observatory: '#1f2a44', cave: '#4a2a5e',
 };
 export const DARK = new Set(['wood', 'brick', 'stone', 'challenge', 'coop', 'storm', 'observatory', 'cave']);
-export const SHORT = { start: 'จั่วบล็อก 1', wood: 'ทอยประโยค → ไม้', brick: 'ทอยประโยค → อิฐ', stone: 'ทอยประโยค → หิน', glass: 'ทอยประโยค → แก้วสี + คำเปลี่ยนร่าง', mission: 'ซ่อมป้าย ★–★★★', challenge: 'ภารกิจ ★★★ + ครูฮูก', creative: 'ทุกคนเล่นด่านถัดไป', market: 'แลก 1:1 · ธนาคาร 2:1', coop: 'ภารกิจร่วม', hint: 'โทเคนคำใบ้ 2', storm: 'เปิดการ์ดภัย', bigmarket: 'แลกไม่จำกัด', observatory: '★★★ + แก้วส้ม', cave: 'การ์ดภัย + มาตรวัด +1' };
+export const SHORT = { start: 'จุดเริ่ม จั่วบล็อก 1', gate: 'ผ่าน/หยุด จั่วบล็อก 1 · จุดวนรอบ', wood: 'ทอยประโยค → ไม้', brick: 'ทอยประโยค → อิฐ', stone: 'ทอยประโยค → หิน', glass: 'ทอยประโยค → แก้วสี + คำเปลี่ยนร่าง', mission: 'ซ่อมป้าย โซน1 ★ · โซน2 ★★ · โซน3 ★★★', challenge: 'ภารกิจ ★★★ + ครูฮูก', creative: 'ทุกคนเล่นด่านถัดไป', market: 'แลก 1:1 · ธนาคาร 2:1', coop: 'ภารกิจร่วม', hint: 'โทเคนคำใบ้ 2', storm: 'เปิดการ์ดภัย', bigmarket: 'แลกไม่จำกัด', observatory: '★★★ + แก้วส้ม', cave: 'การ์ดภัย + มาตรวัด +1' };
 
 const css = `
 @page{size:594mm 420mm;margin:0}
 .page{width:594mm;height:420mm;background:#fff}
 .art{position:absolute;left:${OX}mm;top:0;width:${mm(BOARD_ART.w)}mm;height:${H}mm}
 .art img{width:100%;height:100%;display:block}
-.sp{position:absolute;width:13.5mm;height:13.5mm;transform:translate(-50%,-50%);border-radius:50%;border:1.1mm solid #fff;box-shadow:0 .8mm 1.4mm rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink);z-index:2}
+.sp{position:absolute;width:12mm;height:12mm;transform:translate(-50%,-50%);border-radius:50%;border:1.1mm solid #fff;box-shadow:0 .8mm 1.4mm rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink);z-index:2}
 .sp.dk{color:#fff}
-.sp .ic{font-size:6.4mm;line-height:1}
+.sp .ic{font-size:5.8mm;line-height:1}
 .sp .ic.t{font:600 6.2mm/1 var(--font-display)}
 .sp .no{position:absolute;bottom:-3.2mm;left:50%;transform:translateX(-50%);background:#2a2233;color:#fff;border-radius:2mm;padding:0 1.4mm;font:600 6.4pt/1.4 var(--font-display)}
 .sp .vb{position:absolute;top:-4.6mm;left:50%;transform:translateX(-50%);background:var(--role-verb);color:var(--ink);border:.4mm solid #b88a00;border-radius:1.6mm;padding:0 1.6mm;font:600 7pt/1.35 var(--font-display);white-space:nowrap}
@@ -50,7 +50,7 @@ function fixes() {
 
 export function boardHtml() {
   // พิมพ์เป็นหน้าเดียว 594 × 420 มม. แล้ว build.mjs ตัดเป็น A3 สองแผ่นด้วย split-a3.py
-  const boat = `<div class="boat" style="left:${OX + mm(20)}mm;top:${mm(1000)}mm">⚓ ท่าเรือ (ช่อง 0) · เลยช่อง 35 นั่งเรือกลับมาที่นี่</div>`;
+  const boat = `<div class="boat" style="left:${OX + mm(20)}mm;top:${mm(1000)}mm">⚓ เริ่มที่ท่าเรือ (ช่อง 0) → 🚩 ลานกลาง (ช่อง ${LOOP_START}) → วนรอบเกาะ ${LOOP_START}–${PATH.length - 1} ซ้ำ</div>`;
   return doc('กระดาน A3', css, `<div class="page"><div class="art"><img src="../assets/board-art.jpg" alt=""></div>${fixes()}${spaces()}${boat}
 <div class="join" style="left:297mm"></div>
 <div class="pnote" style="bottom:1.5mm;left:0;width:297mm;z-index:9">กระดานแผ่นที่ 1 (ซ้าย) · ต่อขอบขวากับแผ่นที่ 2</div>
@@ -96,7 +96,7 @@ ${CREATIVE.map((c) => `<span class="r"><span class="emoji">${TOWER.badges[c.id -
 <div class="tp"><h3>👾 มาตรวัดความสับสน</h3><div class="track">${track}</div></div>
 <div class="tp"><h3>🤝 สิ่งก่อสร้างมหัศจรรย์ (ด่าน 1–3) · ครบ 3 ด่าน มาตรวัด −3</h3><div class="won">${won}</div></div>
 <div class="tp" style="flex:1"><h3>⭐ ${TOWER.name}: ภารกิจสร้างสรรค์ (วางเครื่องหมาย ✓)</h3>${grid}</div></div>
-<div class="tp"><h3>ช่องบนถนน (36 ช่อง)</h3><div class="leg">${leg}</div>
-<p style="font-size:8.4pt;margin:3mm 0 0">เดินตามเลขช่อง เริ่มที่ท่าเรือ (ช่อง 0) มุมซ้ายล่าง · เลยช่อง 35 นั่งเรือกลับท่าเรือแล้วเดินต่อ (ผ่านท่าเรือจั่วบล็อก 1) · ช่องที่มีป้ายเหลือง ➜ คือกริยาสำหรับทอยประโยค</p></div></div>
+<div class="tp"><h3>ช่องบนถนน (${PATH.length} ช่อง)</h3><div class="leg">${leg}</div>
+<p style="font-size:8.4pt;margin:3mm 0 0">เดินตามเลขช่อง เริ่มที่ท่าเรือ (ช่อง 0) ผ่านหมู่บ้านไปลานกลาง 🚩 (ช่อง ${LOOP_START}) แล้ววนรอบเกาะหอคอย ${LOOP_START}–${PATH.length - 1} ซ้ำ · ผ่านลานกลางจั่วบล็อก 1 · ภารกิจซ่อมป้าย: โซน 1 ★ · โซน 2 ★★ · โซน 3 ★★★ · ป้ายเหลือง ➜ คือกริยาสำหรับทอยประโยค</p></div></div>
 <div class="pnote">แผ่นติดตามเกม — มาตรวัด สิ่งมหัศจรรย์ ภารกิจสร้างสรรค์ และคำอธิบายช่อง</div></div>`;
 }
