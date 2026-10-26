@@ -1,7 +1,7 @@
 // การ์ดเกม: การ์ดเล็ก 63 × 88 มม. (9 ใบ/หน้า) และการ์ดใหญ่ 95 × 132 มม. (4 ใบ/หน้า)
 // หน้าหน้า–หน้าหลังสลับกัน และกลับลำดับในแต่ละแถวของหน้าหลังไว้แล้ว สำหรับพิมพ์สองหน้าแบบพลิกขอบยาว
 import { doc, esc, md, chunk, arMarker } from './lib.mjs';
-import { TITLE, STAGES, MISSIONS, AREAS, RUBRIC, INDICATORS, SCENES, THINK_HELP, EVENTS, COACH_CARDS } from './data.mjs';
+import { TITLE, CONTENTS, SITUATIONS, MISSIONS, AREAS, RUBRIC, INDICATORS, SCENES, THINK_HELP, EVENTS, COACH_CARDS, CONTENT_OF_MISSION } from './data.mjs';
 
 const css = `
 @page{size:210mm 297mm;margin:0}
@@ -78,7 +78,7 @@ const blk = (spec) => { const [w, r] = spec.split(':'); return `<span class="blk
 const LETTER = ['ก', 'ข', 'ค', 'ง'];
 
 // ---------- การ์ดฐานเรียนรู้ 📘 ----------
-const learnItems = STAGES.flatMap((s) => s.lessons.flatMap((l, li) => l.items.map((it) => ({ s, l, li, it }))));
+const learnItems = CONTENTS.flatMap((s) => s.lessons.flatMap((l, li) => l.items.map((it) => ({ s, l, li, it }))));
 function learnFront({ s, l, li, it }) {
   let body = '', key = '';
   if (it.scene) body += `<div class="scene emoji">${it.scene}</div>`;
@@ -93,18 +93,19 @@ function learnFront({ s, l, li, it }) {
     body += `<div class="blks">${it.items.map(([w]) => `<span class="pill">${esc(w)}</span>`).join('')}</div><p style="font-size:7.8pt">แยกเป็น 2 กลุ่ม: <b>${it.bins.map(esc).join('</b> กับ <b>')}</b></p>`;
     key = it.bins.map((b, i) => `<b>${esc(b)}</b> ${it.items.filter((x) => x[1] === i).map((x) => esc(x[0])).join(' ')}`).join(' · ');
   }
-  return card(`s-${s.id}`, `<div class="band"><span>📘 ฐานที่ ${li + 1} · ${esc(l.title)}</span><span>${s.place}</span></div>
+  return card(`c-${s.id}`, `<div class="band"><span>📘 ฐานที่ ${li + 1} · ${esc(l.title)}</span><span>${s.topic}</span></div>
 <div class="bd">${body}<div class="key">คนอ่านดูเฉลย: ${key}</div></div>`);
 }
-const learnBack = ({ s }) => backCard(`var(--${s.id})`, '📘', 'ฐานเรียนรู้', `ด่านที่ ${s.no} ${s.place} · ${s.topic}`);
+const CCOL = { build: 'var(--school)', use: 'var(--market)', expand: 'var(--field)' };
+const learnBack = ({ s }) => backCard(CCOL[s.id], s.emoji, 'ฐานเรียนรู้', `เนื้อหาด้านที่ ${s.no} · ${s.topic}`);
 
 // ---------- การ์ดสถานการณ์ปัญหา ❗ ----------
-const eventItems = STAGES.flatMap((s) => EVENTS[s.id].map((e, i) => ({ s, e, i })));
-const eventFront = ({ s, e: [sit, task, ex] }) => card(`s-${s.id}`, `<div class="band"><span>❗ สถานการณ์ปัญหา</span><span>${s.place}</span></div>
-<div class="bd"><div class="ev">${esc(sit)}</div><div class="task"><b>ภารกิจ:</b> ${esc(task)}</div>
+const eventItems = SITUATIONS.flatMap((s) => EVENTS[s.id].map((e, i) => ({ s, e, i, c: CONTENTS.find((x) => x.id === e[0]) })));
+const eventFront = ({ s, c, e: [, sit, task, ex] }) => card(`sit a-${s.area}`, `<div class="band"><span>❗ ${esc(s.title)}</span><span>${s.no}</span></div>
+<div class="bd"><span class="pill c-${c.id}" style="background:var(--s);color:#fff;border-color:var(--s);align-self:flex-start">${c.topic}</span><div class="ev">${esc(sit)}</div><div class="task"><b>ภารกิจ:</b> ${esc(task)}</div>
 <p style="font-size:7.4pt;color:var(--muted)">ใช้บล็อกคำเรียงบนแท่น ยืมคำจากเพื่อนได้ 1 ชิ้น · คนทางซ้ายตรวจด้วยเกณฑ์ 4 ข้อ</p>
 <div class="key">ตัวอย่างคำตอบ (คำตอบอื่นที่ผ่านเกณฑ์ก็ได้): <b>${esc(ex)}</b></div></div>`);
-const eventBack = ({ s }) => backCard(`var(--${s.id})`, '❗', 'สถานการณ์ปัญหา', `ด่านที่ ${s.no} ${s.place}`);
+const eventBack = ({ s }) => backCard(`var(--a${s.area})`, '❗', 'สถานการณ์ปัญหา', `ด่านที่ ${s.no} ${esc(s.title)}`);
 
 // ---------- การ์ดครูฮูก 🦉 ----------
 const coachFront = ([kind, q]) => card('', `<div class="band" style="background:var(--ink)"><span>🦉 ครูฮูกถาม</span><span>${esc(kind)}</span></div>
@@ -120,33 +121,33 @@ export function cardsHtml() {
 
 // ---------- การ์ดใหญ่ ----------
 const sceneBox = (id) => { const sc = SCENES[id]; return `<div class="mscene ${sc.sky === 'day' ? '' : sc.sky}">${sc.items.map(([e, x, y]) => `<span class="emoji" style="left:${x}%;top:${y}%">${e}</span>`).join('')}</div>`; };
-const stageOf = (id) => STAGES.find((s) => s.id === id);
+const sitOf = (m) => SITUATIONS.find((s) => s.id === m.area);
 
 function problemFront(s) {
-  const p = s.problem;
-  return card(`lgc s-${s.id}`, `<div class="band"><span>สถานการณ์ปัญหา · ด่านที่ ${s.no}</span><span>${s.place}</span></div>
-<div class="bd">${sceneBox(p.scene)}<h2>${s.topic}</h2><p>${esc(p.story)}</p><div class="slips">${p.broken.map((b) => `<span class="slip">“${esc(b)}”</span>`).join('')}</div>
+  const A = AREAS[s.area];
+  return card(`lgc sit a-${s.area}`, `<div class="band"><span>สถานการณ์ปัญหา · ด่านที่ ${s.no}</span><span>${A.name}</span></div>
+<div class="bd">${sceneBox(s.scene)}<h2>${esc(s.title)}</h2><p>${esc(s.story)}</p><div class="slips">${s.broken.map((b) => `<span class="slip">“${esc(b)}”</span>`).join('')}</div>
 <div class="foot"><span>อ่านออกเสียงตอนเริ่มด่าน · ส่องภาพเพื่อดูคำ</span>${arMarker('problem-' + s.id)}</div></div>`);
 }
 function problemBack(s) {
-  const p = s.problem;
-  return card(`lgc s-${s.id}`, `<div class="band"><span>ภารกิจของด่านที่ ${s.no}</span><span>${s.place}</span></div>
-<div class="bd"><dl class="facts" style="margin:0"><dt>บทบาทของเรา</dt><dd>${esc(p.role)}</dd><dt>คำถามชวนคิด</dt><dd class="qq">${esc(p.question)}</dd><dt>เป้าหมาย</dt><dd>${esc(p.goal)}</dd></dl>
-<div class="task"><b>ผ่านด่านได้เมื่อ</b><br>1) เล่นภารกิจสร้างสรรค์ครบ 4 ด้าน<br>2) แก้สถานการณ์ปัญหาบนแผงของด่านให้ได้ 4 ช่อง เพื่อรับเหรียญหมู่บ้าน</div>
-<p style="font-size:8pt;color:var(--muted)">ระหว่างด่าน เมื่อไม่แน่ใจ ใช้ฐานเรียนรู้ ฐานช่วยเหลือ หรือถามครูฮูก</p></div>`);
+  const ms = s.missions.map((id) => MISSIONS.find((m) => m.id === id));
+  return card(`lgc sit a-${s.area}`, `<div class="band"><span>ภารกิจของด่านที่ ${s.no}</span><span>${AREAS[s.area].motto}</span></div>
+<div class="bd"><dl class="facts" style="margin:0"><dt>บทบาทของเรา</dt><dd>${esc(s.role)}</dd><dt>คำถามชวนคิด</dt><dd class="qq">${esc(s.question)}</dd><dt>เป้าหมาย</dt><dd>${esc(s.goal)}</dd></dl>
+<div class="task"><b>ภารกิจครบเนื้อหา 3 ด้าน</b><br>${ms.map((m) => `${CONTENT_OF_MISSION(m).topic}: ${esc(m.title)}`).join('<br>')}</div>
+<div class="task"><b>ผ่านด่านได้เมื่อ</b> เล่นภารกิจครบ 3 ใบ · แก้สถานการณ์ปัญหาได้ 4 ช่อง รับเหรียญ “${esc(s.badge)}”</div></div>`);
 }
 
 function missionFront(m) {
-  const s = stageOf(m.stage), A = AREAS[m.area];
-  return card(`lgc s-${s.id} a-${m.area}`, `<div class="band" style="background:var(--a)"><span>★ ภารกิจสร้างสรรค์ · ${A.name}</span><span>${s.place}</span></div>
+  const s = sitOf(m), A = AREAS[m.area], c = CONTENT_OF_MISSION(m);
+  return card(`lgc c-${c.id} a-${m.area}`, `<div class="band" style="background:var(--a)"><span>★ ด่านที่ ${s.no} ${esc(s.title)}</span><span>${A.name}</span></div>
 <div class="bd">${sceneBox(m.scene)}<h2>${esc(m.title)}</h2>
-<div class="meta"><span class="pill a">${A.motto}</span><span class="pill">ตัวบ่งชี้ ${m.ind}</span><span class="pill">${esc(m.sub)}</span>${m.timer ? `<span class="pill">⏱ ${m.timer / 60} นาที</span>` : '<span class="pill">⏱ ไม่เกิน 5 นาที</span>'}</div>
+<div class="meta"><span class="pill" style="background:var(--s);color:#fff;border-color:var(--s)">${c.topic}</span><span class="pill a">${A.motto}</span><span class="pill">ตัวบ่งชี้ ${m.ind}</span><span class="pill">${esc(m.sub)}</span>${m.timer ? `<span class="pill">⏱ ${m.timer / 60} นาที</span>` : '<span class="pill">⏱ ไม่เกิน 5 นาที</span>'}</div>
 <p class="prompt">${md(m.prompt)}</p>
 <div class="foot"><span>ทุกคนทำพร้อมกันบนไวท์บอร์ดหรือกระดาษ · ${m.area === 'O' ? 'มีภาพวาดได้' : 'ใช้บล็อกคำช่วยคิดได้'}</span>${arMarker(m.id)}</div></div>`);
 }
 function missionBack(m) {
-  const s = stageOf(m.stage), A = AREAS[m.area];
-  return card(`lgc s-${s.id} a-${m.area}`, `<div class="band" style="background:var(--a)"><span>ตรวจและให้ดาว · ${A.name}</span><span>ตัวบ่งชี้ ${m.ind}</span></div>
+  const A = AREAS[m.area], c = CONTENT_OF_MISSION(m);
+  return card(`lgc c-${c.id} a-${m.area}`, `<div class="band" style="background:var(--a)"><span>ตรวจและให้ดาว · ${c.topic}</span><span>ตัวบ่งชี้ ${m.ind}</span></div>
 <div class="bd"><p style="font-size:8.4pt!important;color:var(--muted)">${esc(INDICATORS[m.ind])}</p>
 <table class="rub">${RUBRIC[m.area].map((t, n) => `<tr><td>${'★'.repeat(n) || '–'} ${n}</td><td>${esc(t)}</td></tr>`).join('')}</table>
 ${m.area === 'O' ? '<div class="task"><b>วงแลกเปลี่ยน:</b> ทุกคนอ่านคำตอบ แล้วแจกโทเคนโหวต “แปลกใหม่” ให้เพื่อน คนละ 2 อัน (ห้ามโหวตตัวเอง) ได้ 0 โหวต = 1 ดาว (ถ้าครบ) · 1–2 โหวต = 2 ดาว · 3 โหวตขึ้นไป = 3 ดาว</div>' : ''}
@@ -166,19 +167,19 @@ const PROCESS_TEXT = {
   O: 'จดความคิดแรกไว้มุมกระดาน ขีดฆ่าทิ้ง แล้วคิดต่ออีก 2 ความคิด เลือกความคิดที่คิดว่าไม่ซ้ำเพื่อน วาดภาพประกอบได้',
   E: 'เขียนประโยคหลักก่อน ใช้ผังจัดความคิดถาม ใคร ทำอะไร ที่ไหน เมื่อไร อย่างไร รู้สึกอย่างไร แล้วเติมทีละช่อง',
 };
-const helpItems = STAGES.flatMap((s) => HELP_TYPES.map((t) => ({ s, t })));
+const helpItems = SITUATIONS.flatMap((s) => HELP_TYPES.map((t) => ({ s, t })));
 function helpFront({ s, t: [, icon, name, get] }) {
-  const ms = MISSIONS.filter((m) => m.stage === s.id);
-  return card(`lgc s-${s.id}`, `<div class="band"><span>${icon} ฐานช่วยเหลือ${name}</span><span>${s.place}</span></div>
-<div class="bd">${ms.map((m) => `<div class="helpm a-${m.area}"><b>${AREAS[m.area].short} · ${esc(m.title)}</b><p>${esc(get(m))}</p></div>`).join('')}
+  const ms = s.missions.map((id) => MISSIONS.find((m) => m.id === id));
+  return card(`lgc sit a-${s.area}`, `<div class="band"><span>${icon} ฐานช่วยเหลือ${name}</span><span>ด่านที่ ${s.no}</span></div>
+<div class="bd">${ms.map((m) => `<div class="helpm c-${m.content}" style="--a:var(--s)"><b>${CONTENT_OF_MISSION(m).topic} · ${esc(m.title)}</b><p>${esc(get(m))}</p></div>`).join('')}
 <div class="foot"><span>จ่ายโทเคนช่วยเหลือ 1 อัน เพื่ออ่านการ์ดนี้</span></div></div>`);
 }
-const helpBack = ({ s, t: [, icon, name] }) => backCard('#3b6a94', icon, `ฐานช่วยเหลือ${name}`, `ด่านที่ ${s.no} ${s.place}`);
+const helpBack = ({ s, t: [, icon, name] }) => backCard('#3b6a94', icon, `ฐานช่วยเหลือ${name}`, `ด่านที่ ${s.no} ${esc(s.title)}`);
 
 export function largeCardsHtml() {
-  const ms = STAGES.flatMap((s) => ['F', 'X', 'O', 'E'].map((a) => MISSIONS.find((m) => m.stage === s.id && m.area === a)));
+  const ms = SITUATIONS.flatMap((s) => s.missions.map((id) => MISSIONS.find((m) => m.id === id)));
   return doc('การ์ดใหญ่', css,
-    sheets(STAGES, problemFront, problemBack, 'lg', 2, 4, 'การ์ดสถานการณ์ปัญหาเปิดด่าน') +
+    sheets(SITUATIONS, problemFront, problemBack, 'lg', 2, 4, 'การ์ดสถานการณ์ปัญหาเปิดด่าน') +
     sheets(ms, missionFront, missionBack, 'lg', 2, 4, 'การ์ดภารกิจสร้างสรรค์') +
     sheets(helpItems, helpFront, helpBack, 'lg', 2, 4, 'การ์ดฐานช่วยเหลือ'));
 }

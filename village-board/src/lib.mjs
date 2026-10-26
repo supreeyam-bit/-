@@ -23,7 +23,7 @@ p{margin:0}
 .page:last-child{break-after:auto;page-break-after:auto}
 .pnote{position:absolute;bottom:3mm;left:0;right:0;text-align:center;font-size:7pt;color:var(--muted)}
 .a-F{--a:var(--aF)}.a-X{--a:var(--aX)}.a-O{--a:var(--aO)}.a-E{--a:var(--aE)}
-.s-school{--s:var(--school)}.s-market{--s:var(--market)}.s-field{--s:var(--field)}
+.c-build{--s:var(--school)}.c-use{--s:var(--market)}.c-expand{--s:var(--field)}.sit{--s:var(--a)}
 .r-S{--rc:var(--rS)}.r-V{--rc:var(--rV)}.r-O{--rc:var(--rO)}.r-M{--rc:var(--rM)}.r-P{--rc:var(--rP)}
 .blk{display:inline-block;border-radius:1.6mm;padding:.6mm 2.4mm;font:500 9pt/1.3 var(--display);color:#fff;background:var(--rc)}
 .blk.r-V{color:var(--on-rV)}

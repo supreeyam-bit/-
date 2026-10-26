@@ -1,6 +1,8 @@
 // บล็อกคำ · แผ่นผู้เล่นและสื่อประกอบ · โทเคน
 import { doc, esc, chunk } from './lib.mjs';
-import { TITLE, STAGES, MISSIONS, AREAS, AREA_ORDER, TILES, BLANK_TILES, ROLE_NAME, CHECK4, STARTERS, PROBLEM_PANEL } from './data.mjs';
+import { TITLE, CONTENTS, SITUATIONS, MISSIONS, AREAS, TILES, BLANK_TILES, ROLE_NAME, CHECK4, STARTERS, PROBLEM_PANEL } from './data.mjs';
+
+const missionAt = (sid, cid) => MISSIONS.find((m) => m.area === sid && m.content === cid);
 
 // ---------- บล็อกคำ 36 × 16 มม. ----------
 const tileCss = `
@@ -40,10 +42,10 @@ const matCss = `
 .box h2{font-size:12pt}
 .chk{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2mm;font:500 10pt var(--display)}
 .chk li{display:flex;gap:2.4mm;align-items:center}.chk li::before{content:"";width:5mm;height:5mm;border:.5mm solid var(--ink);border-radius:1mm;flex:none}
-.stg{display:grid;grid-template-columns:24mm repeat(4,1fr);gap:1.6mm;font-size:7.6pt;flex:1}
-.stg .h{font:500 8.4pt/1.2 var(--display);text-align:center;color:#fff;background:var(--a);border-radius:1.6mm;padding:1mm}
-.stg .s{font:500 9pt/1.2 var(--display);color:var(--s);display:flex;align-items:center}
-.stg .c{border:.4mm solid var(--a);border-radius:2mm;display:flex;flex-direction:column;justify-content:space-between;padding:1mm 1.6mm}
+.stg{display:grid;grid-template-columns:36mm repeat(3,1fr);gap:1.6mm;font-size:7.6pt;flex:1}
+.stg .h{font:500 8.4pt/1.2 var(--display);text-align:center;color:#fff;background:var(--s);border-radius:1.6mm;padding:1mm}
+.stg .s{font:500 8.4pt/1.2 var(--display);color:var(--a);display:flex;align-items:center}
+.stg .c{border:.4mm solid var(--s);border-radius:2mm;display:flex;flex-direction:column;justify-content:space-between;padding:1mm 1.6mm}
 .stg .c span{line-height:1.2}
 .stg .c i{font-style:normal;letter-spacing:1.6mm;font-size:12pt;color:#c9cdbf;text-align:center}
 .tok{display:flex;gap:4mm}
@@ -53,10 +55,10 @@ const matCss = `
 .org div{border:.6mm solid var(--line);border-radius:4mm;padding:3mm;font:500 12pt var(--display)}
 .org div small{display:block;font:400 8.5pt var(--body);color:var(--muted)}
 .org .wide{grid-column:span 4;background:var(--sunk)}
-.ex{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;flex:1}
-.ex .col{border:.7mm solid var(--s);border-radius:4mm;display:flex;flex-direction:column;overflow:hidden}
-.ex .col h2{background:var(--s);color:#fff;font-size:12pt;padding:2mm 3mm}
-.ex .cell{flex:1;border-top:.4mm dashed var(--line);padding:1.4mm 3mm;font:500 8.4pt var(--display);color:var(--a)}
+.ex{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;flex:1}
+.ex .col{border:.7mm solid var(--a);border-radius:4mm;display:flex;flex-direction:column;overflow:hidden}
+.ex .col h2{background:var(--a);color:#fff;font-size:10.5pt;padding:2mm 3mm;line-height:1.25}
+.ex .cell{flex:1;border-top:.4mm dashed var(--line);padding:1.4mm 3mm;font:500 8.4pt var(--display);color:var(--s)}
 .starters{display:flex;flex-wrap:wrap;gap:2.4mm}
 .starters span{border:.4mm solid var(--line);border-radius:9mm;padding:.6mm 3.4mm;font:500 9.5pt var(--display)}
 .mm{display:flex;flex-direction:column;align-items:center;gap:6mm;flex:1}
@@ -79,8 +81,8 @@ function playerMat(n) {
 <div class="box"><h2>เกณฑ์ตรวจประโยค 4 ข้อ</h2><ul class="chk">${CHECK4.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
 <div class="tok"><div>🛟 โทเคนช่วยเหลือ<small>ใช้อ่านการ์ดฐานช่วยเหลือ 1 ใบ</small></div><div>🌾 เมล็ดข้าว<small>ครบ 2 เมล็ด แลกโทเคนช่วยเหลือ 1</small></div></div></div>
 <div class="box"><h2>ดาวความคิดสร้างสรรค์ (ระบายดาวที่ได้)</h2>
-<div class="stg"><span></span>${AREA_ORDER.map((a) => `<span class="h a-${a}">${AREAS[a].name}</span>`).join('')}
-${STAGES.map((s) => `<span class="s s-${s.id}">${s.place}</span>${AREA_ORDER.map((a) => { const m = MISSIONS.find((x) => x.stage === s.id && x.area === a); return `<div class="c a-${a}"><span>${m.ind} ${esc(m.title)}</span><i>★★★</i></div>`; }).join('')}`).join('')}</div></div>
+<div class="stg"><span></span>${CONTENTS.map((c) => `<span class="h c-${c.id}">${c.topic}</span>`).join('')}
+${SITUATIONS.map((st) => `<span class="s a-${st.area}">${st.no}. ${esc(st.title)}<br>${AREAS[st.area].name}</span>${CONTENTS.map((c) => { const m = missionAt(st.id, c.id); return `<div class="c c-${c.id}"><span>${m.ind} ${esc(m.title)}</span><i>★★★</i></div>`; }).join('')}`).join('')}</div></div>
 </div></div>`;
 }
 function organizer() {
@@ -93,13 +95,13 @@ function exchangeBoard() {
   return `<div class="page"><div class="hd"><div><p class="mat-l">${TITLE} · ศูนย์แลกเปลี่ยนเรียนรู้</p><h1>กระดานแลกเปลี่ยน</h1></div></div>
 <p>หลังภารกิจแต่ละครั้ง เขียนคำตอบที่ชอบลงกระดาษโน้ตกาว ติดในช่องของภารกิจ แล้วเขียนตอบเพื่อนด้วยประโยคชวนคิด</p>
 <div class="starters">${STARTERS.map((s) => `<span>${esc(s)}</span>`).join('')}</div>
-<div class="ex">${STAGES.map((s) => `<div class="col s-${s.id}"><h2>ด่านที่ ${s.no} ${s.place}</h2>${AREA_ORDER.map((a) => { const m = MISSIONS.find((x) => x.stage === s.id && x.area === a); return `<div class="cell a-${a}">${AREAS[a].short} · ${esc(m.title)}</div>`; }).join('')}</div>`).join('')}</div></div>`;
+<div class="ex">${SITUATIONS.map((st) => `<div class="col a-${st.area}"><h2>ด่านที่ ${st.no} ${esc(st.title)}</h2>${CONTENTS.map((c) => { const m = missionAt(st.id, c.id); return `<div class="cell c-${c.id}">${c.topic} · ${esc(m.title)}</div>`; }).join('')}</div>`).join('')}</div></div>`;
 }
 function mindmap() {
   return `<div class="page"><div class="hd"><div><p class="mat-l">${TITLE} · ศูนย์การเรียนรู้</p><h1>แผนผังความรู้ เรื่อง การแต่งประโยค</h1></div></div>
 <div class="mm"><div class="root"><b>การแต่งประโยค</b>ตามตัวชี้วัด ท 4.1 ป.3/4</div>
-<div class="br">${STAGES.map((s) => `<div class="s-${s.id}"><div class="node"><b>${s.topic}</b>ด่านที่ ${s.no} ${s.place}</div><ol>${s.lessons.map((l, i) => `<li>${i + 1}. ${esc(l.title)}</li>`).join('')}</ol></div>`).join('')}</div>
-<div class="cr">${AREA_ORDER.map((a) => `<div class="a-${a}"><b>${AREAS[a].name} · ${AREAS[a].motto}</b>${esc(AREAS[a].def)}</div>`).join('')}</div></div></div>`;
+<div class="br">${CONTENTS.map((s) => `<div class="c-${s.id}"><div class="node"><b>${s.topic}</b>เนื้อหาด้านที่ ${s.no}</div><ol>${s.lessons.map((l, i) => `<li>${i + 1}. ${esc(l.title)}</li>`).join('')}</ol></div>`).join('')}</div>
+<div class="cr">${SITUATIONS.map((st) => `<div class="a-${st.area}"><b>ด่านที่ ${st.no} ${AREAS[st.area].name}</b>${esc(st.title)} · ${esc(AREAS[st.area].def)}</div>`).join('')}</div></div></div>`;
 }
 export function matsHtml() {
   return doc('แผ่นผู้เล่นและสื่อประกอบ', matCss, [1, 2, 3, 4].map(playerMat).join('') + organizer() + exchangeBoard() + mindmap());
@@ -129,9 +131,9 @@ export function tokensHtml() {
 <h2>💡 โทเคนโหวตแปลกใหม่ (คนละ 2 อัน · 10)</h2><div class="grid">${tok(10, '💡', 'แปลกใหม่', '--bg:var(--aO);--bc:var(--aO);--fg:#fff')}</div>
 <div class="pnote">โทเคน แผ่นที่ 1/2 · ตัดเป็นวงกลม แนะนำกระดาษแข็ง</div></div>
 <div class="page">
-<h2>📍 หมุดแผงสถานการณ์ปัญหา (ด่านละ 6)</h2><div class="grid">${STAGES.map((s) => tok(6, PROBLEM_PANEL[s.id].icon, s.place, `--bg:var(--${s.id});--bc:var(--${s.id});--fg:#fff`)).join('')}</div>
-<h2>✔ ตัวบอกภารกิจที่เล่นแล้ว (12)</h2><div class="grid">${MISSIONS.map((m) => `<div class="tk a-${m.area}" style="--bg:var(--a);--bc:var(--a);--fg:#fff"><span class="e">✔</span>${m.ind}</div>`).join('')}</div>
+<h2>📍 หมุดแผงสถานการณ์ปัญหา (ด่านละ 6)</h2><div class="grid">${SITUATIONS.map((s) => tok(6, PROBLEM_PANEL[s.id].icon, `ด่าน ${s.no}`, `--bg:var(--a${s.area});--bc:var(--a${s.area});--fg:#fff`)).join('')}</div>
+<h2>✔ ตัวบอกภารกิจที่เล่นแล้ว (12)</h2><div class="grid">${MISSIONS.map((m) => `<div class="tk c-${m.content}" style="--bg:var(--s);--bc:var(--s);--fg:#fff"><span class="e">✔</span>${m.ind}</div>`).join('')}</div>
 <h2>ตัวเดิน (พับเป็นสามเหลี่ยมตั้งได้)</h2><div class="grid">${PAWNS.map(([e, bg]) => `<div class="pawn" style="--bg:${bg}"><div class="emoji">${e}</div><div class="emoji">${e}</div><div class="base">ฐาน · ทากาว</div></div>`).join('')}</div>
-<h2>เหรียญหมู่บ้าน (แก้ปัญหาของด่านได้)</h2><div class="grid" style="gap:6mm">${STAGES.map((s) => `<div class="medal s-${s.id}"><span class="e emoji">${PROBLEM_PANEL[s.id].icon}</span>${s.badge}<br>${s.place}</div>`).join('')}</div>
+<h2>เหรียญหมู่บ้าน (แก้ปัญหาของด่านได้)</h2><div class="grid" style="gap:4mm">${SITUATIONS.map((s) => `<div class="medal sit a-${s.area}"><span class="e emoji">${PROBLEM_PANEL[s.id].icon}</span>${s.badge}<br>ด่านที่ ${s.no}</div>`).join('')}</div>
 <div class="pnote">โทเคน แผ่นที่ 2/2</div></div>`);
 }

@@ -83,7 +83,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--focus);outline:none}
 .achip.tiny{font-size:12px;padding:1px 8px}
 .achip.tiny:not(.done){background:transparent;color:var(--a);box-shadow:inset 0 0 0 1.5px var(--a)}
 .a-F{--a:var(--aF)}.a-X{--a:var(--aX)}.a-O{--a:var(--aO)}.a-E{--a:var(--aE)}
-.s-school{--s:var(--school)}.s-market{--s:var(--market)}.s-field{--s:var(--field)}
+.c-build{--s:var(--school)}.c-use{--s:var(--market)}.c-expand{--s:var(--field)}.sit{--s:var(--a)}
 .ind{font:500 13px var(--display);color:var(--muted);border:1.5px solid var(--line);border-radius:999px;padding:2px 10px;background:var(--raised)}
 .stars{display:inline-flex;gap:1px;font-size:20px;line-height:1;color:var(--line)}
 .stars i{font-style:normal}.stars i.on{color:var(--gold)}
@@ -125,9 +125,10 @@ button.blk:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
 .gform label{font:500 14px var(--display);color:var(--muted)}
 .home-foot{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:14px}
 /* แผนที่ */
-.road{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;position:relative}
+.road{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;position:relative}
 .road::before{content:"";position:absolute;left:8%;right:8%;top:50%;border-top:4px dashed var(--line);z-index:0}
-@media (max-width:760px){.road{grid-template-columns:minmax(0,1fr)}.road::before{display:none}}
+@media (max-width:980px){.road{grid-template-columns:repeat(2,minmax(0,1fr))}.road::before{display:none}}
+@media (max-width:520px){.road{grid-template-columns:minmax(0,1fr)}}
 .stop{position:relative;z-index:1}
 .stop-b{width:100%;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;background:var(--raised);border:3px solid var(--s);border-radius:22px;padding:18px 14px;box-shadow:0 5px 0 var(--s)}
 .stop-b:not(:disabled):hover{transform:translateY(-2px)}
@@ -135,8 +136,19 @@ button.blk:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
 .stop-no{font:500 13px var(--display);color:#fff;background:var(--s);border-radius:999px;padding:2px 12px}
 .stop.locked .stop-no{background:var(--muted)}
 .stop-art{font-size:60px;line-height:1.1}
-.stop-name{font:600 26px var(--display)}
-.stop-topic{font:500 16px var(--display);color:var(--s)}
+.stop-name{font:600 21px/1.25 var(--display);text-wrap:balance}
+.stop-topic{font:500 15px var(--display);color:var(--s)}
+.cchip{display:inline-flex;border-radius:999px;padding:2px 10px;font:500 12px var(--display);color:var(--s);box-shadow:inset 0 0 0 1.5px var(--s);background:var(--raised)}
+.cchip.done{background:var(--s);color:#fff}
+.centers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.centers{grid-template-columns:minmax(0,1fr)}}
+.center-b{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;background:var(--raised);border:2px solid var(--line);border-left:8px solid var(--s);border-radius:14px;padding:12px 14px}
+.center-b b{font:500 18px var(--display)}.center-b small{color:var(--muted)}.center-b .ce{font-size:26px}
+.center-l{background:var(--raised);border:2px solid var(--line);border-top:6px solid var(--s);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.center-l b{font:500 17px var(--display);color:var(--s)}
+.center-l ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.center-l button{text-align:left;font:500 15px var(--display);color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.center-l button.done::after{content:" ✓";color:var(--s)}
 .stop-prog{display:flex;flex-direction:column;align-items:center;gap:6px}
 .dots{display:flex;gap:4px}.dots i{width:12px;height:12px;border-radius:50%;border:2px solid var(--s);display:block}.dots i.on{background:var(--s)}
 .mini{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}
@@ -170,7 +182,9 @@ button.blk:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
 .mgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 @media (max-width:980px){.mgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:480px){.mgrid{grid-template-columns:minmax(0,1fr)}}
-.mcard{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;background:var(--raised);border:2px solid var(--line);border-bottom:6px solid var(--a);border-radius:16px;padding:14px}
+.mgrid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:760px){.mgrid.three{grid-template-columns:minmax(0,1fr)}}
+.mcard{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;background:var(--raised);border:2px solid var(--line);border-bottom:6px solid var(--s);border-radius:16px;padding:14px}
 .mc-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .mc-title{font:500 19px/1.3 var(--display)}
 .mc-sub{font-size:14px;color:var(--muted)}
@@ -351,7 +365,7 @@ pre.ans{white-space:pre-wrap;font:15px/1.6 var(--body);color:var(--ink);backgrou
 // เนื้อหาเกม "หมู่บ้านนักแต่งประโยค"
 // กรอบเนื้อหา: การแต่งประโยค ท 4.1 ป.3/4 (การสร้างประโยค · การใช้ภาษา · การขยายประโยค)
 // กรอบการคิดสร้างสรรค์: Guilford (1967) สรุปโดย จารุณี ซามาตย์ (2552) — คล่อง ยืดหยุ่น ริเริ่ม ละเอียดลออ
-// ภารกิจ 3 ด่าน × 4 ด้าน ตามตารางที่ 2 และตัวบ่งชี้ 1.1–4.3 ตามตารางที่ 3 ของเอกสารออกแบบเนื้อหา
+// ภารกิจ 4 ด่าน (ด้านการคิดสร้างสรรค์) × 3 ด้านเนื้อหา ตามตารางที่ 2 และตัวบ่งชี้ 1.1–4.3 ตามตารางที่ 3 ของเอกสารออกแบบเนื้อหา
 
 const AREAS = {
   F: { name: 'การคิดคล่อง', en: 'Fluency', short: 'คล่อง', motto: 'คิดให้มาก',
@@ -418,6 +432,11 @@ const SCENES = {
     ['🍊', 62, 58, 'ส้ม', 'ขายเป็นกิโล'], ['🧑‍🏫', 82, 52, 'คุณครูใหญ่', 'มาเดินตลาด'], ['👦', 50, 50, 'น้องชาย', 'อายุ 5 ขวบ'],
     ['🧒', 74, 84, 'เพื่อนร่วมห้อง', 'มาซื้อขนม'], ['🪙', 34, 44, 'เหรียญ', 'เงินทอน'],
   ] },
+  grandma: { sky: 'day', items: [
+    ['🏡', 50, 24, 'บ้านยาย', 'บ้านไม้ใต้ถุนสูง'], ['👵🧺', 24, 64, 'ยาย', 'ถือของหนัก'], ['🐈', 44, 80, 'แมว', 'ย่องเข้าครัว'], ['🐟', 58, 70, 'ปลา', 'วางอยู่บนโต๊ะ'],
+    ['🧑‍🏫', 82, 52, 'คุณครูใหญ่', 'เดินผ่านหน้าบ้าน'], ['👩‍🌾', 70, 84, 'แม่ใหญ่ข้างบ้าน', 'พูดภาษาอีสาน'], ['🧒', 12, 86, 'เพื่อน', 'มาเล่นด้วย'], ['👦', 36, 50, 'น้องชาย', 'อายุ 5 ขวบ'],
+    ['👴🐃', 88, 20, 'พ่อใหญ่ข้างบ้าน', 'ตะโกนว่าควายหาย'],
+  ] },
   balloon: { sky: 'day', items: [
     ['🎈', 52, 16, 'ลูกโป่ง', 'ติดอยู่บนหลังคา'], ['🏪', 52, 44, 'ร้านขายผ้า', 'ผ้าไหมแพรวา'], ['👴', 78, 68, 'ลุงเจ้าของร้าน', 'กำลังพับผ้า'],
     ['👦😢', 26, 72, 'น้องชาย', 'ร้องไห้'], ['🪜', 88, 40, 'บันได', 'พิงอยู่ข้างร้าน'],
@@ -429,18 +448,10 @@ const SCENES = {
   ] },
 };
 
-// ---------- 3 ด่าน: สถานการณ์ปัญหา · ฐานเรียนรู้ 5 ฐาน · ภารกิจ 4 ด้าน ----------
-const STAGES = [
+// ---------- เนื้อหา 3 ด้าน (ศูนย์การเรียนรู้ ด้านละ 5 ฐาน) ----------
+const CONTENTS = [
   {
-    id: 'school', no: 1, place: 'โรงเรียน', topic: 'การสร้างประโยค', emoji: '🏫', badge: 'นักสร้างประโยค',
-    problem: {
-      scene: 'schoolyard',
-      story: 'เช้าวันจันทร์ที่โรงเรียนบ้านดอนข้าวหอม ป้ายนิเทศหน้าห้อง ป.3 ยังว่างอยู่ ครูประจำชั้นบอกว่า "วันศุกร์นี้ผู้ปกครองจะมาเยี่ยมโรงเรียน ช่วยกันเขียนประโยคเล่าเรื่องโรงเรียนของเราติดป้ายหน่อยนะ" แต่ประโยคที่เพื่อนส่งมาหลายแผ่นยังอ่านไม่รู้เรื่อง',
-      broken: ['เล่นฟุตบอลสนาม', 'นกต้นมะม่วง', 'หนังสือเด็กหญิงอ่าน'],
-      role: 'หนูคือนักเขียนประจำห้อง ป.3',
-      question: 'ทำไมประโยคบนแผ่นกระดาษเหล่านี้จึงอ่านไม่รู้เรื่อง แล้วประโยคที่ดีต้องมีอะไรบ้าง',
-      goal: 'เขียนประโยคที่ได้ใจความ เล่าเรื่องโรงเรียนให้ผู้ปกครองอ่านแล้วเข้าใจ',
-    },
+    id: 'build', no: 1, topic: 'การสร้างประโยค', emoji: '🧱',
     lessons: [
       { title: 'ประโยคต้องได้ใจความ', idea: ['ประโยค คือ คำที่เรียงกันแล้ว **อ่านรู้เรื่อง**', 'อ่านแล้วต้องรู้ว่า **ใคร** ทำ **อะไร**'],
         example: { good: ['เด็กหญิง:S', 'อ่าน:V', 'หนังสือ:O'], bad: 'หนังสือในห้องสมุด', note: '"หนังสือในห้องสมุด" ยังไม่รู้ว่าใครทำอะไร' },
@@ -476,15 +487,7 @@ const STAGES = [
     ],
   },
   {
-    id: 'market', no: 2, place: 'ตลาด', topic: 'การใช้ภาษา', emoji: '🧺', badge: 'นักใช้ภาษา',
-    problem: {
-      scene: 'market',
-      story: 'วันพุธเป็นวันตลาดนัดของหมู่บ้าน แม่ไม่สบาย จึงให้หนูพาน้องชายไปซื้อของแทน ของในตะกร้าหนักขึ้นเรื่อย ๆ หนูหาเงินทอนไม่เจอ แล้วน้องก็ทำลูกโป่งลอยไปติดหลังคาร้านผ้า แม่ค้าบางคนพูดภาษาอีสาน บางคนพูดภาษาไทยกลาง',
-      broken: ['เอาส้ม!', 'เฮ้ย ถือให้หน่อย', 'เงินทอนล่ะ'],
-      role: 'หนูคือพี่ที่ต้องดูแลน้องและซื้อของให้ครบ',
-      question: 'จะพูดขอความช่วยเหลืออย่างไรให้สุภาพ ผู้ฟังเข้าใจ และเหมาะกับแต่ละคน',
-      goal: 'เลือกถ้อยคำสุภาพ ภาษามาตรฐานหรือภาษาถิ่นให้เหมาะกับผู้ฟังและกาลเทศะ',
-    },
+    id: 'use', no: 2, topic: 'การใช้ภาษา', emoji: '💬',
     lessons: [
       { title: 'ถ้อยคำเหมาะกับผู้ฟัง', idea: ['พูดกับ **ผู้ใหญ่** ใช้คำสุภาพ มีคำลงท้าย', 'พูดกับ **เพื่อน** ใช้ภาษากันเองได้ แต่ **ไม่หยาบ**', 'ในห้องเรียนหรืองานทางการใช้ **ภาษาไทยมาตรฐาน** คุยกับคนในหมู่บ้านใช้ **ภาษาถิ่น** อย่างสุภาพได้'],
         example: { good: ['ครูขา:S', 'หนูขอไปห้องน้ำ:V', 'ได้ไหมคะ:P'], note: 'พูดกับครู มีคำเรียกและคำลงท้าย' },
@@ -521,15 +524,7 @@ const STAGES = [
     ],
   },
   {
-    id: 'field', no: 3, place: 'ทุ่งนา', topic: 'การขยายประโยค', emoji: '🌾', badge: 'นักขยายประโยค',
-    problem: {
-      scene: 'field',
-      story: 'ตอนเย็น พ่อใหญ่เดินกลับจากทุ่งนาด้วยสีหน้ากังวล "ควายของพ่อใหญ่หายไปแล้ว!" ผู้ใหญ่บ้านจะช่วยประกาศเสียงตามสาย และให้ติดประกาศที่ศาลากลางบ้าน แต่ประกาศที่มีอยู่เขียนว่า "ควายหาย" เพียงสองคำ ไม่มีใครรู้เลยว่าควายตัวไหน หายเมื่อไร หายที่ไหน',
-      broken: ['ควายหาย', 'ใครเห็นบอกด้วย'],
-      role: 'หนูคือผู้ช่วยผู้ใหญ่บ้าน มีหน้าที่เขียนประกาศ',
-      question: 'ต้องเติมคำอะไรลงในประโยค "ควายหาย" คนในหมู่บ้านจึงจะจำควายของพ่อใหญ่ได้',
-      goal: 'ขยายประโยคให้บอกลักษณะ การกระทำ เวลา และสถานที่ได้ชัดเจน',
-    },
+    id: 'expand', no: 3, topic: 'การขยายประโยค', emoji: '🔎',
     lessons: [
       { title: 'ประโยคหลัก', idea: ['**ประโยคหลัก** คือแก่นของประโยค (ใคร ทำอะไร)', 'ตัดส่วนขยายออก ประโยคหลักก็ยังอ่านรู้เรื่อง'],
         example: { good: ['ควาย:S', 'ตัวใหญ่:M', 'กินหญ้า:V', 'ในทุ่งนา:M'], note: 'ประโยคหลัก = ควาย กินหญ้า' },
@@ -566,16 +561,56 @@ const STAGES = [
   },
 ];
 
+// ---------- สถานการณ์ปัญหา 4 ด่าน ตามองค์ประกอบการคิดสร้างสรรค์ แต่ละด่านครอบคลุมเนื้อหา 3 ด้าน ----------
+const SITUATIONS = [
+  {
+    id: 'F', area: 'F', no: 1, title: 'วันเปิดบ้านดอนข้าวหอม', emoji: '🎪', badge: 'นักคิดคล่อง', scene: 'schoolyard',
+    story: 'วันศุกร์นี้หมู่บ้านจัดงาน "เปิดบ้านดอนข้าวหอม" แขกจากหมู่บ้านอื่นจะมาเที่ยวโรงเรียน ตลาดนัด และทุ่งนา ผู้ใหญ่บ้านขอให้นักเรียน ป.3 ช่วยเตรียมงาน แต่เวลาเหลือไม่มาก ต้องมีประโยคติดป้ายนิเทศจำนวนมาก ถ้อยคำสุภาพไว้ขอความช่วยเหลือในตลาดนัด และคำขยายไว้เขียนป้ายบรรยายในทุ่งนา',
+    broken: ['เล่นฟุตบอลสนาม', 'เอาผัก!', 'ทุ่งนา'],
+    role: 'หนูคือทีมงานนักเรียนของงานเปิดบ้าน',
+    question: 'เวลาเหลือน้อย จะคิดประโยค ถ้อยคำ และคำขยายให้ได้มากที่สุดอย่างไร โดยที่ยังถูกต้อง',
+    goal: 'คิดให้มาก: ได้ประโยค ถ้อยคำ และคำขยายจำนวนมากภายในเวลาที่กำหนด',
+    missions: ['build-F', 'use-F', 'expand-F'],
+  },
+  {
+    id: 'X', area: 'X', no: 2, title: 'เย็นวันเสาร์ที่บ้านยาย', emoji: '🏡', badge: 'นักคิดยืดหยุ่น', scene: 'grandma',
+    story: 'หนูไปช่วยยายทำงานบ้าน แมวแอบย่องเข้าครัวมาหาปลาของยาย ยายถือของจนเหนื่อย ต้องให้หนูไปขอแรงคนอื่นมาช่วย แล้วพ่อใหญ่ข้างบ้านก็วิ่งมาบอกว่า "ควายหาย!" ทุกคนเล่าเรื่องเดียวกันไม่เหมือนกันเลย',
+    broken: ['แมวปลายาย', 'ถือให้หน่อย', 'ควายหาย'],
+    role: 'หนูคือหลานคนเก่งของยาย',
+    question: 'เรื่องเดียวกัน ถ้าเปลี่ยนผู้ทำ เปลี่ยนผู้ฟัง หรือเปลี่ยนส่วนที่ขยาย จะเล่าได้กี่แบบ',
+    goal: 'คิดให้หลาก: แต่งประโยค ปรับถ้อยคำ และขยายประโยคได้หลายรูปแบบ',
+    missions: ['build-X', 'use-X', 'expand-X'],
+  },
+  {
+    id: 'O', area: 'O', no: 3, title: 'พายุฝนถล่มหมู่บ้าน', emoji: '⛈️', badge: 'นักคิดริเริ่ม', scene: 'butterfly',
+    story: 'บ่ายวันหนึ่งฝนตกหนักและลมแรงทั่วหมู่บ้าน ที่โรงเรียนผีเสื้อปีกเปียกจนบินไม่ได้ ที่ตลาดลมพัดลูกโป่งของน้องไปติดหลังคาร้านผ้า ส่วนที่ทุ่งนาควายของพ่อใหญ่ตกใจเสียงฟ้าร้องวิ่งหนีหายไป วิธีเดิม ๆ ใช้ไม่ได้ผล หมู่บ้านต้องการความคิดใหม่',
+    broken: ['ผีเสื้อบิน', 'ช่วยด้วย', 'ควายหาย'],
+    role: 'หนูคือนักคิดประจำหมู่บ้าน',
+    question: 'จะคิดประโยคและถ้อยคำแบบใหม่ที่ไม่ซ้ำใคร แต่ยังเข้ากับสถานการณ์ได้อย่างไร',
+    goal: 'คิดให้แปลก: แต่งประโยค ถ้อยคำ และประกาศที่แปลกใหม่และเหมาะสม',
+    missions: ['build-O', 'use-O', 'expand-O'],
+  },
+  {
+    id: 'E', area: 'E', no: 4, title: 'จดหมายข่าวบ้านดอนข้าวหอม', emoji: '📰', badge: 'นักคิดละเอียดลออ', scene: 'watering',
+    story: 'ผู้ใหญ่บ้านจะทำจดหมายข่าวแจกทุกบ้าน มีเรื่องเล่าจากโรงเรียน มุมมารยาทการพูดที่ตลาด และประกาศตามหาควายฉบับสมบูรณ์ แต่ต้นฉบับที่ได้มายังสั้นและขาดรายละเอียด คนอ่านจึงไม่เข้าใจ',
+    broken: ['เด็กหญิงรดน้ำต้นไม้', 'เอาส้ม!', 'ควายหาย'],
+    role: 'หนูคือบรรณาธิการจดหมายข่าว',
+    question: 'ต้องเพิ่มรายละเอียดอะไร และแก้ตรงไหน คนอ่านจึงจะเข้าใจชัดเจน',
+    goal: 'คิดให้ละเอียด: ขยายเรื่อง ปรับปรุงถ้อยคำ และเพิ่มรายละเอียดพร้อมบอกเหตุผล',
+    missions: ['build-E', 'use-E', 'expand-E'],
+  },
+];
+
 // ภารกิจ 12 ภารกิจ (ตารางที่ 2) · ศูนย์ส่งเสริมการคิดสร้างสรรค์
 const MISSIONS = [
-  // ---------- ด่าน 1 โรงเรียน ----------
-  { id: 'school-F', stage: 'school', area: 'F', ind: '1.1', sub: 'ด้านการแสดงออก', title: 'ป้ายนิเทศเล่าเรื่องโรงเรียน', scene: 'schoolyard', timer: 300,
+  // ---------- เนื้อหา 1 การสร้างประโยค ----------
+  { id: 'build-F', content: 'build', area: 'F', ind: '1.1', sub: 'ด้านการแสดงออก', title: 'ป้ายนิเทศเล่าเรื่องโรงเรียน', scene: 'schoolyard', timer: 300,
     prompt: 'จากภาพลานโรงเรียน แต่ง **ประโยคบอกเล่า** เกี่ยวกับภาพให้ได้ **มากที่สุดภายในเวลา** ทุกประโยคต้องมีคำนามและคำกริยาอย่างน้อยอย่างละ 1 คำ และมีภาคประธานกับภาคแสดง',
     fields: [{ k: 'items', type: 'sentences', label: 'ประโยคของหนู', ph: 'เช่น เด็กชายเตะฟุตบอล' }],
     coach: 'ในภาพมีใครบ้าง แต่ละคนกำลังทำอะไรอยู่',
     help: { concept: 'ประโยคที่ได้ใจความต้องมี ใคร (ภาคประธาน) และ ทำอะไร (ภาคแสดง) เช่น นก ร้องเพลง', lessons: [0, 1, 4],
       strategy: 'แตะ "ส่องภาพ" ดูทุกคนในภาพ เขียนคนละ 1 ประโยคก่อน แล้วค่อยเปลี่ยนการกระทำหรือเติมกรรม' } },
-  { id: 'school-X', stage: 'school', area: 'X', ind: '2.1', sub: 'แบบดัดแปลง', title: 'แมว ปลา ยาย', scene: 'catfish',
+  { id: 'build-X', content: 'build', area: 'X', ind: '2.1', sub: 'แบบดัดแปลง', title: 'แมว ปลา ยาย', scene: 'catfish',
     prompt: 'ใช้คำว่า **แมว ปลา ยาย** แต่งประโยค **3 แบบ** โดยเปลี่ยนผู้ทำหรือการกระทำ แล้วแต่ง **ประโยค 2 ส่วน ประโยค 3 ส่วน** และประโยค **4 ชนิด** คือ บอกเล่า ปฏิเสธ คำถาม ขอร้องหรือคำสั่ง',
     fields: [
       { k: 'v1', type: 'sentence', label: 'แบบที่ 1', ph: 'เช่น แมวกินปลา', group: 'เปลี่ยนผู้ทำหรือการกระทำ' },
@@ -591,7 +626,7 @@ const MISSIONS = [
     coach: 'ถ้าให้ยายเป็นผู้ทำบ้าง ยายจะทำอะไรกับแมวหรือปลาได้บ้าง',
     help: { concept: 'เปลี่ยนผู้ทำ: แมวกินปลา → ยายทอดปลา · เปลี่ยนการกระทำ: แมวกินปลา → แมวขโมยปลา · ชนิดประโยคดูจากคำ ไม่ (ปฏิเสธ) ไหม/ใคร/อะไร (คำถาม) ช่วย/โปรด (ขอร้อง) อย่า/จง (คำสั่ง)', lessons: [1, 2, 3],
       strategy: 'ทำทีละช่อง เริ่มจากประโยคง่าย ๆ แล้วดัดแปลงประโยคเดิม เช่น เติม "ไม่" ได้ประโยคปฏิเสธ เติม "ไหม" ได้ประโยคคำถาม' } },
-  { id: 'school-O', stage: 'school', area: 'O', ind: '3.1', sub: 'การออกแบบ', title: 'ผีเสื้อในจินตนาการ', scene: 'butterfly',
+  { id: 'build-O', content: 'build', area: 'O', ind: '3.1', sub: 'การออกแบบ', title: 'ผีเสื้อในจินตนาการ', scene: 'butterfly',
     prompt: 'ผีเสื้อปีกเปียกฝนจนบินไม่ได้ **ออกแบบผีเสื้อตามจินตนาการ** ที่ไม่ซ้ำกับภาพ วาดภาพประกอบ แล้ว **แต่งประโยคที่แปลกใหม่** ให้สอดคล้องกับภาพ และ **อธิบายเหตุผล**',
     fields: [
       { k: 'draw', type: 'draw', label: 'วาดผีเสื้อของหนู' },
@@ -602,7 +637,7 @@ const MISSIONS = [
     coach: 'ถ้าผีเสื้อของหนูไม่กลัวฝนเลย ปีกของมันจะต้องเป็นแบบไหน',
     help: { concept: 'ความคิดริเริ่ม = แปลกใหม่ ไม่ซ้ำใคร แต่ยังถูกต้องและเข้ากับสถานการณ์ (ผีเสื้อเจอฝน)', lessons: [0, 4],
       strategy: 'ลองผสมผีเสื้อกับสิ่งของอื่น เช่น ร่ม ใบบัว ไฟฉาย แล้วคิดว่ามันจะช่วยแก้ปัญหาฝนตกได้อย่างไร' } },
-  { id: 'school-E', stage: 'school', area: 'E', ind: '4.1', sub: 'การตกแต่งและขยายความ', title: 'เด็กหญิงรดน้ำต้นไม้', scene: 'watering',
+  { id: 'build-E', content: 'build', area: 'E', ind: '4.1', sub: 'การตกแต่งและขยายความ', title: 'เด็กหญิงรดน้ำต้นไม้', scene: 'watering',
     prompt: 'ขยายประโยค **"เด็กหญิงรดน้ำต้นไม้"** โดยเพิ่มรายละเอียด **เวลา สถานที่ อาการ และความรู้สึก** ให้สมบูรณ์และน่าสนใจ ตั้งชื่อเรื่องให้สัมพันธ์กับภาพ ความยาว **5–7 บรรทัด**',
     fields: [
       { k: 'title', type: 'line', label: 'ชื่อเรื่อง', ph: 'ตั้งชื่อเรื่องให้น่าอ่าน' },
@@ -611,26 +646,26 @@ const MISSIONS = [
     coach: 'เด็กหญิงรดน้ำตอนไหน ที่ไหน รดอย่างไร แล้วเธอรู้สึกอย่างไร',
     help: { concept: 'เวลา (เมื่อไร) · สถานที่ (ที่ไหน) · อาการ (ทำอย่างไร เช่น ค่อย ๆ) · ความรู้สึก (ดีใจ ภูมิใจ)', lessons: [4],
       strategy: 'เขียนประโยคหลักก่อน แล้วถามทีละคำถาม เมื่อไร? ที่ไหน? อย่างไร? รู้สึกอย่างไร? เติมคำตอบลงไปทีละบรรทัด' } },
-  // ---------- ด่าน 2 ตลาด ----------
-  { id: 'market-F', stage: 'market', area: 'F', ind: '1.2', sub: 'ด้านถ้อยคำ', title: 'คำขอความช่วยเหลือสารพัด', scene: 'market', timer: 180,
-    prompt: 'ที่ตลาดนัด หนูมีปัญหาหลายอย่าง คิด **ถ้อยคำสุภาพเพื่อขอความช่วยเหลือ** ให้ได้ **มากที่สุด** ใช้ภาษาไทยมาตรฐานหรือภาษาถิ่นก็ได้ แต่ต้องสุภาพและเหมาะกับกาลเทศะ',
+  // ---------- เนื้อหา 2 การใช้ภาษา ----------
+  { id: 'use-F', content: 'use', area: 'F', ind: '1.2', sub: 'ด้านถ้อยคำ', title: 'คำขอความช่วยเหลือสารพัด', scene: 'market', timer: 180,
+    prompt: 'ในตลาดนัดของงานเปิดบ้าน คนแน่นมากและหนูมีปัญหาหลายอย่าง คิด **ถ้อยคำสุภาพเพื่อขอความช่วยเหลือ** ให้ได้ **มากที่สุด** ใช้ภาษาไทยมาตรฐานหรือภาษาถิ่นก็ได้ แต่ต้องสุภาพและเหมาะกับกาลเทศะ',
     fields: [{ k: 'items', type: 'phrases', label: 'ถ้อยคำขอความช่วยเหลือ', ph: 'เช่น ป้าคะ ช่วยถือตะกร้าให้หนูหน่อยได้ไหมคะ' }],
     coach: 'ในตลาดมีใครที่ช่วยหนูได้บ้าง แต่ละคนช่วยเรื่องอะไรได้',
     help: { concept: 'ขอความช่วยเหลือ = ช่วย/รบกวน + สิ่งที่ต้องการ + หน่อย/ได้ไหม + ครับ/ค่ะ', lessons: [0, 1, 2],
       strategy: 'ไล่ทีละปัญหา: ของหนัก เงินทอนหาย น้องหลง ลูกโป่งติด แล้วไล่ทีละคนที่ช่วยได้' } },
-  { id: 'market-X', stage: 'market', area: 'X', ind: '2.2', sub: 'แบบดัดแปลง', title: 'พูดกับใครดี', scene: 'market',
-    prompt: 'หนูถือของไม่ไหว อยากให้คนช่วยถือ **ปรับถ้อยคำขอความช่วยเหลือ** ให้เหมาะกับผู้ฟัง **อย่างน้อย 3 คน** (เลือกภาษามาตรฐานหรือภาษาถิ่นให้เหมาะกับผู้ฟัง)',
+  { id: 'use-X', content: 'use', area: 'X', ind: '2.2', sub: 'แบบดัดแปลง', title: 'พูดกับใครดี', scene: 'grandma',
+    prompt: 'ยายถือของไม่ไหว หนูต้องไปขอให้คนช่วยถือ **ปรับถ้อยคำขอความช่วยเหลือ** ให้เหมาะกับผู้ฟัง **อย่างน้อย 3 คน** (เลือกภาษามาตรฐานหรือภาษาถิ่นให้เหมาะกับผู้ฟัง)',
     fields: [
-      { k: 'teacher', type: 'line', label: '🧑‍🏫 คุณครูใหญ่ที่มาเดินตลาด (ผู้ใหญ่ ใช้ภาษามาตรฐาน)', ph: '', listener: 'adult-std' },
-      { k: 'grandma', type: 'line', label: '👵 แม่ใหญ่ร้านผักที่พูดภาษาอีสาน (ผู้ใหญ่ ใช้ภาษาถิ่นอย่างสุภาพได้)', ph: '', listener: 'adult' },
+      { k: 'teacher', type: 'line', label: '🧑‍🏫 คุณครูใหญ่ที่เดินผ่านหน้าบ้านยาย (ผู้ใหญ่ ใช้ภาษามาตรฐาน)', ph: '', listener: 'adult-std' },
+      { k: 'grandma', type: 'line', label: '👩‍🌾 แม่ใหญ่ข้างบ้านที่พูดภาษาอีสาน (ผู้ใหญ่ ใช้ภาษาถิ่นอย่างสุภาพได้)', ph: '', listener: 'adult' },
       { k: 'friend', type: 'line', label: '🧒 เพื่อนร่วมห้อง', ph: '', listener: 'friend' },
       { k: 'kid', type: 'line', label: '👦 น้องชายอายุ 5 ขวบ', ph: '', listener: 'kid' },
     ],
     coach: 'ถ้าพูดกับน้องเหมือนพูดกับครูใหญ่ น้องจะเข้าใจไหม ควรปรับคำตรงไหน',
     help: { concept: 'ผู้ใหญ่: มีคำเรียก + คำลงท้าย (ครับ/ค่ะ/เด้อ) · เพื่อน: กันเองได้แต่ไม่หยาบ · น้อง: ใช้คำง่ายและอ่อนโยน (นะ จ้ะ)', lessons: [0, 1, 2],
       strategy: 'เขียนประโยคแรกให้ครูใหญ่ แล้วดัดแปลงจากประโยคนั้น เปลี่ยนคำเรียก คำลงท้าย หรือภาษา ให้เข้ากับแต่ละคน' } },
-  { id: 'market-O', stage: 'market', area: 'O', ind: '3.2', sub: 'การดัดแปลง', title: 'ลูกโป่งติดหลังคา', scene: 'balloon',
-    prompt: 'ลูกโป่งของน้องลอยไปติดบนหลังคาร้านผ้า คิด **ถ้อยคำขอความช่วยเหลือที่แปลกใหม่** ไม่ซ้ำใคร และ **เหมาะสมกับผู้ฟัง** (ลุงเจ้าของร้าน)',
+  { id: 'use-O', content: 'use', area: 'O', ind: '3.2', sub: 'การดัดแปลง', title: 'ลูกโป่งติดหลังคา', scene: 'balloon',
+    prompt: 'ลมพายุพัดลูกโป่งของน้องไปติดบนหลังคาร้านผ้า คิด **ถ้อยคำขอความช่วยเหลือที่แปลกใหม่** ไม่ซ้ำใคร และ **เหมาะสมกับผู้ฟัง** (ลุงเจ้าของร้าน)',
     fields: [
       { k: 'speech', type: 'area', label: 'หนูจะพูดกับลุงว่าอย่างไร', rows: 3, ph: 'ลุงครับ…' },
       { k: 'reason', type: 'line', label: 'ถ้อยคำของหนูแปลกใหม่ตรงไหน', ph: 'เพราะ…' },
@@ -639,7 +674,7 @@ const MISSIONS = [
     coach: 'นอกจากขอให้ลุงหยิบให้ ยังมีวิธีขอแบบอื่นที่ทำให้ลุงอยากช่วยไหม',
     help: { concept: 'แปลกใหม่ได้ เช่น ชมร้านก่อน เสนอช่วยลุงพับผ้า หรือบอกวิธีที่ไม่ต้องปีนเอง แต่ต้องสุภาพและลุงเข้าใจ', lessons: [2, 3],
       strategy: 'ลองคิดอย่างน้อย 3 แบบในใจ แล้วเลือกแบบที่คิดว่าไม่มีเพื่อนคนไหนคิดเหมือน' } },
-  { id: 'market-E', stage: 'market', area: 'E', ind: '4.2', sub: 'การประเมินและตัดสินคุณค่า', title: 'ซ่อมคำพูด', scene: 'market',
+  { id: 'use-E', content: 'use', area: 'E', ind: '4.2', sub: 'การประเมินและตัดสินคุณค่า', title: 'ซ่อมคำพูด', scene: 'market',
     prompt: '**ปรับปรุงถ้อยคำ** 2 ประโยคนี้ให้ **เหมาะกับผู้ฟัง** และ **สื่อความหมายครบถ้วน** (บอกว่าต้องการอะไร เท่าไร อย่างไร)',
     fields: [
       { k: 'fix1', type: 'area', label: 'พูดกับแม่ค้าขายส้ม: "เอาส้ม!"', rows: 2, ph: 'ปรับให้สุภาพและบอกจำนวน' },
@@ -648,14 +683,14 @@ const MISSIONS = [
     coach: 'ถ้าหนูเป็นแม่ค้า ได้ยินคำว่า "เอาส้ม!" จะรู้ไหมว่าต้องการกี่กิโล และรู้สึกอย่างไร',
     help: { concept: 'ประโยคที่ครบถ้วน: คำเรียกผู้ฟัง + ขอ/ช่วย + สิ่งที่ต้องการ + จำนวน + คำลงท้าย', lessons: [1, 3, 4],
       strategy: 'ใช้รายการตรวจด้านล่างเป็นแผน เติมทีละข้อจนครบ แล้วอ่านทวนว่าผู้ฟังจะรู้สึกอย่างไร' } },
-  // ---------- ด่าน 3 ทุ่งนา ----------
-  { id: 'field-F', stage: 'field', area: 'F', ind: '1.3', sub: 'ด้านการโยงความสัมพันธ์', title: 'คลังคำขยาย', scene: 'field', timer: 180,
-    prompt: 'คิด **คำขยาย** บอก **ลักษณะ เวลา และสถานที่** ให้ได้ **มากที่สุด** เพื่อนำไปใช้เขียนประกาศตามหาควาย',
+  // ---------- เนื้อหา 3 การขยายประโยค ----------
+  { id: 'expand-F', content: 'expand', area: 'F', ind: '1.3', sub: 'ด้านการโยงความสัมพันธ์', title: 'คลังคำขยาย', scene: 'field', timer: 180,
+    prompt: 'คิด **คำขยาย** บอก **ลักษณะ เวลา และสถานที่** ให้ได้ **มากที่สุด** เพื่อนำไปเขียนป้ายบรรยายในทุ่งนาให้แขกที่มาเที่ยวงาน',
     fields: [{ k: 'buckets', type: 'buckets', label: 'คลังคำขยาย', bins: ['ลักษณะ', 'เวลา', 'สถานที่'], ph: 'พิมพ์คำขยาย แล้วกดปุ่มกลุ่มที่ใช่' }],
-    coach: 'ควายของพ่อใหญ่หน้าตาเป็นอย่างไรได้บ้าง และอาจหายไปตอนไหน ที่ไหน',
-    help: { concept: 'ลักษณะ: สีดำ ตัวใหญ่ เขาโค้ง · เวลา: ตอนเช้า เมื่อวานนี้ · สถานที่: ริมหนองน้ำ ใต้ต้นมะขาม', lessons: [1, 2, 3],
+    coach: 'ในทุ่งนามีอะไรบ้าง แต่ละอย่างหน้าตาเป็นอย่างไร เห็นได้ตอนไหน และอยู่ที่ไหน',
+    help: { concept: 'ลักษณะ: สีเขียว ตัวใหญ่ เขาโค้ง · เวลา: ตอนเช้า เมื่อวานนี้ · สถานที่: ริมหนองน้ำ ใต้ต้นมะขาม', lessons: [1, 2, 3],
       strategy: 'แตะ "ส่องภาพ" ดูทุ่งนา ทุกสิ่งในภาพเป็นสถานที่ได้ แล้วคิดเวลาตั้งแต่เช้าจนค่ำ' } },
-  { id: 'field-X', stage: 'field', area: 'X', ind: '2.3', sub: 'แบบทันที', title: 'ควายหาย หลายแบบ', scene: 'field',
+  { id: 'expand-X', content: 'expand', area: 'X', ind: '2.3', sub: 'แบบทันที', title: 'ควายหาย หลายแบบ', scene: 'field',
     prompt: 'ขยายประโยค **"ควายหาย"** โดย **เปลี่ยนส่วนที่ขยายอย่างน้อย 3 แบบ** (ผู้ทำ การกระทำ เวลา สถานที่)',
     fields: [
       { k: 'subj', type: 'line', label: 'ขยายผู้ทำ (ควายแบบไหน)', ph: 'เช่น ควายสีดำเขาโค้งหาย' },
@@ -666,8 +701,8 @@ const MISSIONS = [
     coach: 'ถ้าคนในหมู่บ้านถามว่า "ควายตัวไหน" "หายตอนไหน" หนูจะตอบอย่างไร',
     help: { concept: 'ขยายผู้ทำ วางหลัง "ควาย" · ขยายการกระทำ วางหลัง "หาย" · เวลาและสถานที่ วางหน้าหรือท้ายประโยค', lessons: [1, 2, 3],
       strategy: 'เริ่มจาก "ควายหาย" ทุกครั้ง แล้วเติมเพียงส่วนเดียวต่อช่อง จะเห็นชัดว่าแต่ละแบบต่างกันอย่างไร' } },
-  { id: 'field-O', stage: 'field', area: 'O', ind: '3.3', sub: 'การดัดแปลง', title: 'ประกาศตามหาควาย', scene: 'field',
-    prompt: 'แต่ง **ประกาศตามหาควาย 2–3 ประโยค** ที่ **แปลกใหม่** สะดุดหูเมื่อประกาศเสียงตามสาย และยังสอดคล้องกับสถานการณ์',
+  { id: 'expand-O', content: 'expand', area: 'O', ind: '3.3', sub: 'การดัดแปลง', title: 'ประกาศตามหาควาย', scene: 'field',
+    prompt: 'ควายตกใจเสียงฟ้าร้องวิ่งหนีไป แต่ง **ประกาศตามหาควาย 2–3 ประโยค** ที่ **แปลกใหม่** สะดุดหูเมื่อประกาศเสียงตามสาย และยังสอดคล้องกับสถานการณ์',
     fields: [
       { k: 'ann', type: 'area', label: 'ประกาศของหนู (เขียน 2–3 ประโยค ขึ้นบรรทัดใหม่ทุกประโยค)', rows: 4, ph: 'ประกาศ ๆ …' },
     ],
@@ -675,10 +710,10 @@ const MISSIONS = [
     coach: 'ทำอย่างไรให้คนที่กำลังทำนาอยู่หยุดฟังประกาศของหนู',
     help: { concept: 'นำคำขยายจากคลังคำมาประยุกต์ใช้ อาจเปิดประกาศด้วยคำถาม คำคล้องจอง หรือเล่าจากมุมของควาย', lessons: [0, 4],
       strategy: 'เขียนประกาศธรรมดา 1 ฉบับก่อน แล้วดัดแปลงให้แปลกขึ้นโดยเปลี่ยนวิธีเปิดเรื่อง' } },
-  { id: 'field-E', stage: 'field', area: 'E', ind: '4.3', sub: 'การประเมินและตัดสินคุณค่า', title: 'ประกาศฉบับสมบูรณ์', scene: 'field',
+  { id: 'expand-E', content: 'expand', area: 'E', ind: '4.3', sub: 'การประเมินและตัดสินคุณค่า', title: 'ประกาศฉบับสมบูรณ์', scene: 'field',
     prompt: '**เพิ่มรายละเอียด** ในประกาศ เพื่อให้ผู้ฟังทราบ **ลักษณะ เวลา และสถานที่** แล้ว **อธิบายเหตุผล** ว่าทำไมจึงเพิ่มรายละเอียดเหล่านั้น',
     fields: [
-      { k: 'ann', type: 'area', label: 'ประกาศฉบับสมบูรณ์', rows: 6, ph: '', prefill: 'field-O.ann' },
+      { k: 'ann', type: 'area', label: 'ประกาศฉบับสมบูรณ์', rows: 6, ph: '', prefill: 'expand-O.ann' },
       { k: 'reason', type: 'area', label: 'หนูเพิ่มรายละเอียดอะไร เพราะอะไร', rows: 3, ph: 'หนูเพิ่ม… เพราะ…' },
     ],
     coach: 'ถ้ามีควายสีดำหลายตัวในหมู่บ้าน ต้องบอกอะไรเพิ่มคนจึงจะรู้ว่าตัวไหนเป็นของพ่อใหญ่',
@@ -710,7 +745,7 @@ const COMPONENTS = [
   ['ศูนย์การเรียนรู้', 'ข้อ 7–11', 'ฐานเรียนรู้ 15 ฐาน แผนผังความคิดของเนื้อหาทั้งหมด ภาพเคลื่อนไหวที่แตะส่องดูคำได้ และคลังตัวอย่างจากหลายแหล่ง'],
   ['เครื่องมือทางปัญญา', 'ข้อ 12–14', 'ห้องทดลองประโยค (เรียงบล็อกคำแล้วตรวจ) ตัวแยกคำบอกหน้าที่ของคำ และผังจัดความคิด ใคร ทำอะไร ที่ไหน เมื่อไร อย่างไร'],
   ['ศูนย์แลกเปลี่ยนเรียนรู้', 'ข้อ 15–18', 'กระดานแลกเปลี่ยนของกลุ่ม แชร์คำตอบ ให้ดาว และตอบกลับด้วยประโยคชวนคิด ครูเข้ามาให้ความเห็นได้'],
-  ['ศูนย์ส่งเสริมการคิดสร้างสรรค์', 'ข้อ 19–20', 'ภารกิจ 12 ภารกิจ (4 ด้าน × 3 ด่าน) พร้อมเคล็ดคิดของแต่ละด้าน และเส้นทาง คิดให้มาก → คิดให้หลาก → คิดให้แปลก → คิดให้ละเอียด'],
+  ['ศูนย์ส่งเสริมการคิดสร้างสรรค์', 'ข้อ 19–20', 'ภารกิจ 12 ภารกิจ (4 ด่านการคิด × 3 ด้านเนื้อหา) พร้อมเคล็ดคิดของแต่ละด้าน และเส้นทาง คิดให้มาก → คิดให้หลาก → คิดให้แปลก → คิดให้ละเอียด'],
   ['ฐานการช่วยเหลือ', 'ข้อ 21–25', 'ปุ่มขอความช่วยเหลือ 4 แบบในทุกภารกิจ: ความคิดรวบยอด การคิด กระบวนการ และกลยุทธ์'],
   ['การโค้ช', 'ข้อ 26–28', 'ครูฮูกตั้งคำถามกระตุ้น ให้คำแนะนำหลังส่งงาน และช่องปรึกษาครูที่ครูตอบได้ในโหมดครู'],
 ];
@@ -897,18 +932,19 @@ const stars = (n, max = 3) => h('span', { class: 'stars', 'aria-label': n == nul
   Array.from({ length: max }, (_, i) => h('i', { class: n != null && i < n ? 'on' : '' }, '★')));
 
 // ====================== สถานะ ======================
-const KEY = 'sentence-village-v1';
+const KEY = 'sentence-village-v2';
 const DB = Object.assign({ groups: [], cur: null, unlockAll: false, board: [], consult: [], teacher: false }, store.get(KEY) || {});
 let ui = { view: 'home' };
 let saveT = 0;
 const save = () => { clearTimeout(saveT); saveT = setTimeout(() => store.set(KEY, DB), 250); };
 const G = () => DB.groups.find((g) => g.id === DB.cur);
-const STAGE = (id) => STAGES.find((s) => s.id === id);
+const CONTENT = (id) => CONTENTS.find((c) => c.id === id);
+const SIT = (id) => SITUATIONS.find((s) => s.id === id);
 const MISSION = (id) => MISSIONS.find((m) => m.id === id);
-const stageMissions = (sid) => MISSIONS.filter((m) => m.stage === sid);
+const sitMissions = (sid) => SIT(sid).missions.map(MISSION);
 function rec(g, mid) { return (g.missions[mid] ||= { data: {}, submitted: 0, auto: null, teacher: null, helps: {} }); }
 function finalScore(r) { if (!r || !r.submitted) return null; return r.teacher != null ? r.teacher : (r.auto ? r.auto.score : 0); }
-function stageUnlocked(g, i) { return i === 0 || DB.unlockAll || stageMissions(STAGES[i - 1].id).every((m) => g.missions[m.id] && g.missions[m.id].submitted); }
+function sitUnlocked(g, i) { return i === 0 || DB.unlockAll || sitMissions(SITUATIONS[i - 1].id).every((m) => g.missions[m.id] && g.missions[m.id].submitted); }
 const lessonKey = (sid, i) => `${sid}-${i}`;
 const newId = () => Math.random().toString(36).slice(2, 9);
 
@@ -936,7 +972,7 @@ const lines = (s) => (s || '').split(/\n+/).map((x) => x.trim()).filter(Boolean)
 const hasVerb = (s) => structure(makeItem(s || '')).V;
 
 const SCORE = {
-  'school-F'(d) {
+  'build-F'(d) {
     const seen = new Set(); let good = 0, nonStmt = 0, dup = 0, noStruct = 0;
     for (const it of d.items || []) {
       const n = norm(it.text); if (seen.has(n)) { dup++; continue; } seen.add(n);
@@ -951,7 +987,7 @@ const SCORE = {
       { ok: !dup, label: dup ? `มีประโยคซ้ำกัน ${dup} ประโยค` : 'ไม่มีประโยคซ้ำ' },
     ] };
   },
-  'school-X'(d) {
+  'build-X'(d) {
     const checks = []; let pts = 0;
     const keys = new Set();
     for (const k of ['v1', 'v2', 'v3']) {
@@ -967,7 +1003,7 @@ const SCORE = {
     checks.push({ ok: !!(p2 && p2.parts === 2), label: p2 && p2.parts === 3 ? 'มีกรรมแล้ว กลายเป็น 3 ส่วน ลองเอากรรมออก' : 'ประโยค 2 ส่วน: มีแค่ ใคร + ทำอะไร', k: 'p2' });
     checks.push({ ok: !!(p3 && p3.parts === 3), label: 'ประโยค 3 ส่วน: ใคร + ทำอะไร + กับใครหรืออะไร', k: 'p3' });
     pts += (p2 && p2.parts === 2 ? 1 : 0) + (p3 && p3.parts === 3 ? 1 : 0);
-    for (const f of MISSION('school-X').fields.filter((x) => x.want)) {
+    for (const f of MISSION('build-X').fields.filter((x) => x.want)) {
       const it = d[f.k]; const t = it && it.text.trim() ? sType(it.text) : null;
       const ok = !!t && structure(it).V && (f.want === 'request' ? (t === 'request' || t === 'command') : t === f.want);
       if (ok) pts++;
@@ -975,7 +1011,7 @@ const SCORE = {
     }
     return { score: band(pts, 2, 5, 8), checks: [{ ok: pts >= 8, label: `ทำได้ ${pts} จาก 9 จุด` }, ...checks] };
   },
-  'school-O'(d, g, m) {
+  'build-O'(d, g, m) {
     const nv = novelty(m, 'sentence', d, g);
     const checks = [
       { ok: !!d.draw, label: 'วาดภาพผีเสื้อของหนูแล้ว', k: 'draw' },
@@ -985,7 +1021,7 @@ const SCORE = {
     if (nv) checks.push(nv);
     return { score: checks.slice(0, 3).every((c) => c.ok) ? 1 : 0, pending: true, checks };
   },
-  'school-E'(d) {
+  'build-E'(d) {
     const s = d.story || ''; const n = lines(s).length;
     const cats = [['time', 'บอกเวลา'], ['place', 'บอกสถานที่'], ['manner', 'บอกอาการ (ทำอย่างไร)'], ['feeling', 'บอกความรู้สึก']].map(([k, l]) => ({ ok: RX[k].test(s), label: l, k: 'story' }));
     const checks = [{ ok: !!(d.title || '').trim(), label: 'ตั้งชื่อเรื่องแล้ว', k: 'title' }, ...cats,
@@ -994,7 +1030,7 @@ const SCORE = {
     const pts = cats.filter((c) => c.ok).length + (checks[0].ok ? 1 : 0) + (n >= 5 && n <= 7 ? 1 : 0);
     return { score: band(pts, 2, 4, 5), checks };
   },
-  'market-F'(d) {
+  'use-F'(d) {
     const seen = new Set(); let good = 0, polite = 0, rude = 0, dup = 0, notHelp = 0;
     for (const it of d.items || []) {
       const n = norm(it.text); if (seen.has(n)) { dup++; continue; } seen.add(n);
@@ -1010,7 +1046,7 @@ const SCORE = {
       { ok: !dup, label: dup ? `ซ้ำกัน ${dup} ข้อ` : 'ไม่มีข้อซ้ำ' },
     ] };
   },
-  'market-X'(d, g, m) {
+  'use-X'(d, g, m) {
     const seen = new Set(); let pass = 0; const checks = [];
     for (const f of m.fields) {
       const t = (d[f.k] || '').trim();
@@ -1028,7 +1064,7 @@ const SCORE = {
     }
     return { score: band(pass, 1, 2, 3), checks: [{ ok: pass >= 3, label: `ปรับถ้อยคำได้เหมาะกับผู้ฟัง ${pass} คน (อย่างน้อย 3 คน)` }, ...checks] };
   },
-  'market-O'(d, g, m) {
+  'use-O'(d, g, m) {
     const t = d.speech || '';
     const checks = [
       { ok: RX.help.test(t), label: 'เป็นการขอความช่วยเหลือ', k: 'speech' },
@@ -1038,14 +1074,14 @@ const SCORE = {
     const nv = novelty(m, 'speech', d, g); if (nv) checks.push(nv);
     return { score: checks.slice(0, 3).every((c) => c.ok) ? 1 : 0, pending: true, checks };
   },
-  'market-E'(d) {
+  'use-E'(d) {
     const a = d.fix1 || '', b = d.fix2 || '';
     const c1 = [[RX.address.test(a), 'มีคำเรียกผู้ฟัง (ป้า แม่ค้า…)'], [RX.polite.test(a), 'มีคำลงท้ายสุภาพ'], [RX.help.test(a), 'ใช้คำขอ เช่น ขอซื้อ ได้ไหม'], [/ส้ม/.test(a), 'บอกว่าต้องการอะไร (ส้ม)'], [RX.amount.test(a), 'บอกจำนวน (กี่กิโล กี่ลูก)']];
     const c2 = [[RX.address.test(b), 'มีคำเรียกผู้ฟัง (พี่…)'], [RX.polite.test(b), 'มีคำลงท้ายสุภาพ'], [/(ขาด|รั่ว|ซึม|หยด|แตก)/.test(b), 'บอกปัญหา (ถุงรั่ว)'], [RX.help.test(b) || /เปลี่ยน/.test(b), 'ขอให้ช่วย เช่น ขอเปลี่ยนถุงใหม่']];
     const pts = [...c1, ...c2].filter((x) => x[0]).length;
     return { score: band(pts, 3, 6, 8), checks: [...c1.map(([ok, label]) => ({ ok, label, k: 'fix1' })), ...c2.map(([ok, label]) => ({ ok, label, k: 'fix2' }))] };
   },
-  'field-F'(d) {
+  'expand-F'(d) {
     const b = d.buckets || [[], [], []];
     const all = new Set(b.flat().map(norm)); const nb = b.filter((x) => x.length).length;
     const odd = [...b[1].filter((w) => !RX.time.test(w)), ...b[2].filter((w) => !RX.place.test(w))];
@@ -1057,7 +1093,7 @@ const SCORE = {
       { ok: !odd.length, label: odd.length ? `ลองตรวจอีกครั้ง: ${odd.slice(0, 3).join(', ')} อยู่ถูกกลุ่มไหม` : 'คำอยู่ถูกกลุ่ม' },
     ] };
   },
-  'field-X'(d, g, m) {
+  'expand-X'(d, g, m) {
     const seen = new Set(); let pass = 0; const checks = [];
     const test = {
       subj: (t) => /ควาย(.+)หาย/.test(t) && /ควาย(.+)หาย/.exec(t)[1].trim().length > 0,
@@ -1079,7 +1115,7 @@ const SCORE = {
     }
     return { score: band(pass, 1, 2, 3), checks: [{ ok: pass >= 3, label: `ขยายได้ ${pass} แบบ (อย่างน้อย 3 แบบ)` }, ...checks] };
   },
-  'field-O'(d, g, m) {
+  'expand-O'(d, g, m) {
     const t = d.ann || ''; const ls = lines(t); const n = ls.length > 1 ? ls.length : t.split(/\s+/).filter((x) => x.length >= 6).length;
     const checks = [
       { ok: n >= 2 && n <= 4, label: `เขียนได้ ${n} ประโยค (2–3 ประโยค)`, k: 'ann' },
@@ -1088,8 +1124,8 @@ const SCORE = {
     const nv = novelty(m, 'ann', d, g); if (nv) checks.push(nv);
     return { score: checks.slice(0, 2).every((c) => c.ok) ? 1 : 0, pending: true, checks };
   },
-  'field-E'(d, g) {
-    const t = d.ann || ''; const base = (((g.missions['field-O'] || {}).data || {}).ann || '').trim();
+  'expand-E'(d, g) {
+    const t = d.ann || ''; const base = (((g.missions['expand-O'] || {}).data || {}).ann || '').trim();
     const checks = [
       { ok: RX.trait.test(t), label: 'บอกลักษณะของควาย', k: 'ann' },
       { ok: RX.time.test(t), label: 'บอกเวลาที่หาย', k: 'ann' },
@@ -1153,7 +1189,7 @@ function render() {
   const g = G();
   if (!['home', 'about'].includes(ui.view) && !g) ui.view = 'home';
   if (ui.view !== 'home' && g) app.append(navEl());
-  const views = { home: homeView, map: mapView, stage: stageView, lesson: lessonView, mission: missionView, mindmap: mindmapView, lab: labView, board: boardView, consult: consultView, report: reportView, teacher: teacherView, about: aboutView };
+  const views = { home: homeView, map: mapView, situation: situationView, center: centerView, lesson: lessonView, mission: missionView, mindmap: mindmapView, lab: labView, board: boardView, consult: consultView, report: reportView, teacher: teacherView, about: aboutView };
   app.append(h('main', { class: 'main', id: 'main' }, views[ui.view]()));
   if (ui.focus) { const el = document.getElementById(ui.focus); if (el) el.focus(); ui.focus = null; }
 }
@@ -1216,77 +1252,87 @@ function homeView() {
 }
 
 // ---------- แผนที่หมู่บ้าน ----------
+function lessonDots(g, c) { return h('span', { class: 'dots', 'aria-label': `ฐานเรียนรู้ที่ผ่าน` }, c.lessons.map((_, j) => h('i', { class: g.lessons[lessonKey(c.id, j)] ? 'on' : '' }))); }
+function contentChip(c, done) { return h('span', { class: `cchip c-${c.id}${done ? ' done' : ''}` }, c.topic); }
 function mapView() {
   const g = G();
   const wrap = h('div', { class: 'map' });
   wrap.append(h('div', { class: 'pagehead' }, h('h1', {}, 'แผนที่บ้านดอนข้าวหอม'),
-    h('p', { class: 'muted' }, 'เดินทางตามลำดับเนื้อหา: สร้างประโยค → ใช้ภาษา → ขยายประโยค ส่งภารกิจครบ 4 ด้านแล้วด่านต่อไปจะเปิด')));
+    h('p', { class: 'muted' }, 'สถานการณ์ปัญหา 4 ด่าน เรียงตามกระบวนการคิดสร้างสรรค์ แต่ละด่านมีภารกิจครบเนื้อหา 3 ด้าน ส่งภารกิจครบแล้วด่านต่อไปจะเปิด')));
   const road = h('ol', { class: 'road' });
-  STAGES.forEach((s, i) => {
-    const open = stageUnlocked(g, i);
-    const ls = s.lessons.filter((_, j) => g.lessons[lessonKey(s.id, j)]).length;
-    const ms = stageMissions(s.id);
-    const card = h('li', { class: `stop s-${s.id}${open ? '' : ' locked'}` },
-      h('button', { type: 'button', class: 'stop-b', disabled: !open, onclick: () => go('stage', { stage: s.id }) },
-        h('span', { class: 'stop-no' }, `ด่านที่ ${s.no}`),
+  SITUATIONS.forEach((s, i) => {
+    const open = sitUnlocked(g, i);
+    road.append(h('li', { class: `stop sit a-${s.area}${open ? '' : ' locked'}` },
+      h('button', { type: 'button', class: 'stop-b', disabled: !open, onclick: () => go('situation', { sit: s.id }) },
+        h('span', { class: 'stop-no' }, `ด่านที่ ${s.no} · ${AREAS[s.area].motto}`),
         h('span', { class: 'stop-art emoji', 'aria-hidden': 'true' }, s.emoji),
-        h('span', { class: 'stop-name' }, s.place),
-        h('span', { class: 'stop-topic' }, s.topic),
-        h('span', { class: 'stop-prog' },
-          h('span', { class: 'dots', 'aria-label': `ฐานเรียนรู้ ${ls} จาก 5` }, s.lessons.map((_, j) => h('i', { class: g.lessons[lessonKey(s.id, j)] ? 'on' : '' }))),
-          h('span', { class: 'mini' }, ms.map((m) => h('span', { class: `achip tiny a-${m.area}${(g.missions[m.id] || {}).submitted ? ' done' : ''}`, title: AREAS[m.area].name }, AREAS[m.area].short)))),
-        open ? null : h('span', { class: 'lock' }, '🔒 ส่งภารกิจด่านก่อนหน้าให้ครบก่อน')));
-    road.append(card);
+        h('span', { class: 'stop-name' }, s.title),
+        h('span', { class: 'stop-topic' }, AREAS[s.area].name),
+        h('span', { class: 'mini' }, sitMissions(s.id).map((m) => contentChip(CONTENT(m.content), (g.missions[m.id] || {}).submitted))),
+        open ? null : h('span', { class: 'lock' }, '🔒 ส่งภารกิจด่านก่อนหน้าให้ครบก่อน'))));
   });
   wrap.append(road);
-  wrap.append(h('section', { class: 'process' },
-    h('h2', {}, 'เส้นทางการคิดสร้างสรรค์'),
-    h('div', { class: 'proc' }, ['F', 'X', 'O', 'E'].map((a) => h('div', { class: `pstep a-${a}` }, h('b', {}, AREAS[a].motto), h('span', {}, AREAS[a].name), h('small', {}, AREAS[a].def))))));
+  wrap.append(h('section', { class: 'sec' }, h('div', { class: 'sec-h' }, h('h2', {}, 'ศูนย์การเรียนรู้ · เนื้อหา 3 ด้าน'), h('button', { type: 'button', class: 'link', onclick: () => go('mindmap') }, 'ดูแผนผังความรู้')),
+    h('div', { class: 'centers' }, CONTENTS.map((c) => h('button', { type: 'button', class: `center-b c-${c.id}`, onclick: () => go('center', { content: c.id }) },
+      h('span', { class: 'emoji ce', 'aria-hidden': 'true' }, c.emoji), h('b', {}, c.topic), h('small', {}, `ฐานเรียนรู้ 5 ฐาน`), lessonDots(g, c))))));
   return wrap;
 }
 
-// ---------- ด่าน: สถานการณ์ปัญหา + ศูนย์การเรียนรู้ + ศูนย์ส่งเสริมการคิดสร้างสรรค์ ----------
-function stageView() {
-  const g = G(); const s = STAGE(ui.stage); const p = s.problem;
-  const wrap = h('div', { class: `stage s-${s.id}` });
+// ---------- ด่าน: สถานการณ์ปัญหา + ภารกิจครบ 3 ด้านเนื้อหา ----------
+function situationView() {
+  const g = G(); const s = SIT(ui.sit); const A = AREAS[s.area];
+  const wrap = h('div', { class: `stage sit a-${s.area}` });
   wrap.append(h('div', { class: 'band' }, h('div', {},
-    h('p', { class: 'eyebrow' }, `ด่านที่ ${s.no} · ${s.place}`), h('h1', {}, s.topic))));
+    h('p', { class: 'eyebrow' }, `ด่านที่ ${s.no} · ${A.name} (${A.en}) · ${A.motto}`), h('h1', {}, s.title))));
   wrap.append(h('section', { class: 'problem' },
-    h('div', { class: 'prob-art' }, sceneEl(p.scene)),
+    h('div', { class: 'prob-art' }, sceneEl(s.scene)),
     h('div', { class: 'prob-t' },
       h('h2', {}, h('span', { class: 'tagc' }, 'สถานการณ์ปัญหา')),
-      h('p', { class: 'story' }, p.story),
-      h('div', { class: 'slips', 'aria-label': 'ตัวอย่างที่ยังมีปัญหา' }, p.broken.map((b) => h('span', { class: 'slip' }, `“${b}”`))),
+      h('p', { class: 'story' }, s.story),
+      h('div', { class: 'slips', 'aria-label': 'ตัวอย่างที่ยังมีปัญหา' }, s.broken.map((b) => h('span', { class: 'slip' }, `“${b}”`))),
       h('dl', { class: 'facts' },
-        h('dt', {}, 'บทบาทของหนู'), h('dd', {}, p.role),
-        h('dt', {}, 'คำถามชวนคิด'), h('dd', { class: 'q' }, p.question),
-        h('dt', {}, 'ภารกิจ'), h('dd', {}, p.goal)))));
+        h('dt', {}, 'บทบาทของหนู'), h('dd', {}, s.role),
+        h('dt', {}, 'คำถามชวนคิด'), h('dd', { class: 'q' }, s.question),
+        h('dt', {}, 'ภารกิจ'), h('dd', {}, s.goal)))));
   wrap.append(h('section', { class: 'sec' },
-    h('div', { class: 'sec-h' }, h('h2', {}, 'ศูนย์การเรียนรู้ · ฐานเรียนรู้ 5 ฐาน'), h('button', { type: 'button', class: 'link', onclick: () => go('mindmap') }, 'ดูแผนผังความรู้ทั้งหมด')),
-    h('ol', { class: 'lessons' }, s.lessons.map((l, i) => {
-      const done = g.lessons[lessonKey(s.id, i)];
-      return h('li', {}, h('button', { type: 'button', class: `lesson-b${done ? ' done' : ''}`, onclick: () => go('lesson', { stage: s.id, lesson: i }) },
-        h('span', { class: 'ln' }, i + 1), h('span', { class: 'lt' }, l.title), h('span', { class: 'ls' }, done ? '✓ ผ่านแล้ว' : `${l.items.length} ข้อ`)));
-    }))));
-  wrap.append(h('section', { class: 'sec' },
-    h('div', { class: 'sec-h' }, h('h2', {}, 'ศูนย์ส่งเสริมการคิดสร้างสรรค์ · ภารกิจ 4 ด้าน')),
-    h('div', { class: 'mgrid' }, stageMissions(s.id).map((m) => {
-      const r = g.missions[m.id]; const sc = finalScore(r);
-      return h('button', { type: 'button', class: `mcard a-${m.area}`, onclick: () => go('mission', { mission: m.id }) },
-        h('span', { class: 'mc-top' }, areaChip(m.area), h('span', { class: 'ind' }, `ตัวบ่งชี้ ${m.ind}`)),
+    h('div', { class: 'sec-h' }, h('h2', {}, `ภารกิจ${A.name} · ครบเนื้อหา 3 ด้าน`)),
+    h('div', { class: 'mgrid three' }, sitMissions(s.id).map((m) => {
+      const r = g.missions[m.id]; const sc = finalScore(r); const c = CONTENT(m.content);
+      return h('button', { type: 'button', class: `mcard c-${c.id}`, onclick: () => go('mission', { mission: m.id }) },
+        h('span', { class: 'mc-top' }, contentChip(c, true), h('span', { class: 'ind' }, `ตัวบ่งชี้ ${m.ind}`)),
         h('b', { class: 'mc-title' }, m.title),
-        h('span', { class: 'mc-sub' }, `ความ${AREAS[m.area].name.replace('การคิด', 'คิด')}${m.sub}`),
+        h('span', { class: 'mc-sub' }, `กิลฟอร์ด: ${m.sub}`),
         h('span', { class: 'mc-foot' }, stars(sc), r && r.submitted && r.auto && r.auto.pending && r.teacher == null ? h('small', {}, 'รอครูให้ดาวความแปลกใหม่') : null, m.timer ? h('small', {}, `⏱ ${m.timer / 60} นาที`) : null));
     }))));
+  wrap.append(h('section', { class: 'sec' },
+    h('div', { class: 'sec-h' }, h('h2', {}, 'ศูนย์การเรียนรู้ที่เกี่ยวข้อง'), h('button', { type: 'button', class: 'link', onclick: () => go('mindmap') }, 'ดูแผนผังความรู้ทั้งหมด')),
+    h('div', { class: 'centers' }, sitMissions(s.id).map((m) => { const c = CONTENT(m.content);
+      return h('div', { class: `center-l c-${c.id}` }, h('b', {}, c.topic), h('ol', {}, c.lessons.map((l, i) => h('li', {}, h('button', { type: 'button', class: g.lessons[lessonKey(c.id, i)] ? 'done' : '', onclick: () => go('lesson', { content: c.id, lesson: i, from: s.id }) }, l.title)))));
+    }))));
   return wrap;
+}
+
+// ---------- ศูนย์การเรียนรู้ของเนื้อหาหนึ่งด้าน ----------
+function centerView() {
+  const g = G(); const c = CONTENT(ui.content);
+  return h('div', { class: `stage c-${c.id}` },
+    h('button', { type: 'button', class: 'back', onclick: () => go('map') }, '← กลับแผนที่'),
+    h('div', { class: 'band' }, h('div', {}, h('p', { class: 'eyebrow' }, `ศูนย์การเรียนรู้ · เนื้อหาด้านที่ ${c.no}`), h('h1', {}, c.topic))),
+    h('ol', { class: 'lessons' }, c.lessons.map((l, i) => {
+      const done = g.lessons[lessonKey(c.id, i)];
+      return h('li', {}, h('button', { type: 'button', class: `lesson-b${done ? ' done' : ''}`, onclick: () => go('lesson', { content: c.id, lesson: i }) },
+        h('span', { class: 'ln' }, i + 1), h('span', { class: 'lt' }, l.title), h('span', { class: 'ls' }, done ? '✓ ผ่านแล้ว' : `${l.items.length} ข้อ`)));
+    })),
+    h('p', { class: 'muted' }, `ใช้ในภารกิจ: ${MISSIONS.filter((m) => m.content === c.id).map((m) => `${SIT(m.area).title} (${m.title})`).join(' · ')}`));
 }
 
 // ---------- ฐานเรียนรู้ ----------
 function lessonView() {
-  const g = G(); const s = STAGE(ui.stage); const L = s.lessons[ui.lesson];
+  const g = G(); const s = CONTENT(ui.content); const L = s.lessons[ui.lesson];
+  const back = () => (ui.from ? go('situation', { sit: ui.from }) : go('center', { content: s.id }));
   ui.li ??= 0; ui.ls ??= {};
-  const wrap = h('div', { class: `lesson s-${s.id}` });
-  wrap.append(h('button', { type: 'button', class: 'back', onclick: () => go('stage', { stage: s.id }) }, `← กลับ${s.place}`));
+  const wrap = h('div', { class: `lesson c-${s.id}` });
+  wrap.append(h('button', { type: 'button', class: 'back', onclick: back }, ui.from ? `← กลับด่าน${SIT(ui.from).title}` : `← กลับศูนย์การเรียนรู้${s.topic}`));
   wrap.append(h('div', { class: 'pagehead' }, h('p', { class: 'eyebrow' }, `ฐานเรียนรู้ที่ ${ui.lesson + 1} · ${s.topic}`), h('h1', {}, L.title)));
   const card = h('section', { class: 'idea' },
     h('ul', {}, L.idea.map((x) => h('li', { html: md(x) }))),
@@ -1305,8 +1351,8 @@ function lessonView() {
     box.append(h('div', { class: 'win' }, h('span', { class: 'emoji big', 'aria-hidden': 'true' }, '🌾'), h('h2', {}, 'ผ่านฐานนี้แล้ว!'),
       owl('เก่งมาก ลองนำความรู้นี้ไปใช้ในภารกิจของด่านนี้นะ'),
       h('div', { class: 'row' },
-        next != null ? h('button', { type: 'button', class: 'btn primary', onclick: () => go('lesson', { stage: s.id, lesson: next }) }, `ฐานที่ ${next + 1}: ${s.lessons[next].title}`) : null,
-        h('button', { type: 'button', class: 'btn', onclick: () => go('stage', { stage: s.id }) }, 'ไปที่ภารกิจ'))));
+        next != null ? h('button', { type: 'button', class: 'btn primary', onclick: () => go('lesson', { content: s.id, lesson: next, from: ui.from }) }, `ฐานที่ ${next + 1}: ${s.lessons[next].title}`) : null,
+        h('button', { type: 'button', class: 'btn', onclick: ui.from ? back : () => go('map') }, ui.from ? 'กลับไปที่ภารกิจ' : 'กลับแผนที่'))));
   } else {
     box.append(h('p', { class: 'qn' }, `ข้อ ${ui.li + 1} จาก ${total}`), quizItem(L.items[ui.li], () => { ui.li++; ui.ls = {}; render(); }));
   }
@@ -1362,14 +1408,14 @@ function quizItem(it, next) {
 let timerIv = 0;
 function stopTimer() { clearInterval(timerIv); timerIv = 0; }
 function missionView() {
-  const g = G(); const m = MISSION(ui.mission); const s = STAGE(m.stage); const r = rec(g, m.id); const d = r.data; const A = AREAS[m.area];
+  const g = G(); const m = MISSION(ui.mission); const s = SIT(m.area); const c = CONTENT(m.content); const r = rec(g, m.id); const d = r.data; const A = AREAS[m.area];
   ui.help ??= null;
   // เติมข้อความตั้งต้นจากภารกิจก่อนหน้า
   for (const f of m.fields) if (f.prefill && d[f.k] == null) { const [mid, k] = f.prefill.split('.'); const v = (((g.missions[mid] || {}).data) || {})[k]; if (v) d[f.k] = v; }
-  const wrap = h('div', { class: `mission s-${s.id} a-${m.area}` });
-  wrap.append(h('button', { type: 'button', class: 'back', onclick: () => go('stage', { stage: s.id }) }, `← กลับ${s.place}`));
+  const wrap = h('div', { class: `mission c-${c.id} a-${m.area}` });
+  wrap.append(h('button', { type: 'button', class: 'back', onclick: () => go('situation', { sit: s.id }) }, `← กลับด่าน${s.title}`));
   wrap.append(h('div', { class: 'mhead' },
-    h('div', {}, h('p', { class: 'eyebrow' }, `ด่านที่ ${s.no} ${s.place} · ${s.topic}`), h('h1', {}, m.title)),
+    h('div', {}, h('p', { class: 'eyebrow' }, `ด่านที่ ${s.no} ${s.title} · เนื้อหา: ${c.topic}`), h('h1', {}, m.title)),
     h('div', { class: 'mmeta' }, areaChip(m.area), h('span', { class: 'ind' }, `ตัวบ่งชี้ ${m.ind}`), h('span', { class: 'ind' }, `กิลฟอร์ด: ${m.sub}`))));
   const left = h('div', { class: 'mleft' },
     sceneEl(m.scene),
@@ -1515,9 +1561,9 @@ function drawPad(d, k, refresh) {
 }
 // ---------- ฐานการช่วยเหลือ 4 แบบ ----------
 function helpEl(m, r) {
-  const s = STAGE(m.stage);
+  const s = CONTENT(m.content);
   const kinds = [
-    ['concept', '💡', 'ความคิดรวบยอด', () => [h('p', {}, m.help.concept), h('div', { class: 'row' }, m.help.lessons.map((i) => h('button', { type: 'button', class: 'btn small', onclick: () => go('lesson', { stage: s.id, lesson: i }) }, `ทบทวนฐาน ${i + 1}: ${s.lessons[i].title}`)))]],
+    ['concept', '💡', 'ความคิดรวบยอด', () => [h('p', {}, m.help.concept), h('div', { class: 'row' }, m.help.lessons.map((i) => h('button', { type: 'button', class: 'btn small', onclick: () => go('lesson', { content: s.id, lesson: i, from: m.area }) }, `ทบทวนฐาน ${i + 1}: ${s.lessons[i].title}`)))]],
     ['think', '🤔', 'การคิด', () => [h('p', {}, 'ถามตัวเองทีละข้อ:'), h('ul', {}, THINK_HELP[m.area].map((q) => h('li', {}, q)))]],
     ['process', '🧭', 'กระบวนการ', () => [h('ul', {}, [...new Set(m.fields.map((f) => f.type))].flatMap((t) => PROCESS_HELP[t]).map((x) => h('li', {}, x))),
       h('button', { type: 'button', class: 'btn small', onclick: () => go('lab') }, 'เปิดห้องทดลองประโยค')]],
@@ -1549,7 +1595,7 @@ function submitEl(m, r, g) {
       h('div', { class: 'row' },
         h('button', { type: 'button', class: 'btn primary', onclick: () => shareToBoard(m, r, g) }, '💬 แชร์ลงกระดานแลกเปลี่ยน'),
         h('button', { type: 'button', class: 'btn', onclick: () => { r.submitted = 0; save(); render(); } }, 'แก้ไขแล้วส่งใหม่'),
-        h('button', { type: 'button', class: 'btn', onclick: () => go('stage', { stage: m.stage }) }, 'กลับไปที่ด่าน')),
+        h('button', { type: 'button', class: 'btn', onclick: () => go('situation', { sit: m.area }) }, 'กลับไปที่ด่าน')),
       DB.teacher ? teacherScore(m, r, () => result()) : null));
   };
   if (r.submitted) { result(); return box; }
@@ -1591,12 +1637,12 @@ function mindmapView() {
     h('div', { class: 'pagehead' }, h('h1', {}, 'แผนผังความรู้'), h('p', { class: 'muted' }, 'เนื้อหาทั้งหมดของเรื่องการแต่งประโยค แตะหัวข้อเพื่อไปที่ฐานเรียนรู้')),
     h('div', { class: 'mm' },
       h('div', { class: 'mm-root' }, h('b', {}, 'การแต่งประโยค'), h('small', {}, 'ตามตัวชี้วัด ท 4.1 ป.3/4')),
-      h('div', { class: 'mm-branches' }, STAGES.map((s, si) => h('div', { class: `mm-br s-${s.id}` },
-        h('div', { class: 'mm-node' }, h('span', { class: 'emoji', 'aria-hidden': 'true' }, s.emoji), h('b', {}, s.topic), h('small', {}, `ด่านที่ ${s.no} ${s.place}`)),
-        h('ol', { class: 'mm-leaves' }, s.lessons.map((l, i) => h('li', {}, h('button', { type: 'button', class: g.lessons[lessonKey(s.id, i)] ? 'done' : '', disabled: !stageUnlocked(g, si) && !DB.unlockAll,
-          onclick: () => go('lesson', { stage: s.id, lesson: i }) }, l.title)))))))),
-    h('section', { class: 'mm-creative' }, h('h2', {}, 'ใช้ความรู้ฝึกการคิดสร้างสรรค์ 4 ด้าน'),
-      h('div', { class: 'proc' }, ['F', 'X', 'O', 'E'].map((a) => h('div', { class: `pstep a-${a}` }, h('b', {}, AREAS[a].name), h('small', {}, AREAS[a].sub.join(' · ')))))));
+      h('div', { class: 'mm-branches' }, CONTENTS.map((c) => h('div', { class: `mm-br c-${c.id}` },
+        h('div', { class: 'mm-node' }, h('span', { class: 'emoji', 'aria-hidden': 'true' }, c.emoji), h('b', {}, c.topic), h('small', {}, `เนื้อหาด้านที่ ${c.no}`)),
+        h('ol', { class: 'mm-leaves' }, c.lessons.map((l, i) => h('li', {}, h('button', { type: 'button', class: g.lessons[lessonKey(c.id, i)] ? 'done' : '',
+          onclick: () => go('lesson', { content: c.id, lesson: i }) }, l.title)))))))),
+    h('section', { class: 'mm-creative' }, h('h2', {}, 'ใช้ความรู้ฝึกการคิดสร้างสรรค์ใน 4 สถานการณ์ปัญหา'),
+      h('div', { class: 'proc' }, SITUATIONS.map((st) => h('div', { class: `pstep a-${st.area}` }, h('b', {}, AREAS[st.area].name), h('small', {}, `ด่านที่ ${st.no} ${st.title}`), h('small', {}, AREAS[st.area].sub.join(' · ')))))));
 }
 
 // ---------- ห้องทดลองประโยค (เครื่องมือทางปัญญา) ----------
@@ -1642,7 +1688,7 @@ function boardView() {
   wrap.append(h('div', { class: 'pagehead' }, h('h1', {}, 'กระดานแลกเปลี่ยนเรียนรู้'),
     h('p', { class: 'muted' }, 'แชร์คำตอบ ดูวิธีคิดของเพื่อนหลายแบบ ให้ดาว และตอบกลับด้วยประโยคชวนคิด')));
   const sel = h('select', { id: 'b-filter', onchange: (e) => { ui.filter = e.target.value; render(); } },
-    h('option', { value: 'all' }, 'ทุกภารกิจ'), MISSIONS.map((m) => h('option', { value: m.id, selected: ui.filter === m.id }, `${STAGE(m.stage).place} · ${m.title}`)));
+    h('option', { value: 'all' }, 'ทุกภารกิจ'), MISSIONS.map((m) => h('option', { value: m.id, selected: ui.filter === m.id }, `${SIT(m.area).title} · ${m.title}`)));
   const me = h('select', { id: 'b-me', onchange: (e) => { ui.me = e.target.value; } }, [...g.members, ...(DB.teacher ? ['ครู'] : [])].map((n) => h('option', { value: n, selected: ui.me === n }, n)));
   wrap.append(h('div', { class: 'bbar' }, h('label', { for: 'b-filter' }, 'ดูภารกิจ'), sel, h('label', { for: 'b-me' }, 'ฉันคือ'), me));
   // เขียนโพสต์ใหม่
@@ -1685,7 +1731,7 @@ function postEl(p, g) {
 function consultView() {
   const g = G();
   const mine = DB.consult.filter((c) => c.gid === g.id);
-  const sel = h('select', { id: 'c-about' }, h('option', { value: '' }, 'เรื่องทั่วไป'), MISSIONS.map((m) => h('option', { value: m.id, selected: ui.about === m.id }, `${STAGE(m.stage).place} · ${m.title}`)));
+  const sel = h('select', { id: 'c-about' }, h('option', { value: '' }, 'เรื่องทั่วไป'), MISSIONS.map((m) => h('option', { value: m.id, selected: ui.about === m.id }, `${SIT(m.area).title} · ${m.title}`)));
   const ta = h('textarea', { id: 'c-q', rows: 3, placeholder: 'หนูไม่เข้าใจตรงไหน อยากให้ครูช่วยเรื่องอะไร' });
   return h('div', { class: 'consult' },
     h('div', { class: 'pagehead' }, h('h1', {}, 'ปรึกษาครู')),
@@ -1706,9 +1752,9 @@ function reportView() {
   const rows = MISSIONS.slice().sort((a, b) => a.ind.localeCompare(b.ind));
   const total = rows.reduce((s, m) => s + (finalScore(g.missions[m.id]) || 0), 0);
   const helps = MISSIONS.reduce((s, m) => s + Object.values(((g.missions[m.id] || {}).helps) || {}).reduce((a, b) => a + b, 0), 0);
-  const ls = STAGES.reduce((s, st) => s + st.lessons.filter((_, i) => g.lessons[lessonKey(st.id, i)]).length, 0);
+  const ls = CONTENTS.reduce((s, c) => s + c.lessons.filter((_, i) => g.lessons[lessonKey(c.id, i)]).length, 0);
   const copyBox = h('textarea', { class: 'copybox', rows: 6, hidden: true, 'aria-label': 'ข้อมูลสำหรับคัดลอก' });
-  const badges = STAGES.filter((s) => stageMissions(s.id).every((m) => (g.missions[m.id] || {}).submitted));
+  const badges = SITUATIONS.filter((s) => sitMissions(s.id).every((m) => (g.missions[m.id] || {}).submitted));
   return h('div', { class: 'report' },
     h('div', { class: 'pagehead' }, h('h1', {}, `ผลการเรียนของกลุ่ม${g.name}`), h('p', { class: 'muted' }, g.members.join(' · '))),
     h('div', { class: 'kpis' },
@@ -1720,7 +1766,7 @@ function reportView() {
     h('div', { class: 'tablew' }, h('table', {},
       h('thead', {}, h('tr', {}, ['ตัวบ่งชี้', 'ด้าน', 'ภารกิจ', 'ระบบ', 'ครู', 'ผล'].map((x) => h('th', {}, x)))),
       h('tbody', {}, rows.map((m) => { const r = g.missions[m.id];
-        return h('tr', {}, h('td', { class: 'num' }, m.ind), h('td', {}, AREAS[m.area].name), h('td', {}, `${STAGE(m.stage).place} · ${m.title}`),
+        return h('tr', {}, h('td', { class: 'num' }, m.ind), h('td', {}, AREAS[m.area].name), h('td', {}, `${SIT(m.area).title} · ${m.title}`),
           h('td', { class: 'num' }, r && r.submitted ? r.auto.score : '—'), h('td', { class: 'num' }, r && r.teacher != null ? r.teacher : '—'), h('td', {}, stars(finalScore(r))));
       })))),
     h('h2', {}, 'สรุปรายด้าน'),
@@ -1794,11 +1840,11 @@ function aboutView() {
       h('tbody', {}, COMPONENTS.map(([a, b, c], i) => h('tr', {}, h('td', {}, h('b', {}, `${i + 1}) ${a}`)), h('td', { class: 'num' }, b), h('td', {}, c))))))));
   wrap.append(h('section', { class: 'sec' }, h('h2', {}, 'การคิดสร้างสรรค์ตามแนวคิดของกิลฟอร์ด (สรุปโดย จารุณี ซามาตย์)'),
     h('div', { class: 'proc' }, ['F', 'X', 'O', 'E'].map((a) => h('div', { class: `pstep a-${a}` }, h('b', {}, `${AREAS[a].name} (${AREAS[a].en})`), h('small', {}, AREAS[a].def), h('small', {}, `ย่อย: ${AREAS[a].sub.join(' · ')}`))))));
-  wrap.append(h('section', { class: 'sec' }, h('h2', {}, 'ภารกิจ 3 ด่าน × 4 ด้าน'),
+  wrap.append(h('section', { class: 'sec' }, h('h2', {}, 'สถานการณ์ปัญหา 4 ด่าน × เนื้อหา 3 ด้าน'),
     h('div', { class: 'tablew' }, h('table', { class: 'matrix' },
-      h('thead', {}, h('tr', {}, h('th', {}, 'ด้าน'), STAGES.map((s) => h('th', {}, `ด่าน ${s.no} ${s.place}: ${s.topic}`)))),
-      h('tbody', {}, ['F', 'X', 'O', 'E'].map((a) => h('tr', {}, h('td', {}, h('b', {}, AREAS[a].name)),
-        STAGES.map((s) => { const m = MISSIONS.find((x) => x.stage === s.id && x.area === a); return h('td', {}, h('b', {}, `${m.ind} ${m.title}`), h('br'), h('small', {}, INDICATORS[m.ind])); }))))))));
+      h('thead', {}, h('tr', {}, h('th', {}, 'สถานการณ์ปัญหา'), CONTENTS.map((c) => h('th', {}, c.topic)))),
+      h('tbody', {}, SITUATIONS.map((st) => h('tr', {}, h('td', {}, h('b', {}, `${st.no}. ${st.title}`), h('br'), h('small', {}, AREAS[st.area].name)),
+        CONTENTS.map((c) => { const m = MISSIONS.find((x) => x.content === c.id && x.area === st.area); return h('td', {}, h('b', {}, `${m.ind} ${m.title}`), h('br'), h('small', {}, INDICATORS[m.ind])); }))))))));
   return wrap;
 }
 

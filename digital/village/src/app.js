@@ -37,18 +37,19 @@ const stars = (n, max = 3) => h('span', { class: 'stars', 'aria-label': n == nul
   Array.from({ length: max }, (_, i) => h('i', { class: n != null && i < n ? 'on' : '' }, '★')));
 
 // ====================== สถานะ ======================
-const KEY = 'sentence-village-v1';
+const KEY = 'sentence-village-v2';
 const DB = Object.assign({ groups: [], cur: null, unlockAll: false, board: [], consult: [], teacher: false }, store.get(KEY) || {});
 let ui = { view: 'home' };
 let saveT = 0;
 const save = () => { clearTimeout(saveT); saveT = setTimeout(() => store.set(KEY, DB), 250); };
 const G = () => DB.groups.find((g) => g.id === DB.cur);
-const STAGE = (id) => STAGES.find((s) => s.id === id);
+const CONTENT = (id) => CONTENTS.find((c) => c.id === id);
+const SIT = (id) => SITUATIONS.find((s) => s.id === id);
 const MISSION = (id) => MISSIONS.find((m) => m.id === id);
-const stageMissions = (sid) => MISSIONS.filter((m) => m.stage === sid);
+const sitMissions = (sid) => SIT(sid).missions.map(MISSION);
 function rec(g, mid) { return (g.missions[mid] ||= { data: {}, submitted: 0, auto: null, teacher: null, helps: {} }); }
 function finalScore(r) { if (!r || !r.submitted) return null; return r.teacher != null ? r.teacher : (r.auto ? r.auto.score : 0); }
-function stageUnlocked(g, i) { return i === 0 || DB.unlockAll || stageMissions(STAGES[i - 1].id).every((m) => g.missions[m.id] && g.missions[m.id].submitted); }
+function sitUnlocked(g, i) { return i === 0 || DB.unlockAll || sitMissions(SITUATIONS[i - 1].id).every((m) => g.missions[m.id] && g.missions[m.id].submitted); }
 const lessonKey = (sid, i) => `${sid}-${i}`;
 const newId = () => Math.random().toString(36).slice(2, 9);
 
@@ -76,7 +77,7 @@ const lines = (s) => (s || '').split(/\n+/).map((x) => x.trim()).filter(Boolean)
 const hasVerb = (s) => structure(makeItem(s || '')).V;
 
 const SCORE = {
-  'school-F'(d) {
+  'build-F'(d) {
     const seen = new Set(); let good = 0, nonStmt = 0, dup = 0, noStruct = 0;
     for (const it of d.items || []) {
       const n = norm(it.text); if (seen.has(n)) { dup++; continue; } seen.add(n);
@@ -91,7 +92,7 @@ const SCORE = {
       { ok: !dup, label: dup ? `มีประโยคซ้ำกัน ${dup} ประโยค` : 'ไม่มีประโยคซ้ำ' },
     ] };
   },
-  'school-X'(d) {
+  'build-X'(d) {
     const checks = []; let pts = 0;
     const keys = new Set();
     for (const k of ['v1', 'v2', 'v3']) {
@@ -107,7 +108,7 @@ const SCORE = {
     checks.push({ ok: !!(p2 && p2.parts === 2), label: p2 && p2.parts === 3 ? 'มีกรรมแล้ว กลายเป็น 3 ส่วน ลองเอากรรมออก' : 'ประโยค 2 ส่วน: มีแค่ ใคร + ทำอะไร', k: 'p2' });
     checks.push({ ok: !!(p3 && p3.parts === 3), label: 'ประโยค 3 ส่วน: ใคร + ทำอะไร + กับใครหรืออะไร', k: 'p3' });
     pts += (p2 && p2.parts === 2 ? 1 : 0) + (p3 && p3.parts === 3 ? 1 : 0);
-    for (const f of MISSION('school-X').fields.filter((x) => x.want)) {
+    for (const f of MISSION('build-X').fields.filter((x) => x.want)) {
       const it = d[f.k]; const t = it && it.text.trim() ? sType(it.text) : null;
       const ok = !!t && structure(it).V && (f.want === 'request' ? (t === 'request' || t === 'command') : t === f.want);
       if (ok) pts++;
@@ -115,7 +116,7 @@ const SCORE = {
     }
     return { score: band(pts, 2, 5, 8), checks: [{ ok: pts >= 8, label: `ทำได้ ${pts} จาก 9 จุด` }, ...checks] };
   },
-  'school-O'(d, g, m) {
+  'build-O'(d, g, m) {
     const nv = novelty(m, 'sentence', d, g);
     const checks = [
       { ok: !!d.draw, label: 'วาดภาพผีเสื้อของหนูแล้ว', k: 'draw' },
@@ -125,7 +126,7 @@ const SCORE = {
     if (nv) checks.push(nv);
     return { score: checks.slice(0, 3).every((c) => c.ok) ? 1 : 0, pending: true, checks };
   },
-  'school-E'(d) {
+  'build-E'(d) {
     const s = d.story || ''; const n = lines(s).length;
     const cats = [['time', 'บอกเวลา'], ['place', 'บอกสถานที่'], ['manner', 'บอกอาการ (ทำอย่างไร)'], ['feeling', 'บอกความรู้สึก']].map(([k, l]) => ({ ok: RX[k].test(s), label: l, k: 'story' }));
     const checks = [{ ok: !!(d.title || '').trim(), label: 'ตั้งชื่อเรื่องแล้ว', k: 'title' }, ...cats,
@@ -134,7 +135,7 @@ const SCORE = {
     const pts = cats.filter((c) => c.ok).length + (checks[0].ok ? 1 : 0) + (n >= 5 && n <= 7 ? 1 : 0);
     return { score: band(pts, 2, 4, 5), checks };
   },
-  'market-F'(d) {
+  'use-F'(d) {
     const seen = new Set(); let good = 0, polite = 0, rude = 0, dup = 0, notHelp = 0;
     for (const it of d.items || []) {
       const n = norm(it.text); if (seen.has(n)) { dup++; continue; } seen.add(n);
@@ -150,7 +151,7 @@ const SCORE = {
       { ok: !dup, label: dup ? `ซ้ำกัน ${dup} ข้อ` : 'ไม่มีข้อซ้ำ' },
     ] };
   },
-  'market-X'(d, g, m) {
+  'use-X'(d, g, m) {
     const seen = new Set(); let pass = 0; const checks = [];
     for (const f of m.fields) {
       const t = (d[f.k] || '').trim();
@@ -168,7 +169,7 @@ const SCORE = {
     }
     return { score: band(pass, 1, 2, 3), checks: [{ ok: pass >= 3, label: `ปรับถ้อยคำได้เหมาะกับผู้ฟัง ${pass} คน (อย่างน้อย 3 คน)` }, ...checks] };
   },
-  'market-O'(d, g, m) {
+  'use-O'(d, g, m) {
     const t = d.speech || '';
     const checks = [
       { ok: RX.help.test(t), label: 'เป็นการขอความช่วยเหลือ', k: 'speech' },
@@ -178,14 +179,14 @@ const SCORE = {
     const nv = novelty(m, 'speech', d, g); if (nv) checks.push(nv);
     return { score: checks.slice(0, 3).every((c) => c.ok) ? 1 : 0, pending: true, checks };
   },
-  'market-E'(d) {
+  'use-E'(d) {
     const a = d.fix1 || '', b = d.fix2 || '';
     const c1 = [[RX.address.test(a), 'มีคำเรียกผู้ฟัง (ป้า แม่ค้า…)'], [RX.polite.test(a), 'มีคำลงท้ายสุภาพ'], [RX.help.test(a), 'ใช้คำขอ เช่น ขอซื้อ ได้ไหม'], [/ส้ม/.test(a), 'บอกว่าต้องการอะไร (ส้ม)'], [RX.amount.test(a), 'บอกจำนวน (กี่กิโล กี่ลูก)']];
     const c2 = [[RX.address.test(b), 'มีคำเรียกผู้ฟัง (พี่…)'], [RX.polite.test(b), 'มีคำลงท้ายสุภาพ'], [/(ขาด|รั่ว|ซึม|หยด|แตก)/.test(b), 'บอกปัญหา (ถุงรั่ว)'], [RX.help.test(b) || /เปลี่ยน/.test(b), 'ขอให้ช่วย เช่น ขอเปลี่ยนถุงใหม่']];
     const pts = [...c1, ...c2].filter((x) => x[0]).length;
     return { score: band(pts, 3, 6, 8), checks: [...c1.map(([ok, label]) => ({ ok, label, k: 'fix1' })), ...c2.map(([ok, label]) => ({ ok, label, k: 'fix2' }))] };
   },
-  'field-F'(d) {
+  'expand-F'(d) {
     const b = d.buckets || [[], [], []];
     const all = new Set(b.flat().map(norm)); const nb = b.filter((x) => x.length).length;
     const odd = [...b[1].filter((w) => !RX.time.test(w)), ...b[2].filter((w) => !RX.place.test(w))];
@@ -197,7 +198,7 @@ const SCORE = {
       { ok: !odd.length, label: odd.length ? `ลองตรวจอีกครั้ง: ${odd.slice(0, 3).join(', ')} อยู่ถูกกลุ่มไหม` : 'คำอยู่ถูกกลุ่ม' },
     ] };
   },
-  'field-X'(d, g, m) {
+  'expand-X'(d, g, m) {
     const seen = new Set(); let pass = 0; const checks = [];
     const test = {
       subj: (t) => /ควาย(.+)หาย/.test(t) && /ควาย(.+)หาย/.exec(t)[1].trim().length > 0,
@@ -219,7 +220,7 @@ const SCORE = {
     }
     return { score: band(pass, 1, 2, 3), checks: [{ ok: pass >= 3, label: `ขยายได้ ${pass} แบบ (อย่างน้อย 3 แบบ)` }, ...checks] };
   },
-  'field-O'(d, g, m) {
+  'expand-O'(d, g, m) {
     const t = d.ann || ''; const ls = lines(t); const n = ls.length > 1 ? ls.length : t.split(/\s+/).filter((x) => x.length >= 6).length;
     const checks = [
       { ok: n >= 2 && n <= 4, label: `เขียนได้ ${n} ประโยค (2–3 ประโยค)`, k: 'ann' },
@@ -228,8 +229,8 @@ const SCORE = {
     const nv = novelty(m, 'ann', d, g); if (nv) checks.push(nv);
     return { score: checks.slice(0, 2).every((c) => c.ok) ? 1 : 0, pending: true, checks };
   },
-  'field-E'(d, g) {
-    const t = d.ann || ''; const base = (((g.missions['field-O'] || {}).data || {}).ann || '').trim();
+  'expand-E'(d, g) {
+    const t = d.ann || ''; const base = (((g.missions['expand-O'] || {}).data || {}).ann || '').trim();
     const checks = [
       { ok: RX.trait.test(t), label: 'บอกลักษณะของควาย', k: 'ann' },
       { ok: RX.time.test(t), label: 'บอกเวลาที่หาย', k: 'ann' },
@@ -293,7 +294,7 @@ function render() {
   const g = G();
   if (!['home', 'about'].includes(ui.view) && !g) ui.view = 'home';
   if (ui.view !== 'home' && g) app.append(navEl());
-  const views = { home: homeView, map: mapView, stage: stageView, lesson: lessonView, mission: missionView, mindmap: mindmapView, lab: labView, board: boardView, consult: consultView, report: reportView, teacher: teacherView, about: aboutView };
+  const views = { home: homeView, map: mapView, situation: situationView, center: centerView, lesson: lessonView, mission: missionView, mindmap: mindmapView, lab: labView, board: boardView, consult: consultView, report: reportView, teacher: teacherView, about: aboutView };
   app.append(h('main', { class: 'main', id: 'main' }, views[ui.view]()));
   if (ui.focus) { const el = document.getElementById(ui.focus); if (el) el.focus(); ui.focus = null; }
 }
@@ -356,77 +357,87 @@ function homeView() {
 }
 
 // ---------- แผนที่หมู่บ้าน ----------
+function lessonDots(g, c) { return h('span', { class: 'dots', 'aria-label': `ฐานเรียนรู้ที่ผ่าน` }, c.lessons.map((_, j) => h('i', { class: g.lessons[lessonKey(c.id, j)] ? 'on' : '' }))); }
+function contentChip(c, done) { return h('span', { class: `cchip c-${c.id}${done ? ' done' : ''}` }, c.topic); }
 function mapView() {
   const g = G();
   const wrap = h('div', { class: 'map' });
   wrap.append(h('div', { class: 'pagehead' }, h('h1', {}, 'แผนที่บ้านดอนข้าวหอม'),
-    h('p', { class: 'muted' }, 'เดินทางตามลำดับเนื้อหา: สร้างประโยค → ใช้ภาษา → ขยายประโยค ส่งภารกิจครบ 4 ด้านแล้วด่านต่อไปจะเปิด')));
+    h('p', { class: 'muted' }, 'สถานการณ์ปัญหา 4 ด่าน เรียงตามกระบวนการคิดสร้างสรรค์ แต่ละด่านมีภารกิจครบเนื้อหา 3 ด้าน ส่งภารกิจครบแล้วด่านต่อไปจะเปิด')));
   const road = h('ol', { class: 'road' });
-  STAGES.forEach((s, i) => {
-    const open = stageUnlocked(g, i);
-    const ls = s.lessons.filter((_, j) => g.lessons[lessonKey(s.id, j)]).length;
-    const ms = stageMissions(s.id);
-    const card = h('li', { class: `stop s-${s.id}${open ? '' : ' locked'}` },
-      h('button', { type: 'button', class: 'stop-b', disabled: !open, onclick: () => go('stage', { stage: s.id }) },
-        h('span', { class: 'stop-no' }, `ด่านที่ ${s.no}`),
+  SITUATIONS.forEach((s, i) => {
+    const open = sitUnlocked(g, i);
+    road.append(h('li', { class: `stop sit a-${s.area}${open ? '' : ' locked'}` },
+      h('button', { type: 'button', class: 'stop-b', disabled: !open, onclick: () => go('situation', { sit: s.id }) },
+        h('span', { class: 'stop-no' }, `ด่านที่ ${s.no} · ${AREAS[s.area].motto}`),
         h('span', { class: 'stop-art emoji', 'aria-hidden': 'true' }, s.emoji),
-        h('span', { class: 'stop-name' }, s.place),
-        h('span', { class: 'stop-topic' }, s.topic),
-        h('span', { class: 'stop-prog' },
-          h('span', { class: 'dots', 'aria-label': `ฐานเรียนรู้ ${ls} จาก 5` }, s.lessons.map((_, j) => h('i', { class: g.lessons[lessonKey(s.id, j)] ? 'on' : '' }))),
-          h('span', { class: 'mini' }, ms.map((m) => h('span', { class: `achip tiny a-${m.area}${(g.missions[m.id] || {}).submitted ? ' done' : ''}`, title: AREAS[m.area].name }, AREAS[m.area].short)))),
-        open ? null : h('span', { class: 'lock' }, '🔒 ส่งภารกิจด่านก่อนหน้าให้ครบก่อน')));
-    road.append(card);
+        h('span', { class: 'stop-name' }, s.title),
+        h('span', { class: 'stop-topic' }, AREAS[s.area].name),
+        h('span', { class: 'mini' }, sitMissions(s.id).map((m) => contentChip(CONTENT(m.content), (g.missions[m.id] || {}).submitted))),
+        open ? null : h('span', { class: 'lock' }, '🔒 ส่งภารกิจด่านก่อนหน้าให้ครบก่อน'))));
   });
   wrap.append(road);
-  wrap.append(h('section', { class: 'process' },
-    h('h2', {}, 'เส้นทางการคิดสร้างสรรค์'),
-    h('div', { class: 'proc' }, ['F', 'X', 'O', 'E'].map((a) => h('div', { class: `pstep a-${a}` }, h('b', {}, AREAS[a].motto), h('span', {}, AREAS[a].name), h('small', {}, AREAS[a].def))))));
+  wrap.append(h('section', { class: 'sec' }, h('div', { class: 'sec-h' }, h('h2', {}, 'ศูนย์การเรียนรู้ · เนื้อหา 3 ด้าน'), h('button', { type: 'button', class: 'link', onclick: () => go('mindmap') }, 'ดูแผนผังความรู้')),
+    h('div', { class: 'centers' }, CONTENTS.map((c) => h('button', { type: 'button', class: `center-b c-${c.id}`, onclick: () => go('center', { content: c.id }) },
+      h('span', { class: 'emoji ce', 'aria-hidden': 'true' }, c.emoji), h('b', {}, c.topic), h('small', {}, `ฐานเรียนรู้ 5 ฐาน`), lessonDots(g, c))))));
   return wrap;
 }
 
-// ---------- ด่าน: สถานการณ์ปัญหา + ศูนย์การเรียนรู้ + ศูนย์ส่งเสริมการคิดสร้างสรรค์ ----------
-function stageView() {
-  const g = G(); const s = STAGE(ui.stage); const p = s.problem;
-  const wrap = h('div', { class: `stage s-${s.id}` });
+// ---------- ด่าน: สถานการณ์ปัญหา + ภารกิจครบ 3 ด้านเนื้อหา ----------
+function situationView() {
+  const g = G(); const s = SIT(ui.sit); const A = AREAS[s.area];
+  const wrap = h('div', { class: `stage sit a-${s.area}` });
   wrap.append(h('div', { class: 'band' }, h('div', {},
-    h('p', { class: 'eyebrow' }, `ด่านที่ ${s.no} · ${s.place}`), h('h1', {}, s.topic))));
+    h('p', { class: 'eyebrow' }, `ด่านที่ ${s.no} · ${A.name} (${A.en}) · ${A.motto}`), h('h1', {}, s.title))));
   wrap.append(h('section', { class: 'problem' },
-    h('div', { class: 'prob-art' }, sceneEl(p.scene)),
+    h('div', { class: 'prob-art' }, sceneEl(s.scene)),
     h('div', { class: 'prob-t' },
       h('h2', {}, h('span', { class: 'tagc' }, 'สถานการณ์ปัญหา')),
-      h('p', { class: 'story' }, p.story),
-      h('div', { class: 'slips', 'aria-label': 'ตัวอย่างที่ยังมีปัญหา' }, p.broken.map((b) => h('span', { class: 'slip' }, `“${b}”`))),
+      h('p', { class: 'story' }, s.story),
+      h('div', { class: 'slips', 'aria-label': 'ตัวอย่างที่ยังมีปัญหา' }, s.broken.map((b) => h('span', { class: 'slip' }, `“${b}”`))),
       h('dl', { class: 'facts' },
-        h('dt', {}, 'บทบาทของหนู'), h('dd', {}, p.role),
-        h('dt', {}, 'คำถามชวนคิด'), h('dd', { class: 'q' }, p.question),
-        h('dt', {}, 'ภารกิจ'), h('dd', {}, p.goal)))));
+        h('dt', {}, 'บทบาทของหนู'), h('dd', {}, s.role),
+        h('dt', {}, 'คำถามชวนคิด'), h('dd', { class: 'q' }, s.question),
+        h('dt', {}, 'ภารกิจ'), h('dd', {}, s.goal)))));
   wrap.append(h('section', { class: 'sec' },
-    h('div', { class: 'sec-h' }, h('h2', {}, 'ศูนย์การเรียนรู้ · ฐานเรียนรู้ 5 ฐาน'), h('button', { type: 'button', class: 'link', onclick: () => go('mindmap') }, 'ดูแผนผังความรู้ทั้งหมด')),
-    h('ol', { class: 'lessons' }, s.lessons.map((l, i) => {
-      const done = g.lessons[lessonKey(s.id, i)];
-      return h('li', {}, h('button', { type: 'button', class: `lesson-b${done ? ' done' : ''}`, onclick: () => go('lesson', { stage: s.id, lesson: i }) },
-        h('span', { class: 'ln' }, i + 1), h('span', { class: 'lt' }, l.title), h('span', { class: 'ls' }, done ? '✓ ผ่านแล้ว' : `${l.items.length} ข้อ`)));
-    }))));
-  wrap.append(h('section', { class: 'sec' },
-    h('div', { class: 'sec-h' }, h('h2', {}, 'ศูนย์ส่งเสริมการคิดสร้างสรรค์ · ภารกิจ 4 ด้าน')),
-    h('div', { class: 'mgrid' }, stageMissions(s.id).map((m) => {
-      const r = g.missions[m.id]; const sc = finalScore(r);
-      return h('button', { type: 'button', class: `mcard a-${m.area}`, onclick: () => go('mission', { mission: m.id }) },
-        h('span', { class: 'mc-top' }, areaChip(m.area), h('span', { class: 'ind' }, `ตัวบ่งชี้ ${m.ind}`)),
+    h('div', { class: 'sec-h' }, h('h2', {}, `ภารกิจ${A.name} · ครบเนื้อหา 3 ด้าน`)),
+    h('div', { class: 'mgrid three' }, sitMissions(s.id).map((m) => {
+      const r = g.missions[m.id]; const sc = finalScore(r); const c = CONTENT(m.content);
+      return h('button', { type: 'button', class: `mcard c-${c.id}`, onclick: () => go('mission', { mission: m.id }) },
+        h('span', { class: 'mc-top' }, contentChip(c, true), h('span', { class: 'ind' }, `ตัวบ่งชี้ ${m.ind}`)),
         h('b', { class: 'mc-title' }, m.title),
-        h('span', { class: 'mc-sub' }, `ความ${AREAS[m.area].name.replace('การคิด', 'คิด')}${m.sub}`),
+        h('span', { class: 'mc-sub' }, `กิลฟอร์ด: ${m.sub}`),
         h('span', { class: 'mc-foot' }, stars(sc), r && r.submitted && r.auto && r.auto.pending && r.teacher == null ? h('small', {}, 'รอครูให้ดาวความแปลกใหม่') : null, m.timer ? h('small', {}, `⏱ ${m.timer / 60} นาที`) : null));
     }))));
+  wrap.append(h('section', { class: 'sec' },
+    h('div', { class: 'sec-h' }, h('h2', {}, 'ศูนย์การเรียนรู้ที่เกี่ยวข้อง'), h('button', { type: 'button', class: 'link', onclick: () => go('mindmap') }, 'ดูแผนผังความรู้ทั้งหมด')),
+    h('div', { class: 'centers' }, sitMissions(s.id).map((m) => { const c = CONTENT(m.content);
+      return h('div', { class: `center-l c-${c.id}` }, h('b', {}, c.topic), h('ol', {}, c.lessons.map((l, i) => h('li', {}, h('button', { type: 'button', class: g.lessons[lessonKey(c.id, i)] ? 'done' : '', onclick: () => go('lesson', { content: c.id, lesson: i, from: s.id }) }, l.title)))));
+    }))));
   return wrap;
+}
+
+// ---------- ศูนย์การเรียนรู้ของเนื้อหาหนึ่งด้าน ----------
+function centerView() {
+  const g = G(); const c = CONTENT(ui.content);
+  return h('div', { class: `stage c-${c.id}` },
+    h('button', { type: 'button', class: 'back', onclick: () => go('map') }, '← กลับแผนที่'),
+    h('div', { class: 'band' }, h('div', {}, h('p', { class: 'eyebrow' }, `ศูนย์การเรียนรู้ · เนื้อหาด้านที่ ${c.no}`), h('h1', {}, c.topic))),
+    h('ol', { class: 'lessons' }, c.lessons.map((l, i) => {
+      const done = g.lessons[lessonKey(c.id, i)];
+      return h('li', {}, h('button', { type: 'button', class: `lesson-b${done ? ' done' : ''}`, onclick: () => go('lesson', { content: c.id, lesson: i }) },
+        h('span', { class: 'ln' }, i + 1), h('span', { class: 'lt' }, l.title), h('span', { class: 'ls' }, done ? '✓ ผ่านแล้ว' : `${l.items.length} ข้อ`)));
+    })),
+    h('p', { class: 'muted' }, `ใช้ในภารกิจ: ${MISSIONS.filter((m) => m.content === c.id).map((m) => `${SIT(m.area).title} (${m.title})`).join(' · ')}`));
 }
 
 // ---------- ฐานเรียนรู้ ----------
 function lessonView() {
-  const g = G(); const s = STAGE(ui.stage); const L = s.lessons[ui.lesson];
+  const g = G(); const s = CONTENT(ui.content); const L = s.lessons[ui.lesson];
+  const back = () => (ui.from ? go('situation', { sit: ui.from }) : go('center', { content: s.id }));
   ui.li ??= 0; ui.ls ??= {};
-  const wrap = h('div', { class: `lesson s-${s.id}` });
-  wrap.append(h('button', { type: 'button', class: 'back', onclick: () => go('stage', { stage: s.id }) }, `← กลับ${s.place}`));
+  const wrap = h('div', { class: `lesson c-${s.id}` });
+  wrap.append(h('button', { type: 'button', class: 'back', onclick: back }, ui.from ? `← กลับด่าน${SIT(ui.from).title}` : `← กลับศูนย์การเรียนรู้${s.topic}`));
   wrap.append(h('div', { class: 'pagehead' }, h('p', { class: 'eyebrow' }, `ฐานเรียนรู้ที่ ${ui.lesson + 1} · ${s.topic}`), h('h1', {}, L.title)));
   const card = h('section', { class: 'idea' },
     h('ul', {}, L.idea.map((x) => h('li', { html: md(x) }))),
@@ -445,8 +456,8 @@ function lessonView() {
     box.append(h('div', { class: 'win' }, h('span', { class: 'emoji big', 'aria-hidden': 'true' }, '🌾'), h('h2', {}, 'ผ่านฐานนี้แล้ว!'),
       owl('เก่งมาก ลองนำความรู้นี้ไปใช้ในภารกิจของด่านนี้นะ'),
       h('div', { class: 'row' },
-        next != null ? h('button', { type: 'button', class: 'btn primary', onclick: () => go('lesson', { stage: s.id, lesson: next }) }, `ฐานที่ ${next + 1}: ${s.lessons[next].title}`) : null,
-        h('button', { type: 'button', class: 'btn', onclick: () => go('stage', { stage: s.id }) }, 'ไปที่ภารกิจ'))));
+        next != null ? h('button', { type: 'button', class: 'btn primary', onclick: () => go('lesson', { content: s.id, lesson: next, from: ui.from }) }, `ฐานที่ ${next + 1}: ${s.lessons[next].title}`) : null,
+        h('button', { type: 'button', class: 'btn', onclick: ui.from ? back : () => go('map') }, ui.from ? 'กลับไปที่ภารกิจ' : 'กลับแผนที่'))));
   } else {
     box.append(h('p', { class: 'qn' }, `ข้อ ${ui.li + 1} จาก ${total}`), quizItem(L.items[ui.li], () => { ui.li++; ui.ls = {}; render(); }));
   }
@@ -502,14 +513,14 @@ function quizItem(it, next) {
 let timerIv = 0;
 function stopTimer() { clearInterval(timerIv); timerIv = 0; }
 function missionView() {
-  const g = G(); const m = MISSION(ui.mission); const s = STAGE(m.stage); const r = rec(g, m.id); const d = r.data; const A = AREAS[m.area];
+  const g = G(); const m = MISSION(ui.mission); const s = SIT(m.area); const c = CONTENT(m.content); const r = rec(g, m.id); const d = r.data; const A = AREAS[m.area];
   ui.help ??= null;
   // เติมข้อความตั้งต้นจากภารกิจก่อนหน้า
   for (const f of m.fields) if (f.prefill && d[f.k] == null) { const [mid, k] = f.prefill.split('.'); const v = (((g.missions[mid] || {}).data) || {})[k]; if (v) d[f.k] = v; }
-  const wrap = h('div', { class: `mission s-${s.id} a-${m.area}` });
-  wrap.append(h('button', { type: 'button', class: 'back', onclick: () => go('stage', { stage: s.id }) }, `← กลับ${s.place}`));
+  const wrap = h('div', { class: `mission c-${c.id} a-${m.area}` });
+  wrap.append(h('button', { type: 'button', class: 'back', onclick: () => go('situation', { sit: s.id }) }, `← กลับด่าน${s.title}`));
   wrap.append(h('div', { class: 'mhead' },
-    h('div', {}, h('p', { class: 'eyebrow' }, `ด่านที่ ${s.no} ${s.place} · ${s.topic}`), h('h1', {}, m.title)),
+    h('div', {}, h('p', { class: 'eyebrow' }, `ด่านที่ ${s.no} ${s.title} · เนื้อหา: ${c.topic}`), h('h1', {}, m.title)),
     h('div', { class: 'mmeta' }, areaChip(m.area), h('span', { class: 'ind' }, `ตัวบ่งชี้ ${m.ind}`), h('span', { class: 'ind' }, `กิลฟอร์ด: ${m.sub}`))));
   const left = h('div', { class: 'mleft' },
     sceneEl(m.scene),
@@ -655,9 +666,9 @@ function drawPad(d, k, refresh) {
 }
 // ---------- ฐานการช่วยเหลือ 4 แบบ ----------
 function helpEl(m, r) {
-  const s = STAGE(m.stage);
+  const s = CONTENT(m.content);
   const kinds = [
-    ['concept', '💡', 'ความคิดรวบยอด', () => [h('p', {}, m.help.concept), h('div', { class: 'row' }, m.help.lessons.map((i) => h('button', { type: 'button', class: 'btn small', onclick: () => go('lesson', { stage: s.id, lesson: i }) }, `ทบทวนฐาน ${i + 1}: ${s.lessons[i].title}`)))]],
+    ['concept', '💡', 'ความคิดรวบยอด', () => [h('p', {}, m.help.concept), h('div', { class: 'row' }, m.help.lessons.map((i) => h('button', { type: 'button', class: 'btn small', onclick: () => go('lesson', { content: s.id, lesson: i, from: m.area }) }, `ทบทวนฐาน ${i + 1}: ${s.lessons[i].title}`)))]],
     ['think', '🤔', 'การคิด', () => [h('p', {}, 'ถามตัวเองทีละข้อ:'), h('ul', {}, THINK_HELP[m.area].map((q) => h('li', {}, q)))]],
     ['process', '🧭', 'กระบวนการ', () => [h('ul', {}, [...new Set(m.fields.map((f) => f.type))].flatMap((t) => PROCESS_HELP[t]).map((x) => h('li', {}, x))),
       h('button', { type: 'button', class: 'btn small', onclick: () => go('lab') }, 'เปิดห้องทดลองประโยค')]],
@@ -689,7 +700,7 @@ function submitEl(m, r, g) {
       h('div', { class: 'row' },
         h('button', { type: 'button', class: 'btn primary', onclick: () => shareToBoard(m, r, g) }, '💬 แชร์ลงกระดานแลกเปลี่ยน'),
         h('button', { type: 'button', class: 'btn', onclick: () => { r.submitted = 0; save(); render(); } }, 'แก้ไขแล้วส่งใหม่'),
-        h('button', { type: 'button', class: 'btn', onclick: () => go('stage', { stage: m.stage }) }, 'กลับไปที่ด่าน')),
+        h('button', { type: 'button', class: 'btn', onclick: () => go('situation', { sit: m.area }) }, 'กลับไปที่ด่าน')),
       DB.teacher ? teacherScore(m, r, () => result()) : null));
   };
   if (r.submitted) { result(); return box; }
@@ -731,12 +742,12 @@ function mindmapView() {
     h('div', { class: 'pagehead' }, h('h1', {}, 'แผนผังความรู้'), h('p', { class: 'muted' }, 'เนื้อหาทั้งหมดของเรื่องการแต่งประโยค แตะหัวข้อเพื่อไปที่ฐานเรียนรู้')),
     h('div', { class: 'mm' },
       h('div', { class: 'mm-root' }, h('b', {}, 'การแต่งประโยค'), h('small', {}, 'ตามตัวชี้วัด ท 4.1 ป.3/4')),
-      h('div', { class: 'mm-branches' }, STAGES.map((s, si) => h('div', { class: `mm-br s-${s.id}` },
-        h('div', { class: 'mm-node' }, h('span', { class: 'emoji', 'aria-hidden': 'true' }, s.emoji), h('b', {}, s.topic), h('small', {}, `ด่านที่ ${s.no} ${s.place}`)),
-        h('ol', { class: 'mm-leaves' }, s.lessons.map((l, i) => h('li', {}, h('button', { type: 'button', class: g.lessons[lessonKey(s.id, i)] ? 'done' : '', disabled: !stageUnlocked(g, si) && !DB.unlockAll,
-          onclick: () => go('lesson', { stage: s.id, lesson: i }) }, l.title)))))))),
-    h('section', { class: 'mm-creative' }, h('h2', {}, 'ใช้ความรู้ฝึกการคิดสร้างสรรค์ 4 ด้าน'),
-      h('div', { class: 'proc' }, ['F', 'X', 'O', 'E'].map((a) => h('div', { class: `pstep a-${a}` }, h('b', {}, AREAS[a].name), h('small', {}, AREAS[a].sub.join(' · ')))))));
+      h('div', { class: 'mm-branches' }, CONTENTS.map((c) => h('div', { class: `mm-br c-${c.id}` },
+        h('div', { class: 'mm-node' }, h('span', { class: 'emoji', 'aria-hidden': 'true' }, c.emoji), h('b', {}, c.topic), h('small', {}, `เนื้อหาด้านที่ ${c.no}`)),
+        h('ol', { class: 'mm-leaves' }, c.lessons.map((l, i) => h('li', {}, h('button', { type: 'button', class: g.lessons[lessonKey(c.id, i)] ? 'done' : '',
+          onclick: () => go('lesson', { content: c.id, lesson: i }) }, l.title)))))))),
+    h('section', { class: 'mm-creative' }, h('h2', {}, 'ใช้ความรู้ฝึกการคิดสร้างสรรค์ใน 4 สถานการณ์ปัญหา'),
+      h('div', { class: 'proc' }, SITUATIONS.map((st) => h('div', { class: `pstep a-${st.area}` }, h('b', {}, AREAS[st.area].name), h('small', {}, `ด่านที่ ${st.no} ${st.title}`), h('small', {}, AREAS[st.area].sub.join(' · ')))))));
 }
 
 // ---------- ห้องทดลองประโยค (เครื่องมือทางปัญญา) ----------
@@ -782,7 +793,7 @@ function boardView() {
   wrap.append(h('div', { class: 'pagehead' }, h('h1', {}, 'กระดานแลกเปลี่ยนเรียนรู้'),
     h('p', { class: 'muted' }, 'แชร์คำตอบ ดูวิธีคิดของเพื่อนหลายแบบ ให้ดาว และตอบกลับด้วยประโยคชวนคิด')));
   const sel = h('select', { id: 'b-filter', onchange: (e) => { ui.filter = e.target.value; render(); } },
-    h('option', { value: 'all' }, 'ทุกภารกิจ'), MISSIONS.map((m) => h('option', { value: m.id, selected: ui.filter === m.id }, `${STAGE(m.stage).place} · ${m.title}`)));
+    h('option', { value: 'all' }, 'ทุกภารกิจ'), MISSIONS.map((m) => h('option', { value: m.id, selected: ui.filter === m.id }, `${SIT(m.area).title} · ${m.title}`)));
   const me = h('select', { id: 'b-me', onchange: (e) => { ui.me = e.target.value; } }, [...g.members, ...(DB.teacher ? ['ครู'] : [])].map((n) => h('option', { value: n, selected: ui.me === n }, n)));
   wrap.append(h('div', { class: 'bbar' }, h('label', { for: 'b-filter' }, 'ดูภารกิจ'), sel, h('label', { for: 'b-me' }, 'ฉันคือ'), me));
   // เขียนโพสต์ใหม่
@@ -825,7 +836,7 @@ function postEl(p, g) {
 function consultView() {
   const g = G();
   const mine = DB.consult.filter((c) => c.gid === g.id);
-  const sel = h('select', { id: 'c-about' }, h('option', { value: '' }, 'เรื่องทั่วไป'), MISSIONS.map((m) => h('option', { value: m.id, selected: ui.about === m.id }, `${STAGE(m.stage).place} · ${m.title}`)));
+  const sel = h('select', { id: 'c-about' }, h('option', { value: '' }, 'เรื่องทั่วไป'), MISSIONS.map((m) => h('option', { value: m.id, selected: ui.about === m.id }, `${SIT(m.area).title} · ${m.title}`)));
   const ta = h('textarea', { id: 'c-q', rows: 3, placeholder: 'หนูไม่เข้าใจตรงไหน อยากให้ครูช่วยเรื่องอะไร' });
   return h('div', { class: 'consult' },
     h('div', { class: 'pagehead' }, h('h1', {}, 'ปรึกษาครู')),
@@ -846,9 +857,9 @@ function reportView() {
   const rows = MISSIONS.slice().sort((a, b) => a.ind.localeCompare(b.ind));
   const total = rows.reduce((s, m) => s + (finalScore(g.missions[m.id]) || 0), 0);
   const helps = MISSIONS.reduce((s, m) => s + Object.values(((g.missions[m.id] || {}).helps) || {}).reduce((a, b) => a + b, 0), 0);
-  const ls = STAGES.reduce((s, st) => s + st.lessons.filter((_, i) => g.lessons[lessonKey(st.id, i)]).length, 0);
+  const ls = CONTENTS.reduce((s, c) => s + c.lessons.filter((_, i) => g.lessons[lessonKey(c.id, i)]).length, 0);
   const copyBox = h('textarea', { class: 'copybox', rows: 6, hidden: true, 'aria-label': 'ข้อมูลสำหรับคัดลอก' });
-  const badges = STAGES.filter((s) => stageMissions(s.id).every((m) => (g.missions[m.id] || {}).submitted));
+  const badges = SITUATIONS.filter((s) => sitMissions(s.id).every((m) => (g.missions[m.id] || {}).submitted));
   return h('div', { class: 'report' },
     h('div', { class: 'pagehead' }, h('h1', {}, `ผลการเรียนของกลุ่ม${g.name}`), h('p', { class: 'muted' }, g.members.join(' · '))),
     h('div', { class: 'kpis' },
@@ -860,7 +871,7 @@ function reportView() {
     h('div', { class: 'tablew' }, h('table', {},
       h('thead', {}, h('tr', {}, ['ตัวบ่งชี้', 'ด้าน', 'ภารกิจ', 'ระบบ', 'ครู', 'ผล'].map((x) => h('th', {}, x)))),
       h('tbody', {}, rows.map((m) => { const r = g.missions[m.id];
-        return h('tr', {}, h('td', { class: 'num' }, m.ind), h('td', {}, AREAS[m.area].name), h('td', {}, `${STAGE(m.stage).place} · ${m.title}`),
+        return h('tr', {}, h('td', { class: 'num' }, m.ind), h('td', {}, AREAS[m.area].name), h('td', {}, `${SIT(m.area).title} · ${m.title}`),
           h('td', { class: 'num' }, r && r.submitted ? r.auto.score : '—'), h('td', { class: 'num' }, r && r.teacher != null ? r.teacher : '—'), h('td', {}, stars(finalScore(r))));
       })))),
     h('h2', {}, 'สรุปรายด้าน'),
@@ -934,11 +945,11 @@ function aboutView() {
       h('tbody', {}, COMPONENTS.map(([a, b, c], i) => h('tr', {}, h('td', {}, h('b', {}, `${i + 1}) ${a}`)), h('td', { class: 'num' }, b), h('td', {}, c))))))));
   wrap.append(h('section', { class: 'sec' }, h('h2', {}, 'การคิดสร้างสรรค์ตามแนวคิดของกิลฟอร์ด (สรุปโดย จารุณี ซามาตย์)'),
     h('div', { class: 'proc' }, ['F', 'X', 'O', 'E'].map((a) => h('div', { class: `pstep a-${a}` }, h('b', {}, `${AREAS[a].name} (${AREAS[a].en})`), h('small', {}, AREAS[a].def), h('small', {}, `ย่อย: ${AREAS[a].sub.join(' · ')}`))))));
-  wrap.append(h('section', { class: 'sec' }, h('h2', {}, 'ภารกิจ 3 ด่าน × 4 ด้าน'),
+  wrap.append(h('section', { class: 'sec' }, h('h2', {}, 'สถานการณ์ปัญหา 4 ด่าน × เนื้อหา 3 ด้าน'),
     h('div', { class: 'tablew' }, h('table', { class: 'matrix' },
-      h('thead', {}, h('tr', {}, h('th', {}, 'ด้าน'), STAGES.map((s) => h('th', {}, `ด่าน ${s.no} ${s.place}: ${s.topic}`)))),
-      h('tbody', {}, ['F', 'X', 'O', 'E'].map((a) => h('tr', {}, h('td', {}, h('b', {}, AREAS[a].name)),
-        STAGES.map((s) => { const m = MISSIONS.find((x) => x.stage === s.id && x.area === a); return h('td', {}, h('b', {}, `${m.ind} ${m.title}`), h('br'), h('small', {}, INDICATORS[m.ind])); }))))))));
+      h('thead', {}, h('tr', {}, h('th', {}, 'สถานการณ์ปัญหา'), CONTENTS.map((c) => h('th', {}, c.topic)))),
+      h('tbody', {}, SITUATIONS.map((st) => h('tr', {}, h('td', {}, h('b', {}, `${st.no}. ${st.title}`), h('br'), h('small', {}, AREAS[st.area].name)),
+        CONTENTS.map((c) => { const m = MISSIONS.find((x) => x.content === c.id && x.area === st.area); return h('td', {}, h('b', {}, `${m.ind} ${m.title}`), h('br'), h('small', {}, INDICATORS[m.ind])); }))))))));
   return wrap;
 }
 
