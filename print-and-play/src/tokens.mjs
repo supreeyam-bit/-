@@ -1,6 +1,6 @@
 // โทเคนวงกลม 22 มม. ดาวสร้างสรรค์ 4 รูปทรง หมุดผู้เล่น ธงประเภทประโยค และลูกเต๋าประเภทประโยค
 import { doc, esc, chunk } from './lib.mjs';
-import { TYPES, PLAYERS, STORY_CUBES, CUBE_RULES } from './data.mjs';
+import { TYPES, PLAYERS, STORY_CUBES, CUBE_RULES, SPORT_CUBES, STORY_THEMES } from './data.mjs';
 
 const css = `
 @page{size:210mm 297mm;margin:0}
@@ -33,6 +33,10 @@ h2{margin:0 0 3mm;font:500 12pt var(--font-display)}
 .cname{grid-column:3/5;grid-row:3;font:500 7pt/1.2 var(--font-display);padding:2mm;color:var(--ink-muted)}
 .legend{display:grid;grid-template-columns:repeat(3,1fr);gap:2mm 4mm;font-size:8pt}
 .legend div b{font-family:var(--font-display);font-weight:500}
+.themes{display:grid;grid-template-columns:repeat(3,60mm);grid-auto-rows:34mm;gap:3mm;justify-content:center}
+.theme{border:.4mm dashed #999;border-radius:3mm;background:#fbe9cc;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2mm;gap:1mm}
+.theme b{font:600 14pt/1 var(--font-display)}
+.theme span{font:500 10pt/1.25 var(--font-display)}
 .note{font-size:8pt;color:var(--ink-muted);margin:2mm 0 4mm}
 `;
 
@@ -85,5 +89,11 @@ export function tokensHtml() {
 ${i === 1 ? `<h2 style="margin-top:6mm">การ์ดคำแนะนำภาพ (วางข้างลูกเต๋า)</h2><div class="legend">${STORY_CUBES.map((c) => `<div><b style="color:${COL[c.role]}">${esc(c.name)}</b><br>${c.faces.map(([e, w]) => `<span class="emoji">${e}</span> ${esc(w)}`).join(' · ')}</div>`).join('')}</div>
 <h2 style="margin-top:5mm">กติกาลูกเต๋าเรื่องเล่า</h2><ol style="margin:0;padding-left:5mm;font-size:8.6pt;line-height:1.5">${CUBE_RULES.map((r) => `<li>${esc(r)}</li>`).join('')}</ol>` : ''}
 <div class="pnote">ลูกเต๋าเรื่องเล่า · กลไกได้แรงบันดาลใจจาก Rory's Story Cubes · ภาพบนหน้าลูกเต๋าออกแบบใหม่สำหรับเกมนี้</div></div>`).join('');
-  return doc('โทเคน ธง หมุด', css, tokenPages.join('') + extra + cubePages);
+  const sportPage = `<div class="page"><h2>ชุดเสริม "สนามกีฬาสี" 3 ลูก (แบบชุด MIX)</h2>
+<div class="note">สลับเข้าแทนลูกเต๋าหลัก: ${SPORT_CUBES.map((c) => `${c.name} แทน ลูก ${c.swap}`).join(' · ')} — ใช้กับโหมดนักพากย์กีฬา หรือเมื่ออยากได้ภาพใหม่ (ไม่ใช้พร้อมชุดตามตารางที่ 2)</div>
+<div class="cubes">${SPORT_CUBES.map(cubeNet).join('')}<div class="legend" style="grid-template-columns:1fr;align-content:start">${SPORT_CUBES.map((c) => `<div><b style="color:${COL[c.role]}">${esc(c.name)}</b><br>${c.faces.map(([e, w]) => `<span class="emoji">${e}</span> ${esc(w)}`).join(' · ')}</div>`).join('')}</div></div>
+<h2 style="margin-top:6mm">การ์ดหัวข้อเรื่อง (ตั้งชื่อเรื่องก่อนเล่า · ทอยเต๋าธรรมดาเลือก 1–6)</h2>
+<div class="themes">${STORY_THEMES.map((t, i) => `<div class="theme"><b>${i + 1}</b><span>${esc(t)}</span></div>`).join('')}</div>
+<div class="pnote">ชุดเสริมสนามกีฬาสี · ปรับกลไกจาก Rory's Story Cubes: Score · ภาพออกแบบใหม่สำหรับเกมนี้</div></div>`;
+  return doc('โทเคน ธง หมุด', css, tokenPages.join('') + extra + cubePages + sportPage);
 }

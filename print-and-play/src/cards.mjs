@@ -3,7 +3,7 @@
 import { doc, esc, arMarker, chunk } from './lib.mjs';
 import {
   TYPES, RESOURCES, GLASS_PER_TYPE, MISSIONS, MISSION_REWARD, CHAOS, TEMPLATES, HINT_LEVELS,
-  CREATIVE, STAGES, ELAB_BROKEN, WONDERS, ROLES_JIGSAW, COACH, STORY_CUBES,
+  CREATIVE, STAGES, ELAB_BROKEN, WONDERS, ROLES_JIGSAW, COACH, STORY_CUBES, STORY_MODES, STORY_SCORE,
 } from './data.mjs';
 
 const css = `
@@ -124,8 +124,23 @@ function cubeChips(codes) {
     return `<span style="display:inline-flex;align-items:center;gap:1mm;margin:0 2mm .8mm 0;white-space:nowrap"><span style="width:3.4mm;height:3.4mm;border-radius:.8mm;background:${CUBE_COL[role]};display:inline-block"></span>${esc(label)}</span>`;
   }).join('');
 }
-const crItems = CREATIVE.flatMap((c) => [{ c, s: -1 }, ...[0, 1, 2].map((s) => ({ c, s }))]);
-function crFront({ c, s }) {
+// การ์ดเสริมภารกิจการคิดริเริ่ม: วิธีเล่าเรื่อง และใบแต้มนักเล่าเรื่อง (ปรับจาก Rory's Story Cubes: Score)
+function storyCard(c, special) {
+  const band = `<div class="band" style="background:var(--spark-gold);color:var(--ink)"><span>★ ภารกิจที่ 3 ${c.area} · 🎲 ลูกเต๋าเรื่องเล่า</span><span>การ์ดเสริม</span></div>`;
+  if (special === 'modes') {
+    return lg({ style: 'background:#fff;border:.5mm solid var(--spark-gold)', html: `${band}<div class="bd"><h3>วิธีเล่าเรื่อง 4 แบบ</h3>
+${STORY_MODES.map((m) => `<div class="crit"><b><span class="emoji">${m.icon}</span> ${esc(m.name)}</b><br>${esc(m.text)}</div>`).join('')}
+<div class="foot"><span>ครูหรือผู้หยุดที่ ★ เลือกวิธีเล่าก่อนทอยลูกเต๋า</span></div></div>` });
+  }
+  return lg({ style: 'background:#fff;border:.5mm solid var(--spark-gold)', html: `${band}<div class="bd"><h3>ใบแต้มนักเล่าเรื่อง</h3>
+<table style="width:100%;border-collapse:collapse;font-size:9pt;line-height:1.35">${STORY_SCORE.map(([k, v]) => `<tr><td style="border-bottom:.3mm solid var(--line);padding:1.2mm 0">${esc(k)}</td><td style="border-bottom:.3mm solid var(--line);padding:1.2mm 0;text-align:right;white-space:nowrap"><b>${esc(v)}</b></td></tr>`).join('')}</table>
+<div class="crit"><b>แลกรางวัล</b> ทุก 3 แต้ม = ประกายคิดเพิ่ม 1 (สูงสุด 3 ต่อด่าน) · ผ่านด่าน = ประกายคิด 1 + ดาวสามเหลี่ยม 1<br><b>โหวตเรื่องเด็ด</b> ทุกคนชี้เรื่องของเพื่อนที่ชอบที่สุดพร้อมกัน (ห้ามชี้ตัวเอง)</div>
+<div class="foot"><span>นับแต้มให้เพื่อนด้วยคำถาม: ใช้ภาพไหนบ้าง? ประโยคถูกไหม? คิดต่างจากคนอื่นตรงไหน?</span></div></div>` });
+}
+const crItems = [...CREATIVE.flatMap((c) => [{ c, s: -1 }, ...[0, 1, 2].map((s) => ({ c, s }))]),
+  { c: CREATIVE[2], special: 'modes' }, { c: CREATIVE[2], special: 'score' }];
+function crFront({ c, s, special }) {
+  if (special) return storyCard(c, special);
   const band = `<div class="band" style="background:var(--spark-gold);color:var(--ink)"><span>★ ภารกิจที่ ${c.id} ${c.area} (${c.en})</span><span>ดาว${c.shape}</span></div>`;
   if (s < 0) {
     return lg({ style: 'background:#fff;border:.5mm solid var(--spark-gold)', html: `${band}<div class="bd"><span class="pill" style="align-self:flex-start">การ์ดภาพสถานการณ์</span>
@@ -142,8 +157,8 @@ ${c.roll ? `<div class="crit"><b>🎲 ลูกเต๋าเรื่องเ
 <div class="crit"><b>ถูกก่อน แล้วค่อยแปลก</b> — นับเฉพาะประโยคที่มีภาคประธานและภาคแสดงครบ และสื่อความหมายได้ถูกต้องสมบูรณ์<br>ผ่านด่าน: ประกายคิด 1 + ดาว${c.shape} 1 · ${esc(c.reward)}</div>
 <div class="foot"><span>${timed ? '⏳ นาฬิกาทราย 5 นาที · ' : ''}ทุกคนเขียนพร้อมกันบนไวท์บอร์ด</span><span class="pill">ตัวบ่งชี้ ${ind}</span></div></div>` });
 }
-const crBack = ({ c, s }) => lg({ style: 'background:var(--spark-gold)', html: `<div class="bd back" style="color:var(--ink)"><div class="big" style="font:600 30mm/1 var(--font-display)">★</div><div class="t">ภารกิจสร้างสรรค์</div>
-<div class="s">ภารกิจที่ ${c.id} ${c.area}<br>${s < 0 ? 'การ์ดภาพสถานการณ์' : esc(STAGES[s])}</div><div class="ttl">ดินแดนมหัศจรรย์แห่งคำ</div></div>` });
+const crBack = ({ c, s, special }) => lg({ style: 'background:var(--spark-gold)', html: `<div class="bd back" style="color:var(--ink)"><div class="big" style="font:600 30mm/1 var(--font-display)">★</div><div class="t">ภารกิจสร้างสรรค์</div>
+<div class="s">ภารกิจที่ ${c.id} ${c.area}<br>${special ? (special === 'modes' ? 'วิธีเล่าเรื่อง 4 แบบ' : 'ใบแต้มนักเล่าเรื่อง') : s < 0 ? 'การ์ดภาพสถานการณ์' : esc(STAGES[s])}</div><div class="ttl">ดินแดนมหัศจรรย์แห่งคำ</div></div>` });
 
 const coopItems = WONDERS.flatMap((w) => [{ w, s: -1 }, ...[0, 1, 2].map((s) => ({ w, s }))]);
 function coopFront({ w, s }) {

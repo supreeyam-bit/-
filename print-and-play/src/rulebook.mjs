@@ -2,7 +2,7 @@
 import { doc, esc } from './lib.mjs';
 import {
   TITLE, TYPES, SUBJECTS, VERBS, OBJECTS, MODIFIERS, CHANGERS, GHOSTS, RESOURCES, GLASS_PER_TYPE,
-  MISSIONS, MISSION_REWARD, CHAOS, CREATIVE, STAGES, INDICATORS, STORY_CUBES, CUBE_RULES, WONDERS, COACH, SPACE_KINDS, PATH, COST, PLAYERS,
+  MISSIONS, MISSION_REWARD, CHAOS, CREATIVE, STAGES, INDICATORS, STORY_CUBES, CUBE_RULES, SPORT_CUBES, STORY_THEMES, STORY_MODES, STORY_SCORE, WONDERS, COACH, SPACE_KINDS, PATH, COST, PLAYERS,
 } from './data.mjs';
 
 const css = `
@@ -202,6 +202,16 @@ ${STORY_CUBES.map((c) => `<tr><td><b>${esc(c.name)}</b> (${c.id})</td><td>${c.fa
 <tr><td>2 การขยายประโยค</td><td>เพิ่มน้ำเงินอย่างไร + ทอยน้ำเงินที่ไหน/เมื่อไรใหม่</td><td>ขยายประโยคเดิมด้วยคำขยายที่ได้แรงบันดาลใจจากภาพใหม่</td></tr>
 <tr><td>3 การใช้ภาษา</td><td>ทอยครบ 9 ลูก</td><td>เล่าเรื่องต่อ ใช้ภาพอย่างน้อย 5 ลูก ใช้ถ้อยคำสุภาพ ชี้ลูกเต๋าขณะเล่า</td></tr></table>
 <ol>${CUBE_RULES.map((r) => `<li>${esc(r)}</li>`).join('')}</ol>
+<h2>ปรับจาก Rory's Story Cubes: Score — ชุดเสริม วิธีเล่า และการให้แต้ม</h2>
+<p><b>Rory's Story Cubes: Score</b> เป็นชุดเสริมแบบ MIX ธีมกีฬา ลูกเต๋า 3 ลูก ทอยเล่าเรื่องการแข่งขันเดี่ยว ๆ ก็ได้ หรือสลับเข้าแทน 3 ลูกในชุดหลักก็ได้ เกมนี้นำกลไกนั้นมาปรับดังนี้</p>
+<table style="font-size:8.8pt"><tr><th style="width:26%">กลไกจาก Story Cubes: Score</th><th>ปรับใช้ในดินแดนมหัศจรรย์แห่งคำ</th></tr>
+<tr><td>ชุดเสริม MIX 3 ลูก สลับแทนชุดหลัก</td><td>ชุดเสริม <b>"สนามกีฬาสี"</b> 3 ลูก ยังแบ่งสีตามหน้าที่ของคำ ${SPORT_CUBES.map((c) => `${esc(c.name)} แทน ${c.swap}`).join(' · ')}</td></tr>
+<tr><td>เล่าเรื่องการแข่งขันกีฬา</td><td>โหมด <b>นักพากย์กีฬา</b> เล่าเหมือนพากย์สด ต้องใช้ประโยคอย่างน้อย 3 ประเภท จึงฝึกทั้งการคิดริเริ่มและการใช้ประโยคตามเจตนา</td></tr>
+<tr><td>ตั้งชื่อเรื่องหรือธีมก่อนเล่า</td><td>การ์ดหัวข้อเรื่อง 6 ใบ: ${STORY_THEMES.map(esc).join(' · ')}</td></tr>
+<tr><td>ผลัดกันเล่าต่อเป็นวง</td><td>โหมด <b>เล่าต่อกันเป็นวง</b> แบ่งลูกเต๋า เริ่มด้วย "กาลครั้งหนึ่ง…"</td></tr>
+<tr><td>ให้แต้มตามภาพที่ใช้ / โหวตเรื่องที่ดีที่สุด</td><td><b>ใบแต้มนักเล่าเรื่อง</b> แต้มแลกเป็นประกายคิด และใช้เป็นหลักฐานตัวบ่งชี้ 3.1–3.3</td></tr></table>
+<div class="grid2"><div><b>วิธีเล่าเรื่อง 4 แบบ</b><ul>${STORY_MODES.map((m) => `<li><b>${esc(m.name)}</b> — ${esc(m.text)}</li>`).join('')}</ul></div>
+<div><b>ใบแต้มนักเล่าเรื่อง (ต่อคนต่อด่าน)</b><table style="font-size:8.8pt">${STORY_SCORE.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table><p class="small">ทุก 3 แต้ม = ประกายคิดเพิ่ม 1 (สูงสุด 3 ต่อด่าน) · ใช้เล่าเดี่ยวเมื่อเก็บข้อมูลตามตารางที่ 2</p></div></div>
 <h2>เกณฑ์ตรวจประโยค</h2>
 <ol><li>มี ใคร (ภาคประธาน) และ ทำอะไร (ภาคแสดง) ครบไหม?</li><li>ลำดับคำทำให้ความหมายถูกไหม?</li><li>ตรงกับภาพหรือเหตุการณ์ไหม?</li><li>คำขยายบอก ลักษณะ / การกระทำ / เวลา / สถานที่ ได้ชัดขึ้นไหม?</li><li>(ด่านที่ 3) ใช้คำสุภาพและคำลงท้ายเหมาะกับผู้ฟังไหม? ผู้ฟังรู้ไหมว่าเราต้องการอะไร?</li></ol>
 <h2>ภารกิจร่วมและสิ่งก่อสร้างมหัศจรรย์</h2>
@@ -246,6 +256,9 @@ ${INDICATORS.map(([area, list], i) => list.map((t, k) => `<tr>${k === 0 ? `<td r
 <div class="box"><b>เกณฑ์ให้คะแนนแนะนำ (ต่อตัวบ่งชี้)</b> 3 = ทำได้ครบตามตัวบ่งชี้ ถูกต้อง โดยไม่ใช้คำใบ้หรือใช้ขั้น 1 · 2 = ทำได้บางส่วน หรือใช้คำใบ้ขั้น 2–3 · 1 = ยังทำไม่ได้แม้มีคำใบ้ · 0 = ไม่ได้ทำ<br><span class="small">เกณฑ์นี้เป็นข้อเสนอ ควรตรวจสอบความตรงเชิงเนื้อหาโดยผู้เชี่ยวชาญก่อนใช้เก็บข้อมูลวิจัย</span></div>
 <table class="form" style="font-size:8pt"><tr><th style="width:24%">ชื่อนักเรียน</th>${inds.map((x) => `<th style="text-align:center">${x}</th>`).join('')}<th>รวม</th></tr>
 ${Array.from({ length: 12 }, () => `<tr><td></td>${inds.map(() => '<td></td>').join('')}<td></td></tr>`).join('')}</table>
+<h2>ใบแต้มนักเล่าเรื่อง (ภารกิจที่ 3 การคิดริเริ่ม)</h2>
+<table class="form" style="font-size:8pt"><tr><th style="width:20%">ชื่อ</th><th>ด่าน</th><th>วิธีเล่า</th><th>ภาพที่ใช้ (×1)</th><th>พลิกแพลง (+1 ≤2)</th><th>ไม่ซ้ำ (+2)</th><th>ครบ 3 ประเภท (+2)</th><th>เรื่องเด็ด (+1)</th><th>รวม</th><th>ประกายคิด</th></tr>
+${Array.from({ length: 8 }, () => `<tr>${'<td></td>'.repeat(10)}</tr>`).join('')}</table>
 <h1><span class="n">11</span>ใบนับแต้ม</h1>
 <table class="form"><tr><th>รายการ</th>${PLAYERS.map((p) => `<th>${esc(p.name)}<br><span class="small">ชื่อ ……………</span></th>`).join('')}</tr>
 ${['กระท่อม × 1', 'บ้าน × 3', 'หอคอย × 6', 'ดาวสร้างสรรค์ × 1', 'ภารกิจสร้างสรรค์ครบ 3 ด่าน × 2', 'มือช่วย × 1', 'สิ่งมหัศจรรย์ × 2', 'ครบ 5 ย่าน (3)', 'นิทานเมืองของฉัน (≤3)', '<b>รวม</b>'].map((r) => `<tr><td>${r}</td>${PLAYERS.map(() => '<td></td>').join('')}</tr>`).join('')}</table>`;

@@ -860,7 +860,7 @@ function openCreative() {
   if (S.creative.m >= 4) { P().res.spark++; log(`ภารกิจสร้างสรรค์ครบทุกด่านแล้ว ${P().name} รับประกายคิด 1`); return afterResolve(); }
   const c = DATA.CREATIVE[S.creative.m]; const s = S.creative.s; const [task, ind] = c.stages[s];
   const lander = P();
-  const per = S.players.map((p) => ({ p, n: 0, extra: false, unique: false, twist: false, text: '' }));
+  const per = S.players.map((p) => ({ p, n: 0, extra: false, unique: false, text: '', pics: 0, twists: 0, caster3: false, vote: false }));
   let left = 300; let iv = null;
   const tm = h('span', { class: 'timer' }, '5:00');
   const startBtn = h('button', { class: 'btn gold', type: 'button', onclick: () => {
@@ -875,9 +875,8 @@ function openCreative() {
       h('div', { class: 'row' }, h('span', { style: 'font-size:14px' }, 'ประโยคที่ถูก (ตรวจโดยเพื่อน):'), h('div', { class: 'stepper' },
         h('button', { type: 'button', 'aria-label': 'ลด', onclick: () => { x.n = Math.max(0, x.n - 1); n.textContent = x.n; } }, '−'), n,
         h('button', { type: 'button', 'aria-label': 'เพิ่ม', onclick: () => { x.n++; n.textContent = x.n; } }, '+'))),
-      S.creative.m === 0 ? null : h('label', { class: 'ck' }, h('input', { type: 'checkbox', onchange: (e) => { x.extra = e.target.checked; } }), extraLabel),
-      S.creative.m === 2 ? h('label', { class: 'ck' }, h('input', { type: 'checkbox', onchange: (e) => { x.unique = e.target.checked; } }), 'ไม่ซ้ำกับใครในวง') : null,
-      c.roll ? h('label', { class: 'ck' }, h('input', { type: 'checkbox', onchange: (e) => { x.twist = e.target.checked; } }), 'ตีความภาพบนลูกเต๋าแบบพลิกแพลง และอธิบายเหตุผลได้') : null);
+      S.creative.m === 0 || c.roll ? null : h('label', { class: 'ck' }, h('input', { type: 'checkbox', onchange: (e) => { x.extra = e.target.checked; } }), extraLabel),
+      c.roll ? storyScoreUI(x) : null);
   });
   const extraNote = c.id === 4 && s === 0 ? h('div', { class: 'sign', style: 'font-size:17px' }, DATA.ELAB_BROKEN.join(' · ')) : null;
   openModal({
@@ -904,13 +903,12 @@ function openCreative() {
       let spark = 1;
       if (S.creative.m === 0) spark += Math.floor(x.n / 3);
       if (S.creative.m === 1 && x.extra) spark += 1;
-      if (S.creative.m === 2 && x.unique && x.extra && !x.dup) spark += 2;
-      if (c.roll && x.twist) spark += 1;
+      if (c.roll) { x.sp = storyPoints(x); spark += Math.min(3, Math.floor(x.sp / 3)); }
       if (S.creative.m === 3 && x.extra) spark += 1;
       if (p === lander) spark += 1;
       p.res.spark += spark; p.stars[S.creative.m]++;
       p.crPass[c.id] = (p.crPass[c.id] || 0) + 1;
-      lines.push(`${p.name}: ผ่าน! ประกายคิด +${spark} ดาว${c.shape} +1${x.dup ? ' (มีประโยคซ้ำกับเพื่อน จึงไม่ได้โบนัสริเริ่ม)' : ''}`);
+      lines.push(`${p.name}: ผ่าน! ${c.roll ? `แต้มนักเล่าเรื่อง ${x.sp} · ` : ''}ประกายคิด +${spark} ดาว${c.shape} +1${x.dup ? ' (มีประโยคซ้ำกับเพื่อน จึงไม่ได้แต้มไม่ซ้ำ)' : ''}`);
     });
     S.creative.s++;
     if (S.creative.s >= 3) { S.creative.s = 0; S.creative.m++; }
@@ -921,14 +919,18 @@ function openCreative() {
   }
 }
 // ลูกเต๋าเรื่องเล่า (กลไกแบบ Rory's Story Cubes) สำหรับภารกิจการคิดริเริ่ม
+// + ชุดเสริม MIX "สนามกีฬาสี" วิธีเล่าเรื่อง 4 แบบ และการ์ดหัวข้อ (ปรับจาก Rory's Story Cubes: Score)
+const ALL_CUBES = () => [...DATA.STORY_CUBES, ...DATA.SPORT_CUBES];
 function cubesUI(c, s) {
-  S.cubes = s === 0 || !S.cubes ? { faces: {}, table2: S.cubes ? S.cubes.table2 : false, shown: [] } : S.cubes;
+  const prev = S.cubes || {};
+  S.cubes = s === 0 || !S.cubes ? { faces: {}, table2: !!prev.table2, mix: !!prev.mix, mode: prev.mode || 'solo', theme: null, shown: [] } : S.cubes;
   const st = S.cubes;
   let showWords = false; let rolled = false;
   const box = h('div', { class: 'card', style: 'background:color-mix(in srgb,var(--gold) 14%,var(--raised))' });
-  const cubeById = (id) => DATA.STORY_CUBES.find((x) => x.id === id);
+  const cubeById = (id) => ALL_CUBES().find((x) => x.id === id);
   const COL = { S: 'var(--subj)', V: 'var(--verb)', O: 'var(--obj)', M: 'var(--mod)' };
-  const resolve = (code) => (code === 'R' ? (st.table2 ? 'R3' : pick(['R1', 'R2', 'R3'])) : code === 'Y' ? pick(['Y1', 'Y2', 'Y3']) : code);
+  const swapIn = (id) => { if (!st.mix || st.table2) return id; const sp = DATA.SPORT_CUBES.find((x) => x.swap === id); return sp ? sp.id : id; };
+  const resolve = (code) => swapIn(code === 'R' ? (st.table2 ? 'R3' : pick(['R1', 'R2', 'R3'])) : code === 'Y' ? pick(['Y1', 'Y2', 'Y3']) : code);
   const doRoll = () => {
     const ids = c.roll[s].map(resolve);
     if (s === 2) st.shown = [];
@@ -937,18 +939,33 @@ function cubesUI(c, s) {
       st.faces[id] = fixed ? DATA.TABLE2_FACES[id] : rnd(6);
       if (!st.shown.includes(id)) st.shown.push(id);
     });
-    rolled = true; drawBox(true); save();
+    if (st.mode === 'title' && !st.theme) st.theme = DATA.STORY_THEMES[rnd(6)];
+    rolled = true; S.cubeCount = st.shown.length; drawBox(true); save();
   };
   const drawBox = (spin) => {
     box.innerHTML = '';
     box.append(h('h3', {}, '🎲 ลูกเต๋าเรื่องเล่า', h('small', {}, s === 0 ? 'ทอย 4 ลูก' : s === 1 ? 'ทอยเพิ่ม 2 ลูก' : 'ทอยครบ 9 ลูก')));
-    if (s === 0 && !rolled) box.append(h('label', { class: 'ck' }, h('input', { type: 'checkbox', checked: st.table2, onchange: (e) => { st.table2 = e.target.checked; } }), 'ใช้ชุดตามตารางที่ 2 (ครูตั้งหน้า 💨 ลม · 🪁 ว่าว · 🌾 ทุ่งนา) สำหรับเก็บข้อมูลวิจัย'));
+    if (!rolled) {
+      const mode = DATA.STORY_MODES.find((m) => m.id === st.mode);
+      box.append(h('div', {}, h('div', { class: 'muted', style: 'font-size:14px;margin-bottom:4px' }, 'วิธีเล่าเรื่อง'),
+        h('div', { class: 'row' }, DATA.STORY_MODES.map((m) => h('button', { class: `btn small${st.mode === m.id ? ' primary' : ''}`, type: 'button', 'aria-pressed': st.mode === m.id ? 'true' : 'false',
+          onclick: () => { st.mode = m.id; if (m.id === 'caster') { st.mix = true; st.table2 = false; } drawBox(false); } }, h('span', { class: 'emoji' }, m.icon), m.name))),
+        h('p', { style: 'margin:4px 0 0;font-size:14px' }, mode.text)));
+      if (s === 0) box.append(h('label', { class: 'ck' }, h('input', { type: 'checkbox', checked: st.table2, onchange: (e) => { st.table2 = e.target.checked; if (st.table2) { st.mix = false; if (st.mode === 'caster') st.mode = 'solo'; } drawBox(false); } }), 'ใช้ชุดตามตารางที่ 2 (ครูตั้งหน้า 💨 ลม · 🪁 ว่าว · 🌾 ทุ่งนา) สำหรับเก็บข้อมูลวิจัย'));
+      box.append(h('label', { class: 'ck' }, h('input', { type: 'checkbox', checked: st.mix, disabled: st.table2, onchange: (e) => { st.mix = e.target.checked; drawBox(false); } }), `ใส่ชุดเสริม "สนามกีฬาสี" 3 ลูก (สลับแทน ${DATA.SPORT_CUBES.map((x) => x.swap).join(' ')})`));
+    }
+    if (st.theme && st.mode === 'title') box.append(h('div', { class: 'sign', style: 'font-size:17px' }, `🏷️ หัวข้อเรื่อง: ${st.theme}`));
     const shown = st.shown.filter((id) => st.faces[id] != null);
     box.append(h('div', { class: 'cubes', 'aria-live': 'polite' }, shown.length ? shown.map((id) => {
       const cube = cubeById(id); const [e, w] = cube.faces[st.faces[id]];
-      const fresh = c.roll[s].map(resolve).length && spin;
-      return h('div', { class: `cube${fresh ? ' spin' : ''}`, style: `--cc:${COL[cube.role]}`, title: `${cube.name}: ${w}`, role: 'img', 'aria-label': `${cube.name}: ${w}` }, h('span', { class: 'e emoji' }, e), showWords ? h('small', {}, w) : null);
+      return h('div', { class: `cube${spin ? ' spin' : ''}`, style: `--cc:${COL[cube.role]}`, title: `${cube.name}: ${w}`, role: 'img', 'aria-label': `${cube.name}: ${w}` }, h('span', { class: 'e emoji' }, e), showWords ? h('small', {}, w) : null);
     }) : h('span', { class: 'muted' }, 'ยังไม่ได้ทอย')));
+    if (rolled && st.mode === 'chain' && S.players.length > 1) {
+      const order = S.players.map((_, k) => S.players[(S.cur + k) % S.players.length]);
+      box.append(h('div', { class: 'card' }, h('h3', {}, '🔗 ลำดับเล่าต่อกัน'), order.map((p, k) => h('div', {}, h('b', {}, `${k + 1}. ${p.name}: `),
+        shown.filter((_, j) => j % order.length === k).map((id) => cubeById(id).faces[st.faces[id]][0]).join(' ') || '(ใช้ภาพของเพื่อนได้)', k === 0 ? ' — เริ่มว่า "กาลครั้งหนึ่ง…"' : ''))));
+    }
+    if (rolled && st.mode === 'caster') box.append(owlEl('พากย์ให้สนุกนะ! ลองใช้ประโยคบอกเล่า ประโยคคำถาม และประโยคคำสั่งหรือขอร้องให้ครบ 3 ประเภท แล้วอย่าลืมพูดสุภาพกับผู้ชม'));
     box.append(h('div', { class: 'row' },
       h('button', { class: 'btn gold', type: 'button', disabled: rolled, onclick: doRoll }, rolled ? 'ทอยแล้ว' : `🎲 ${P().name} ทอยลูกเต๋า`),
       h('label', { class: 'ck' }, h('input', { type: 'checkbox', checked: showWords, onchange: (e) => { showWords = e.target.checked; drawBox(false); } }), 'แสดงคำแนะนำใต้ภาพ')),
@@ -957,6 +974,27 @@ function cubesUI(c, s) {
   drawBox(false);
   return box;
 }
+// แต้มนักเล่าเรื่อง (ใบแต้มจาก Story Cubes: Score) ต่อผู้เล่นต่อด่าน
+function storyScoreUI(x) {
+  const total = h('b', {}, '0');
+  const upd = () => { total.textContent = storyPoints(x); };
+  const step = (key, max, label) => {
+    const v = h('span', {}, x[key]);
+    return h('div', { class: 'row' }, h('span', { style: 'font-size:14px;flex:1;min-width:0' }, label), h('div', { class: 'stepper' },
+      h('button', { type: 'button', 'aria-label': `ลด ${label}`, onclick: () => { x[key] = Math.max(0, x[key] - 1); v.textContent = x[key]; upd(); } }, '−'), v,
+      h('button', { type: 'button', 'aria-label': `เพิ่ม ${label}`, onclick: () => { x[key] = Math.min(max(), x[key] + 1); v.textContent = x[key]; upd(); } }, '+')));
+  };
+  const ck = (key, label) => h('label', { class: 'ck' }, h('input', { type: 'checkbox', onchange: (e) => { x[key] = e.target.checked; upd(); } }), label);
+  return h('div', { style: 'display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:8px' },
+    h('b', { style: 'font-family:var(--display);font-weight:500' }, '🎲 ใบแต้มนักเล่าเรื่อง'),
+    step('pics', () => S.cubeCount || 9, 'ภาพที่ใช้ในประโยคที่ถูก (ภาพละ 1)'),
+    step('twists', () => 2, 'ตีความพลิกแพลง + อธิบายได้ (+1)'),
+    ck('unique', 'ไม่ซ้ำกับใครในวง (+2)'),
+    S.cubes && S.cubes.mode === 'caster' ? ck('caster3', 'นักพากย์: ใช้ประโยคครบ 3 ประเภท (+2)') : null,
+    ck('vote', 'ได้โหวต "เรื่องเด็ด" มากที่สุด (+1)'),
+    h('div', { style: 'font-size:14px' }, 'รวมแต้มนักเล่าเรื่อง: ', total, ' · ทุก 3 แต้ม = ประกายคิด +1 (สูงสุด 3)'));
+}
+function storyPoints(x) { return x.pics + Math.min(2, x.twists) + (x.unique && !x.dup ? 2 : 0) + (x.caster3 ? 2 : 0) + (x.vote ? 1 : 0); }
 function wowPicker() {
   const wrap = h('div', { class: 'card' }, h('h3', {}, 'ให้โทเคน "ว้าว!" (ไม่บังคับ)'), h('p', { class: 'muted', style: 'margin:0;font-size:14px' }, 'ผู้ให้เลือกเพื่อนที่ชอบประโยคที่สุด เพื่อนได้ประกายคิด +1'));
   S.players.forEach((giver) => {
