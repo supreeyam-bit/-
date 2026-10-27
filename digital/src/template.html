@@ -923,7 +923,7 @@ function openCreative() {
 const ALL_CUBES = () => [...DATA.STORY_CUBES, ...DATA.SPORT_CUBES];
 function cubesUI(c, s) {
   const prev = S.cubes || {};
-  S.cubes = s === 0 || !S.cubes ? { faces: {}, table2: !!prev.table2, mix: !!prev.mix, mode: prev.mode || 'solo', theme: null, shown: [] } : S.cubes;
+  S.cubes = s === 0 || !S.cubes ? { faces: {}, table2: prev.table2 === undefined ? true : prev.table2, mix: !!prev.mix, mode: prev.mode || 'solo', theme: null, shown: [] } : S.cubes;
   const st = S.cubes;
   let showWords = false; let rolled = false;
   const box = h('div', { class: 'card', style: 'background:color-mix(in srgb,var(--gold) 14%,var(--raised))' });
@@ -951,7 +951,7 @@ function cubesUI(c, s) {
         h('div', { class: 'row' }, DATA.STORY_MODES.map((m) => h('button', { class: `btn small${st.mode === m.id ? ' primary' : ''}`, type: 'button', 'aria-pressed': st.mode === m.id ? 'true' : 'false',
           onclick: () => { st.mode = m.id; if (m.id === 'caster') { st.mix = true; st.table2 = false; } drawBox(false); } }, h('span', { class: 'emoji' }, m.icon), m.name))),
         h('p', { style: 'margin:4px 0 0;font-size:14px' }, mode.text)));
-      if (s === 0) box.append(h('label', { class: 'ck' }, h('input', { type: 'checkbox', checked: st.table2, onchange: (e) => { st.table2 = e.target.checked; if (st.table2) { st.mix = false; if (st.mode === 'caster') st.mode = 'solo'; } drawBox(false); } }), 'ใช้ชุดตามตารางที่ 2 (ครูตั้งหน้า 💨 ลม · 🪁 ว่าว · 🌾 ทุ่งนา) สำหรับเก็บข้อมูลวิจัย'));
+      if (s === 0) box.append(h('label', { class: 'ck' }, h('input', { type: 'checkbox', checked: st.table2, onchange: (e) => { st.table2 = e.target.checked; if (st.table2) { st.mix = false; if (st.mode === 'caster') st.mode = 'solo'; } drawBox(false); } }), 'ใช้คำที่กำหนดตามตารางที่ 2 (ตั้งหน้า 💨 ลม · 🪁 ว่าว · 🌾 ทุ่งนา) — ค่าเริ่มต้น เอาออกเพื่อทอยอิสระ'));
       box.append(h('label', { class: 'ck' }, h('input', { type: 'checkbox', checked: st.mix, disabled: st.table2, onchange: (e) => { st.mix = e.target.checked; drawBox(false); } }), `ใส่ชุดเสริม "สนามกีฬาสี" 3 ลูก (สลับแทน ${DATA.SPORT_CUBES.map((x) => x.swap).join(' ')})`));
     }
     if (st.theme && st.mode === 'title') box.append(h('div', { class: 'sign', style: 'font-size:17px' }, `🏷️ หัวข้อเรื่อง: ${st.theme}`));

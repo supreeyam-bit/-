@@ -2,7 +2,7 @@
 import { doc, esc } from './lib.mjs';
 import {
   TITLE, TYPES, SUBJECTS, VERBS, OBJECTS, MODIFIERS, CHANGERS, GHOSTS, RESOURCES, GLASS_PER_TYPE,
-  MISSIONS, MISSION_REWARD, CHAOS, CREATIVE, STAGES, INDICATORS, STORY_CUBES, CUBE_RULES, SPORT_CUBES, STORY_THEMES, STORY_MODES, STORY_SCORE, WONDERS, COACH, SPACE_KINDS, PATH, COST, PLAYERS,
+  MISSIONS, SCENES, MISSION_REWARD, CHAOS, CREATIVE, STAGES, INDICATORS, STORY_CUBES, CUBE_RULES, SPORT_CUBES, STORY_THEMES, STORY_MODES, STORY_SCORE, WONDERS, COACH, SPACE_KINDS, PATH, COST, PLAYERS,
 } from './data.mjs';
 
 const css = `
@@ -59,6 +59,10 @@ function cover() {
 function overview() {
   return `<h1><span class="n">1</span>ภาพรวมและเป้าหมายการเรียนรู้</h1>
 <p>ดินแดน <b>อักษรา</b> เป็นหมู่เกาะที่ทุกสิ่งสร้างขึ้นจากคำ บ้านยืนอยู่ได้เพราะประโยคที่มีประธาน กริยา และกรรมเรียงกันถูกที่ คืนหนึ่งสัตว์ประหลาดความสับสนชื่อ <b>"ยุ่งเหยิง"</b> ตื่นขึ้นมากินลำดับของคำและธงประเภทประโยค ป้ายในเมืองอ่านไม่รู้เรื่อง บ้านเอียง สะพานขาด ผู้เล่นคือนักสำรวจรุ่นเยาว์ที่ต้องซ่อมป้าย สร้างเมืองของตัวเองขึ้นใหม่ และช่วยกันสร้างสิ่งก่อสร้างมหัศจรรย์ 3 แห่งเพื่อขังยุ่งเหยิงกลับเข้าถ้ำ</p>
+<h2>4 ฉากสถานการณ์ปัญหา (ตรงกับตารางที่ 2)</h2>
+<p>ยุ่งเหยิงโจมตี 4 แห่งในอักษรา แต่ละแห่งคือสถานการณ์เดียวกับภารกิจสร้างสรรค์ในตารางที่ 2 ป้ายที่ต้องซ่อม ภารกิจสร้างสรรค์ และภารกิจร่วมจึงใช้เรื่องเดียวกัน เด็กพบสถานการณ์ซ้ำหลายรูปแบบตั้งแต่สร้างประโยค ขยายประโยค จนถึงใช้ภาษากับผู้ฟัง</p>
+<table style="font-size:8.8pt"><tr><th style="width:21%">ฉาก (ภารกิจในตารางที่ 2)</th><th>เรื่องในเกม</th><th style="width:22%">การ์ดซ่อมป้าย</th></tr>
+${SCENES.map((sc) => `<tr><td><b>${esc(sc.name)}</b><br>${esc(sc.place)} · ภารกิจที่ ${sc.creative}</td><td>${esc(sc.story)}</td><td>${MISSIONS.filter((m) => m.scene === sc.id).map((m) => `#${m.id}`).join(' ')}</td></tr>`).join('')}</table>
 <h2>เป้าหมายการเรียนรู้</h2>
 <table><tr><th style="width:32%">ด้าน</th><th>นักเรียนสามารถ…</th></tr>
 <tr><td>ความรู้ (เรื่อง การแต่งประโยค ท 4.1 ป.3/4)</td><td>บอกส่วนประกอบของประโยค (ประธาน กริยา กรรม) จำแนกประโยค 5 ประเภท (บอกเล่า ปฏิเสธ คำถาม คำสั่ง ขอร้อง) แต่งและขยายประโยคได้ถูกต้อง และใช้ถ้อยคำเหมาะกับผู้ฟัง</td></tr>

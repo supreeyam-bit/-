@@ -2,7 +2,7 @@
 // หน้าหน้า–หน้าหลังสลับกัน กลับคอลัมน์ไว้แล้วสำหรับพิมพ์สองหน้าแบบพลิกขอบยาว
 import { doc, esc, arMarker, chunk } from './lib.mjs';
 import {
-  TYPES, RESOURCES, GLASS_PER_TYPE, MISSIONS, MISSION_REWARD, CHAOS, TEMPLATES, HINT_LEVELS,
+  TYPES, RESOURCES, GLASS_PER_TYPE, MISSIONS, SCENES, MISSION_REWARD, CHAOS, TEMPLATES, HINT_LEVELS,
   CREATIVE, STAGES, ELAB_BROKEN, WONDERS, ROLES_JIGSAW, COACH, STORY_CUBES, STORY_MODES, STORY_SCORE,
 } from './data.mjs';
 
@@ -82,7 +82,7 @@ const resBack = () => card({ style: 'background:var(--ink)', html: `<div class="
 // ---------- ภารกิจซ่อมป้าย ----------
 const stars = (n) => '★'.repeat(n);
 const missionFront = (m) => card({ style: 'background:#fff;border:.4mm solid var(--line)', html: `<div class="band" style="background:var(--ink)"><span>ภารกิจซ่อมป้าย</span><span>${stars(m.level)}</span></div>
-<div class="bd"><h3>📜 ${esc(m.place)}</h3><div class="sign">${esc(m.broken)}</div><p><b>${esc(m.task)}</b></p>
+<div class="bd"><span class="pill" style="align-self:flex-start">ฉาก: ${esc(SCENES.find((x) => x.id === m.scene).name)}</span><h3>📜 ${esc(m.place)}</h3><div class="sign">${esc(m.broken)}</div><p><b>${esc(m.task)}</b></p>
 <ol class="steps"><li>ต่อบล็อกบนแท่นวางประโยค (หรือพูด/เขียน)</li><li>ปักธงประเภทประโยค อ่านออกเสียง</li><li>ผู้ตรวจป้ายถาม: ใคร? ทำอะไร? กับอะไร?</li></ol>
 <div class="foot"><span>รางวัล: ${esc(MISSION_REWARD[m.level])}</span><span class="pill">#${m.id}</span></div></div>` });
 const missionBack = (m) => card({ style: 'background:#3a3145', html: `<div class="bd back"><div class="big emoji">📜</div><div class="t">ภารกิจซ่อมป้าย</div><div style="font:600 16pt var(--font-display);color:var(--spark-gold)">${stars(m.level)}</div><div class="s">${['', 'เรียงลำดับใหม่', 'เติมส่วนที่ขาด · ธงผิด', 'แปลงประเภท · ขยาย · สุภาพ'][m.level]}</div><div class="ttl">ดินแดนมหัศจรรย์แห่งคำ</div></div>` });
