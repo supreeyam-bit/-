@@ -2,7 +2,7 @@
 import { doc, esc } from './lib.mjs';
 import {
   TITLE, TYPES, SUBJECTS, VERBS, OBJECTS, MODIFIERS, CHANGERS, GHOSTS, RESOURCES, GLASS_PER_TYPE,
-  MISSIONS, SCENES, MISSION_REWARD, CHAOS, CREATIVE, STAGES, INDICATORS, STORY_CUBES, CUBE_RULES, SPORT_CUBES, STORY_THEMES, STORY_MODES, STORY_SCORE, WONDERS, COACH, SPACE_KINDS, PATH, COST, PLAYERS,
+  MISSIONS, SCENES, MISSION_REWARD, CHAOS, CREATIVE, STAGES, INDICATORS, STORY_CUBES, CUBE_RULES, SPORT_CUBES, STORY_THEMES, STORY_MODES, STORY_SCORE, WONDERS, COACH, SPACE_KINDS, PATH, COST, PLAYERS, GAME_INSPIRATIONS, DREAM_RULES, TALE_RULES, TALE_CARDS, TALE_ENDINGS, BLANK_RULES, DOMINO_RULES, DREAM_CARDS,
 } from './data.mjs';
 
 const css = `
@@ -99,6 +99,10 @@ function components() {
     ['โทเคน: ประกายคิด 30 · คำใบ้ 20 · มือช่วย 16 · ว้าว 8 · ดาว 4 รูปทรง × 10 · พัง 12 · มาตรวัด 1 · เครื่องหมายมหัศจรรย์ 9 · เครื่องหมายสร้างสรรค์ 12', '148', 'ไฟล์ 06'],
     ['หมุดผู้เล่น 4 · ลูกเต๋าประเภทประโยค 1 · ธงประเภทประโยค 30', '35', 'ไฟล์ 06'],
     ['ลูกเต๋าเรื่องเล่า 9 ลูก (แดง 3 · เหลือง 3 · น้ำเงิน 3) + การ์ดคำแนะนำภาพ', '9', 'ไฟล์ 06'],
+    ['การ์ดภาพฝัน (แบบ Dixit) 24 ใบ', '24', 'ไฟล์ 04'],
+    ['การ์ดนิทาน 40 ใบ + การ์ดตอนจบ 8 ใบ (แบบ Once Upon a Time)', '48', 'ไฟล์ 04'],
+    ['บล็อกเขียนเอง 12 ใบ (ประธาน กริยา กรรม ส่วนขยาย อย่างละ 3)', '12', 'ไฟล์ 03'],
+    ['ป้ายโหวตเลข 1–6 สีผู้เล่น 4 ชุด', '24', 'ไฟล์ 06'],
     ['ลูกเต๋าธรรมดา 1 · นาฬิกาทราย 5 นาที 1 · ไวท์บอร์ดเล็ก + ปากกา 4 ชุด · แท็บเล็ต (ถ้ามี)', '—', 'จัดหาเพิ่ม'],
   ];
   return `<h1><span class="n">2</span>ส่วนประกอบ การพิมพ์ และการประกอบ</h1>
@@ -135,7 +139,7 @@ function setupAndTurn() {
 ${Object.entries(SPACE_KINDS).map(([k, s]) => `<tr><td>${s.icon} ${esc(s.name)}</td><td>${PATH.filter((x) => x === k).length}</td><td>${esc({
     start: 'จุดเริ่มต้น ผ่านหรือหยุด: จั่วบล็อกคำ 1 ใบ (เลือกสี)',
     bigmarket: 'แลกกับผู้เล่นใดก็ได้ไม่จำกัดครั้ง และแลกกับธนาคาร 1:1',
-    observatory: 'ช่องท้าทายใหญ่: จั่วภารกิจ ★★★ ทำโดยมีครูฮูก/การ์ดโค้ชช่วยถาม สำเร็จรับรางวัล + แก้วส้มเพิ่ม 1',
+    observatory: 'หอดูดาวภาพฝัน: เล่นรอบการ์ดภาพฝันแบบ Dixit ผู้หยุดเป็นผู้เล่า (กติกาในบทที่ 6)',
     cave: 'เปิดการ์ดภัย 1 ใบ และมาตรวัด +1',
     wood: 'รับไม้ 1 และจั่วบล็อกคำ 2 ใบ (เลือกสีได้)',
     brick: 'รับอิฐ 1 และจั่วบล็อกคำ 2 ใบ',
@@ -222,6 +226,18 @@ ${STORY_CUBES.map((c) => `<tr><td><b>${esc(c.name)}</b> (${c.id})</td><td>${c.fa
 <p>หยุดที่ 🤝 → ทุกคนหยุดเล่นเดี่ยว เปิดด่านถัดไปของสิ่งมหัศจรรย์ (เลือกแห่งที่ยังไม่เสร็จ) ต่อประโยคบน <b>แท่นยักษ์ร่วม</b> แบ่งบทบาทจิ๊กซอว์ นักหาประธาน · นักหากริยา · นักหากรรม · ผู้ตรวจธง (หมุนเวียน เล่น 2 คนรับคนละ 2 บทบาท) ทุกคนต้องวางบล็อกอย่างน้อย 1 ใบ</p>
 <table>${WONDERS.map((w) => `<tr><td style="width:22%"><b>${w.icon} ${esc(w.name)}</b><br><span class="small">${esc(w.goal)}</span></td><td><ol style="margin:0">${w.stages.map((s) => `<li>${esc(s)}</li>`).join('')}</ol></td></tr>`).join('')}</table>
 <p>ครบ 3 ด่าน: สิ่งมหัศจรรย์เสร็จ มาตรวัด −3 · ผู้ร่วมทุกคนได้ 2 แต้มเมือง</p>
+<h2>กลไกจากเกมเล่าเรื่องและเกมสร้างประโยค</h2>
+<table style="font-size:8.8pt"><tr><th style="width:24%">เกมต้นแบบ</th><th style="width:18%">กลไก</th><th>อยู่ตรงไหนในเกมนี้</th></tr>
+${GAME_INSPIRATIONS.map(([g, m, w]) => `<tr><td><b>${esc(g)}</b></td><td>${esc(m)}</td><td>${esc(w)}</td></tr>`).join('')}</table>
+<h2>🔭 หอดูดาวภาพฝัน (แบบ Dixit)</h2>
+<ol>${DREAM_RULES.map((r) => `<li>${esc(r)}</li>`).join('')}</ol>
+<div class="box sky"><b>ทำไมดีกับการเรียนรู้</b> ประโยคที่ชัดเกินไปทุกคนทายถูก ยากเกินไปไม่มีใครถูก ผู้เล่าจึงต้องเลือกคำให้ "พอดี" ฝึกการเลือกคำ ภาษาเชิงอุปมา และการคิดริเริ่ม (ตัวบ่งชี้ 3.1–3.2)</div>
+<h2>📜 การ์ดนิทาน (แบบ Once Upon a Time ภาษาไทย)</h2>
+<p>การ์ดองค์ประกอบ 40 ใบ สีตามหน้าที่ของคำ: ${Object.values(TALE_CARDS).map((g) => `<b>${esc(g.name)}</b> ${g.items.length}`).join(' · ')} และการ์ดตอนจบ ${TALE_ENDINGS.length} ใบ ใช้ในภารกิจร่วม "หอนาฬิกาเรื่องเล่า" และใช้แทนนิทานเมืองของฉันได้</p>
+<ol>${TALE_RULES.map((r) => `<li>${esc(r)}</li>`).join('')}</ol>
+<h2>✏️ บล็อกเขียนเอง (จากเกมต่อศัพท์)</h2><p>${esc(BLANK_RULES)}</p>
+<h2>🁢 โดมิโนประโยค อุ่นเครื่อง 5 นาที (จาก Word Domino)</h2>
+<ol>${DOMINO_RULES.map((r) => `<li>${esc(r)}</li>`).join('')}</ol>
 <h1><span class="n">7</span>จบเกมและนับแต้ม</h1>
 <ul><li><b>ทุกคนแพ้พร้อมกัน</b> ถ้ามาตรวัดถึง 12</li><li><b>เกมจบ</b> เมื่อสิ่งมหัศจรรย์ครบ 3 แห่ง หรือมีผู้เล่นสร้างครบ 5 ย่าน (เล่นต่อจนจบรอบ) หรือหมดเวลาคาบ</li>
 <li><b>นิทานเมืองของฉัน</b> — ทุกคนเล่าเรื่องเมืองตัวเองด้วยประโยคจากสิ่งก่อสร้างอย่างน้อย 3 ประโยคที่ต่างประเภทกัน เพื่อนให้ดาวเมื่อ เรื่องต่อเนื่อง (1) มีประโยคหลากประเภท (1) น่าตื่นเต้น (1)</li></ul>

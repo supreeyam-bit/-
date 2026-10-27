@@ -1,6 +1,6 @@
 // บล็อกคำ 60 × 35 มม. ขอบต่อกันแบบจิ๊กซอว์ — 21 ชิ้นต่อหน้า A4
 import { doc, esc, chunk } from './lib.mjs';
-import { SUBJECTS, VERBS, OBJECTS, MODIFIERS, CHANGERS, GHOSTS, TYPES } from './data.mjs';
+import { SUBJECTS, VERBS, OBJECTS, MODIFIERS, CHANGERS, GHOSTS, TYPES, BLANK_BLOCKS } from './data.mjs';
 
 const css = `
 @page{size:210mm 297mm;margin:0}
@@ -50,6 +50,11 @@ function changer([word, type, where]) {
 const ghost = () => `<div class="b"><svg viewBox="0 0 600 350" preserveAspectRatio="none"><polygon points="${SHAPES.subject}" fill="#f6dcda" stroke="#c8322b" stroke-width="6" stroke-dasharray="22 14" stroke-linejoin="round"/></svg>
 <div class="s" style="color:#c8322b">▲</div><div class="in" style="color:#9e2620"><div class="w" style="font-size:16pt">(ประธานล่องหน)</div><div class="q">ใช้กับประโยคคำสั่ง / ขอร้อง</div></div></div>`;
 
+// บล็อกเขียนเอง (กลไกจากเกมต่อศัพท์): เขียนคำใหม่ด้วยปากกาไวท์บอร์ดหลังเคลือบ
+function blank(role) {
+  const html = block(role, '');
+  return html.replace('<div class="w" style="font-size:19pt"></div>', '<div class="w" style="width:34mm;height:9mm;border-bottom:.5mm dashed currentColor"></div>').replace('<div class="r">', '<div class="r">✏️ เขียนเอง · ');
+}
 export function blocksHtml() {
   const all = [
     ...SUBJECTS.map((w) => block('subject', w)),
@@ -58,6 +63,7 @@ export function blocksHtml() {
     ...MODIFIERS.map((w) => block('modifier', w)),
     ...CHANGERS.map(changer),
     ...Array.from({ length: GHOSTS }, ghost),
+    ...Object.entries(BLANK_BLOCKS).flatMap(([r, n]) => Array.from({ length: n }, () => blank({ S: 'subject', V: 'verb', O: 'object', M: 'modifier' }[r]))),
   ];
   const pages = chunk(all, 21).map((p, i, a) => `<div class="page"><div class="grid">${p.join('')}</div>
 <div class="pnote">บล็อกคำ ${i + 1}/${a.length} · ตัดตามเส้นขอบ (หัวลูกศรของบล็อกหนึ่งสอดเข้ารอยบากของบล็อกถัดไป) · แนะนำกระดาษ 180–220 แกรม</div></div>`);

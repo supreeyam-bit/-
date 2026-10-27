@@ -2,7 +2,7 @@
 // หน้าหน้า–หน้าหลังสลับกัน กลับคอลัมน์ไว้แล้วสำหรับพิมพ์สองหน้าแบบพลิกขอบยาว
 import { doc, esc, arMarker, chunk } from './lib.mjs';
 import {
-  TYPES, RESOURCES, GLASS_PER_TYPE, MISSIONS, SCENES, MISSION_REWARD, CHAOS, TEMPLATES, HINT_LEVELS,
+  TYPES, RESOURCES, GLASS_PER_TYPE, MISSIONS, SCENES, DREAM_CARDS, TALE_CARDS, TALE_ENDINGS, MISSION_REWARD, CHAOS, TEMPLATES, HINT_LEVELS,
   CREATIVE, STAGES, ELAB_BROKEN, WONDERS, ROLES_JIGSAW, COACH, STORY_CUBES, STORY_MODES, STORY_SCORE,
 } from './data.mjs';
 
@@ -104,12 +104,27 @@ ${lv === 1 ? '<p>วางบล็อกลงร่องตามแม่แ
 const hintBack = ({ t, lv }) => card({ style: 'background:var(--hint-sky);color:var(--ink)', html: `<div class="bd back" style="color:var(--ink)"><div class="t">💡 การ์ดคำใบ้</div><div style="background:${t.color};color:#fff;border-radius:2mm;padding:1mm 3mm;font:500 10pt var(--font-display)">${t.sym} ${t.name} · ขั้น ${lv + 1}</div>
 <p style="font-size:8.4pt;margin-top:2mm"><b>ก่อนเปิด ถามตัวเองก่อน:</b><br>ตอนนี้เราติดตรงไหน?<br>☐ หาคำไม่เจอ ☐ เรียงไม่ถูก<br>☐ ไม่รู้ว่าเป็นประโยคประเภทไหน</p></div>` });
 
+// ---------- การ์ดภาพฝัน (แบบ Dixit) ----------
+const dreamFront = (d, i) => card({ style: 'background:#fdf8ff;border:.4mm solid #c9b6dc', html: `<div class="bd" style="align-items:center;justify-content:center;gap:0">
+<div class="emoji" style="font-size:20mm;line-height:1.05;text-align:center">${d[0]}</div><div class="emoji" style="font-size:14mm;line-height:1.1;display:flex;gap:2mm;justify-content:center"><span>${d[1]}</span><span>${d[2]}</span></div>
+<span class="pill" style="position:absolute;bottom:2.5mm;right:3mm">${DREAM_CARDS.indexOf(d) + 1}</span></div>` });
+const dreamBack = () => card({ style: 'background:#2b2140', html: `<div class="bd back"><div class="big emoji">🔭</div><div class="t">การ์ดภาพฝัน</div><div class="s">หอดูดาวภาพฝัน</div><div class="ttl">ดินแดนมหัศจรรย์แห่งคำ</div></div>` });
+// ---------- การ์ดนิทาน (แบบ Once Upon a Time ภาษาไทย) ----------
+const TALE_COL = { S: 'var(--role-subject)', V: 'var(--role-verb)', O: 'var(--role-object)', M: '#4f74b8' };
+const taleItems = [...Object.values(TALE_CARDS).flatMap((g) => g.items.map((w) => ({ g, w }))), ...TALE_ENDINGS.map((w) => ({ end: true, w }))];
+const taleFront = ({ g, w, end }) => card({ style: 'background:#fff;border:.4mm solid var(--line)', html: end
+  ? `<div class="band" style="background:var(--spark-gold);color:var(--ink)"><span>📜 การ์ดตอนจบ</span><span>เก็บเป็นความลับ</span></div><div class="bd" style="justify-content:center"><p style="font:500 13pt/1.4 var(--font-display);text-align:center;margin:auto 0">${esc(w)}</p><div class="foot"><span>พาเรื่องมาจบตรงนี้ให้สมเหตุสมผล</span></div></div>`
+  : `<div class="band" style="background:${TALE_COL[g.role]};${g.role === 'V' ? 'color:var(--ink)' : ''}"><span>📜 การ์ดนิทาน</span><span>${esc(g.name)}</span></div><div class="bd" style="justify-content:center"><h2 style="text-align:center;font-size:17pt;margin:auto 0">${esc(w)}</h2><div class="foot"><span>พูดถึงในประโยคที่ถูกต้อง แล้ววางการ์ด · แทรกได้</span></div></div>` });
+const taleBack = ({ end }) => card({ style: `background:${end ? 'var(--spark-gold)' : 'var(--coop-teal)'}`, html: `<div class="bd back" style="${end ? 'color:var(--ink)' : ''}"><div class="big emoji">📜</div><div class="t">${end ? 'การ์ดตอนจบ' : 'การ์ดนิทาน'}</div><div class="s">หอนาฬิกาเรื่องเล่า</div><div class="ttl">ดินแดนมหัศจรรย์แห่งคำ</div></div>` });
+
 export function cardsHtml() {
   return doc('การ์ดเกม', css,
     sheets(resItems, resFront, resBack, 'std', 3, 9, 'การ์ดทรัพยากร') +
     sheets(MISSIONS, missionFront, missionBack, 'std', 3, 9, 'การ์ดภารกิจซ่อมป้าย') +
     sheets(CHAOS, chaosFront, chaosBack, 'std', 3, 9, 'การ์ดภัยยุ่งเหยิง') +
-    sheets(hintItems, hintFront, hintBack, 'std', 3, 9, 'การ์ดคำใบ้'));
+    sheets(hintItems, hintFront, hintBack, 'std', 3, 9, 'การ์ดคำใบ้') +
+    sheets(DREAM_CARDS, dreamFront, dreamBack, 'std', 3, 9, 'การ์ดภาพฝัน') +
+    sheets(taleItems, taleFront, taleBack, 'std', 3, 9, 'การ์ดนิทาน'));
 }
 
 // ---------- การ์ดใหญ่ ----------

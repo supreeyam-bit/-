@@ -110,6 +110,18 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,textarea:focus
 .tile.O{background:var(--obj);color:var(--on-dark);clip-path:polygon(0 0,100% 0,100% 100%,0 100%,10px 50%);border-radius:0 8px 8px 0;padding-left:20px;padding-right:14px}
 .tile.M{background:var(--mod);color:var(--on-dark);clip-path:polygon(0 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,0 100%,10px 50%);padding-left:20px}
 .tile.C{background:var(--raised);color:var(--ink);border:2px solid var(--line);border-top:6px solid var(--tc,var(--muted));border-radius:8px;padding:0 12px}
+.tile.X{background:var(--raised);color:var(--ink);border:2.5px dashed var(--muted);border-radius:8px;padding:0 12px}
+.dream{display:flex;flex-direction:column;align-items:center;justify-content:center;width:112px;height:150px;border-radius:12px;border:2px solid #c9b6dc;background:color-mix(in srgb,#c9b6dc 18%,var(--raised));gap:2px;position:relative;cursor:pointer}
+.dream .a{font-size:46px;line-height:1}.dream .b{font-size:30px;line-height:1.1}
+.dream small{position:absolute;bottom:4px;right:8px;font:600 12px var(--display);color:var(--muted)}
+.dream.on{outline:4px solid var(--ink);outline-offset:2px}
+.dream[aria-disabled="true"]{opacity:.4;cursor:default}
+.dreams{display:flex;flex-wrap:wrap;gap:10px}
+.privacy{text-align:center;padding:30px 10px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.privacy .big{font-size:56px}
+.tale{display:inline-flex;flex-direction:column;border-radius:8px;border:1.5px solid var(--line);overflow:hidden;font-size:14px;min-width:96px}
+.tale b{color:#fff;font:500 11px var(--display);padding:2px 6px}
+.tale span{padding:4px 6px;font:500 14px var(--display)}
 .tile.G{background:transparent;color:var(--subj);border:2.5px dashed var(--subj);border-radius:8px;padding:0 12px}
 .tile small{font-size:10px;position:absolute;top:2px;left:6px;opacity:.85}
 .tile.sm{min-height:32px;font-size:14px;padding:0 16px 0 12px}
@@ -287,7 +299,7 @@ function tileEl(t, opts = {}) {
   if (t.r === 'C') el.style.setProperty('--tc', TCOL(tileType(t)));
   return el;
 }
-function roleName(t) { return { S: 'ประธาน', V: 'กริยา', O: 'กรรม', M: 'ส่วนขยาย', C: 'คำเปลี่ยนร่าง', G: 'ประธานล่องหน' }[t.r]; }
+function roleName(t) { return { S: 'ประธาน', V: 'กริยา', O: 'กรรม', M: 'ส่วนขยาย', C: 'คำเปลี่ยนร่าง', G: 'ประธานล่องหน', X: 'บล็อกเขียนเอง' }[t.r]; }
 
 // ====================== สถานะเกม ======================
 const SAVE_KEY = 'wordland-save-v1';
@@ -310,10 +322,10 @@ function draw(role, n = 1) {
   const out = [];
   for (let k = 0; k < n; k++) {
     let r = role;
-    if (!r) { const x = Math.random(); r = x < .3 ? 'S' : x < .58 ? 'V' : x < .8 ? 'O' : x < .9 ? 'M' : x < .985 ? 'C' : 'G'; }
+    if (!r) { const x = Math.random(); r = x < .3 ? 'S' : x < .58 ? 'V' : x < .8 ? 'O' : x < .88 ? 'M' : x < .955 ? 'C' : x < .985 ? 'X' : 'G'; }
     const word = r === 'S' ? pick(DATA.SUBJECTS.filter((w) => !w.includes('(')))
       : r === 'V' ? pick(DATA.VERBS) : r === 'O' ? pick(DATA.OBJECTS) : r === 'M' ? pick(DATA.MODIFIERS)
-      : r === 'C' ? pick(DATA.CHANGERS)[0] : '(ประธานล่องหน)';
+      : r === 'C' ? pick(DATA.CHANGERS)[0] : r === 'X' ? '✏️ เขียนเอง' : '(ประธานล่องหน)';
     out.push({ id: uid++, r, w: word });
   }
   return out;
@@ -447,7 +459,7 @@ function sideEl() {
     h('span', { class: 'chip', title: 'ประกายคิด' }, '✨ ', r.spark), h('span', { class: 'chip', title: 'โทเคนคำใบ้' }, '💡 ', r.hint),
     h('span', { class: 'chip', title: 'มือช่วย' }, '🤝 ', r.helper), h('span', { class: 'chip', title: 'โทเคนว้าว' }, 'ว้าว ', r.wow));
   const stars = h('div', { class: 'res' }, DATA.CREATIVE.map((c, k) => h('span', { class: 'chip', title: `ดาว${c.area}` }, ['●', '■', '▲', '⬢'][k], ' ', c.area.replace('การคิด', ''), ' ', sel.stars[k])));
-  const hand = h('div', { class: 'hand' }, sel.hand.length ? sel.hand.map((t) => tileEl(t, { sm: true })) : h('span', { class: 'muted' }, 'ยังไม่มีบล็อกคำ'));
+  const hand = h('div', { class: 'hand' }, sel.hand.length ? sel.hand.map((t) => tileEl(t, { sm: true, onclick: t.r === 'X' && sel === P() ? () => openBlank(t) : null })) : h('span', { class: 'muted' }, 'ยังไม่มีบล็อกคำ'));
   const city = h('div', { class: 'city' }, DATA.TYPES.map((t) => h('div', { class: 'dist' },
     h('div', { class: 'dh', style: `background:${TCOL(t.id)}` }, `${t.sym} ${t.district.replace('ย่าน', '')}`),
     sel.city[t.id].map((b, k) => plotEl(sel, t, b, k)))));
@@ -525,7 +537,7 @@ function resolveSpace(k) {
     case 'hint': p.res.hint += 2; log(`${p.name} ได้โทเคนคำใบ้ 2`); return afterResolve();
     case 'mission': return chooseMission();
     case 'challenge': return openMission(drawMission(3), { challenge: true });
-    case 'observatory': return openMission(drawMission(3), { challenge: true, bonusGlass: 'question' });
+    case 'observatory': return openDream();
     case 'storm': return openChaos();
     case 'cave': meter(1, 'ถ้ำยุ่งเหยิง'); return openChaos();
     case 'creative': return openCreative();
@@ -692,7 +704,7 @@ function reward(level, flag, ctx) {
 // ====================== สร้าง / อัปเกรด ======================
 function openBuild() {
   const p = P();
-  const ui2 = dockUI({ tiles: p.hand.slice(), placeholder: 'แตะบล็อกในมือเพื่อต่อประโยค' });
+  const ui2 = dockUI({ tiles: p.hand.filter((t) => t.r !== 'X'), placeholder: 'แตะบล็อกในมือเพื่อต่อประโยค' });
   const fb = h('div', { 'aria-live': 'polite' }); const owlSlot = h('div', {}); let attempt = 0; const hints = []; const hintSlot = h('div');
   const costTbl = h('div', { class: 'grid2' }, DATA.COST.map((c) => h('div', { class: 'card' }, h('h3', {}, `${['🛖', '🏠', '🏯'][c.level - 1]} ระดับ ${c.level} ${c.name} · ${c.points} แต้ม`), h('span', { style: 'font-size:14px' }, c.parts), h('span', { class: 'muted', style: 'font-size:13px' }, c.cost))));
   const step2 = h('div');
@@ -995,6 +1007,108 @@ function storyScoreUI(x) {
     h('div', { style: 'font-size:14px' }, 'รวมแต้มนักเล่าเรื่อง: ', total, ' · ทุก 3 แต้ม = ประกายคิด +1 (สูงสุด 3)'));
 }
 function storyPoints(x) { return x.pics + Math.min(2, x.twists) + (x.unique && !x.dup ? 2 : 0) + (x.caster3 ? 2 : 0) + (x.vote ? 1 : 0); }
+// ---------- บล็อกเขียนเอง (กลไกจากเกมต่อศัพท์) ----------
+function openBlank(t) {
+  let role = 'S'; let ok = false;
+  const input = h('input', { type: 'text', id: 'blank-word', placeholder: 'เขียนคำใหม่ เช่น ปลาดาว', 'aria-label': 'คำใหม่' });
+  const roles = h('div', { class: 'row' }, ['S', 'V', 'O', 'M'].map((r) => h('button', { class: `tile sm ${r}`, type: 'button', onclick: () => { role = r; [...roles.children].forEach((b) => b.style.outline = b.classList.contains(r) ? '3px solid var(--ink)' : ''); } }, roleName({ r }))));
+  const go = h('button', { class: 'btn primary', type: 'button', disabled: true, onclick: () => {
+    const w = input.value.trim(); if (!w) return;
+    t.r = role; t.w = w; P().res.spark++; log(`${P().name} เขียนบล็อกคำใหม่ "${w}" (${roleName(t)}) ได้ประกายคิด 1`); closeModal(); render();
+  } }, 'ใช้คำนี้');
+  const upd = () => { go.disabled = !(ok && input.value.trim()); };
+  input.addEventListener('input', upd);
+  openModal({ title: '✏️ บล็อกเขียนเอง', color: 'var(--ink)', onClose: render, body: [
+    h('p', { class: 'task', style: 'margin:0' }, 'เขียนคำใหม่ของตัวเองลงบล็อกเปล่า แล้วเลือกว่าเป็นคำหน้าที่อะไร'), input, roles,
+    h('label', { class: 'ck' }, h('input', { type: 'checkbox', onchange: (e) => { ok = e.target.checked; upd(); } }), 'เพื่อนหรือพจนานุกรมยืนยันว่าสะกดถูก และเป็นคำชนิดตรงกับสีบล็อก'),
+    owlEl('ลองเลือกคำที่ไม่ค่อยมีใครใช้ แต่ต้องสะกดให้ถูกนะ แล้วเอาไปใช้ในประโยคหอคอยได้'), go] });
+}
+// ---------- การ์ดนิทาน (แบบ Once Upon a Time) ----------
+function taleHands() {
+  const groups = Object.values(DATA.TALE_CARDS);
+  const COL = { S: 'var(--subj)', V: 'var(--verb)', O: 'var(--obj)', M: 'var(--mod)' };
+  const ends = shuffle(DATA.TALE_ENDINGS);
+  return h('div', { class: 'card' }, h('h3', {}, '📜 การ์ดนิทานของแต่ละคน', h('small', {}, 'เล่าทีละประโยค พูดถึงสิ่งบนการ์ดแล้ววางลง · แทรกได้')),
+    S.players.map((p, i) => h('div', { class: 'row' }, h('b', { style: 'min-width:110px' }, p.name),
+      shuffle(groups).slice(0, 3).map((g) => h('span', { class: 'tale' }, h('b', { style: `background:${COL[g.role]};${g.role === 'V' ? 'color:var(--ink)' : ''}` }, g.name), h('span', {}, pick(g.items)))),
+      h('details', {}, h('summary', { style: 'cursor:pointer;font-size:13px' }, 'ตอนจบลับ (ให้เจ้าของดูคนเดียว)'), h('span', { style: 'font-size:14px' }, ends[i % ends.length])))),
+    h('details', {}, h('summary', { style: 'cursor:pointer;font-size:14px' }, 'กติกาการ์ดนิทาน'), h('ol', { style: 'margin:4px 0 0;padding-left:20px;font-size:14px' }, DATA.TALE_RULES.map((r) => h('li', {}, r)))));
+}
+// ---------- หอดูดาวภาพฝัน (แบบ Dixit) ส่งเครื่องต่อกันแบบไม่ให้เห็นไพ่ ----------
+function dreamEl(k, opts = {}) {
+  const d = DATA.DREAM_CARDS[k];
+  return h('button', { class: `dream${opts.on ? ' on' : ''}`, type: 'button', 'aria-label': `การ์ดภาพฝัน ${opts.label || k + 1}`, 'aria-disabled': opts.disabled ? 'true' : null, onclick: opts.disabled ? null : opts.onclick },
+    h('span', { class: 'a emoji' }, d[0]), h('span', { class: 'b emoji' }, d[1] + d[2]), opts.label ? h('small', {}, opts.label) : null);
+}
+function openDream() {
+  const teller = P(); const others = S.players.filter((p) => p !== teller);
+  const deck = shuffle(DATA.DREAM_CARDS.map((_, k) => k));
+  const hands = new Map(S.players.map((p) => [p, deck.splice(0, 4)]));
+  const st = { step: 'tell', pi: 0, pick: null, clue: '', type: null, table: [], votes: new Map(), complete: false };
+  const box = h('div');
+  const privacy = (who, next) => { box.innerHTML = ''; box.append(h('div', { class: 'privacy' }, h('div', { class: 'big emoji' }, '🙈'), h('h3', {}, `ส่งเครื่องให้ ${who.name}`), h('p', { class: 'muted', style: 'margin:0' }, 'คนอื่นหลับตาหรือหันหลังก่อนนะ'), h('button', { class: 'btn primary', type: 'button', onclick: next }, `ฉันคือ ${who.name} พร้อมแล้ว`))); };
+  const draw = () => {
+    box.innerHTML = '';
+    if (st.step === 'tell') {
+      let pick = null; let clue = '';
+      const go = h('button', { class: 'btn primary', type: 'button', disabled: true, onclick: () => { st.pick = pick; st.clue = clue.trim(); hands.get(teller).splice(hands.get(teller).indexOf(pick), 1); st.step = 'others'; st.pi = 0; nextOther(); } }, 'ส่งประโยคให้เพื่อน');
+      const upd = () => { go.disabled = !(pick != null && clue.trim()); };
+      const cards = h('div', { class: 'dreams' });
+      const drawCards = () => { cards.innerHTML = ''; hands.get(teller).forEach((k) => cards.append(dreamEl(k, { on: pick === k, onclick: () => { pick = k; drawCards(); upd(); } }))); };
+      drawCards();
+      box.append(h('p', { class: 'task', style: 'margin:0' }, `${teller.name} เลือกการ์ดลับ 1 ใบ แล้วพิมพ์ประโยคบรรยายภาพ 1 ประโยค (ใช้คำเปรียบเทียบ เหมือน ราวกับ ดุจ ได้)`), cards,
+        h('input', { type: 'text', id: 'dream-clue', placeholder: 'เช่น ปลาวาฬลอยอยู่บนฟ้าเหมือนลูกโป่ง', 'aria-label': 'ประโยคบรรยายภาพ', oninput: (e) => { clue = e.target.value; upd(); } }),
+        owlEl('ประโยคที่ชัดเกินไป ทุกคนทายถูก ยากเกินไปไม่มีใครทายถูก ลองเลือกคำให้พอดีนะ'), go);
+    } else if (st.step === 'vote') {
+      const voter = others[st.pi]; let pickN = null;
+      const go = h('button', { class: 'btn primary', type: 'button', disabled: true, onclick: () => { st.votes.set(voter, pickN); st.pi++; if (st.pi < others.length) privacy(others[st.pi], draw); else { st.step = 'score'; draw(); } } }, 'โหวต');
+      const grid = h('div', { class: 'dreams' });
+      const drawGrid = () => { grid.innerHTML = ''; st.table.forEach((c, n) => grid.append(dreamEl(c.k, { label: String(n + 1), on: pickN === n, disabled: c.owner === voter, onclick: () => { pickN = n; drawGrid(); go.disabled = false; } }))); };
+      drawGrid();
+      box.append(h('div', { class: 'sign', style: 'font-size:18px' }, `"${st.clue}"`), h('p', { class: 'task', style: 'margin:0' }, `${voter.name} ใบไหนเป็นของ${teller.name}? (โหวตใบตัวเองไม่ได้)`), grid, go);
+    } else if (st.step === 'score') {
+      const tellerIdx = st.table.findIndex((c) => c.owner === teller);
+      const correct = others.filter((p) => st.votes.get(p) === tellerIdx);
+      const allOrNone = correct.length === 0 || correct.length === others.length;
+      const grid = h('div', { class: 'dreams' }, st.table.map((c, n) => h('div', { style: 'display:flex;flex-direction:column;align-items:center;gap:4px' }, dreamEl(c.k, { label: String(n + 1), on: n === tellerIdx, disabled: true }),
+        h('small', { class: 'muted' }, c.owner ? (c.owner === teller ? `★ ${teller.name}` : c.owner.name) : 'การ์ดหลอกจากกอง'),
+        h('small', {}, others.filter((p) => st.votes.get(p) === n).map((p) => p.animal).join(' ') || '—'))));
+      const result = h('div', { class: 'card' });
+      const apply = h('button', { class: 'btn primary', type: 'button', onclick: () => {
+        const lines = []; const add = (p, n, why) => { if (n > 0) { p.res.spark += n; lines.push(`${p.name} +${n} ✨ ${why}`); } };
+        if (!st.complete) lines.push(`ประโยคยังไม่สมบูรณ์ ${teller.name} จึงไม่ได้แต้มรอบนี้`);
+        if (allOrNone) { others.forEach((p) => add(p, 1, correct.length ? 'ทุกคนทายถูก (ประโยคชัดเกินไป)' : 'ไม่มีใครทายถูก (ประโยคยากเกินไป)')); }
+        else { if (st.complete) add(teller, 2, 'มีบางคนทายถูก'); correct.forEach((p) => add(p, 2, 'ทายถูก')); }
+        st.table.forEach((c, n) => { if (c.owner && c.owner !== teller) { const v = others.filter((p) => p !== c.owner && st.votes.get(p) === n).length; add(c.owner, Math.min(2, v), 'การ์ดหลอกมีคนโหวต'); } });
+        log(`หอดูดาวภาพฝัน: "${st.clue}"`); lines.forEach((l) => log(l));
+        result.innerHTML = ''; result.append(h('h3', {}, 'ผลรอบนี้'), ...(lines.length ? lines.map((l) => h('div', {}, l)) : [h('div', {}, 'ไม่มีใครได้แต้ม')]));
+        apply.replaceWith(h('button', { class: 'btn primary', type: 'button', onclick: () => done() }, 'ตกลง'));
+      } }, 'นับแต้ม');
+      box.append(h('div', { class: 'sign', style: 'font-size:18px' }, `"${st.clue}"`), grid,
+        h('p', { class: 'task', style: 'margin:0' }, correct.length ? `ทายถูก: ${correct.map((p) => p.name).join(', ')}` : 'ไม่มีใครทายถูก'),
+        h('label', { class: 'ck' }, h('input', { type: 'checkbox', onchange: (e) => { st.complete = e.target.checked; } }), 'ผู้ตรวจป้าย: ประโยคของผู้เล่ามีภาคประธานและภาคแสดงครบ ได้ใจความ'),
+        result, apply);
+    }
+  };
+  function nextOther() {
+    if (st.pi >= others.length) {
+      st.table = shuffle([{ k: st.pick, owner: teller }, ...others.map((p) => ({ k: p.chosen, owner: p })), ...(others.length < 2 ? deck.splice(0, 2).map((k) => ({ k, owner: null })) : [])]);
+      others.forEach((p) => delete p.chosen);
+      st.step = 'vote'; st.pi = 0; privacy(others[0], draw); return;
+    }
+    const p = others[st.pi];
+    privacy(p, () => {
+      box.innerHTML = ''; let pk = null;
+      const go = h('button', { class: 'btn primary', type: 'button', disabled: true, onclick: () => { p.chosen = pk; st.pi++; nextOther(); } }, 'ส่งการ์ดคว่ำให้ผู้เล่า');
+      const cards = h('div', { class: 'dreams' });
+      const dc = () => { cards.innerHTML = ''; hands.get(p).forEach((k) => cards.append(dreamEl(k, { on: pk === k, onclick: () => { pk = k; dc(); go.disabled = false; } }))); };
+      dc();
+      box.append(h('div', { class: 'sign', style: 'font-size:18px' }, `"${st.clue}"`), h('p', { class: 'task', style: 'margin:0' }, `${p.name} เลือกการ์ดในมือที่เข้ากับประโยคนี้ที่สุด เพื่อหลอกให้เพื่อนทาย`), cards, go);
+    });
+  }
+  privacy(teller, draw);
+  openModal({ title: '🔭 หอดูดาวภาพฝัน', color: '#2b2140', closable: false, body: [h('p', { class: 'muted', style: 'margin:0' }, 'เล่นแบบ Dixit: ผู้เล่าบรรยายการ์ดลับด้วยประโยค 1 ประโยค เพื่อนวางการ์ดหลอกแล้วทาย'), box] });
+}
 function wowPicker() {
   const wrap = h('div', { class: 'card' }, h('h3', {}, 'ให้โทเคน "ว้าว!" (ไม่บังคับ)'), h('p', { class: 'muted', style: 'margin:0;font-size:14px' }, 'ผู้ให้เลือกเพื่อนที่ชอบประโยคที่สุด เพื่อนได้ประกายคิด +1'));
   S.players.forEach((giver) => {
@@ -1037,6 +1151,7 @@ function coopStage(w) {
   } }, 'ทีมทำสำเร็จ ✓');
   openModal({ title: `${w.icon} ${w.name} · ด่าน ${s + 1}/3`, color: 'var(--teal)', closable: false,
     body: [h('p', { class: 'muted', style: 'margin:0' }, `ภาพ: ${w.scene}`), h('p', { class: 'task', style: 'margin:0' }, h('b', {}, w.stages[s])),
+      w.id === 'clock' ? taleHands() : null,
       h('div', { class: 'card' }, h('h3', {}, 'บทบาทจิ๊กซอว์ในด่านนี้'), assign.map(([p, rs]) => h('div', {}, h('b', {}, p.name), ': ', rs.map((r) => `${r[0]} (${r[1]})`).join(' · ')))),
       owlEl('ไม่มีใครต่อประโยคได้คนเดียวนะ ลองถามกันว่า "เราต้องการคำแบบไหน?" ทุกคนต้องวางบล็อกหรือพูดอย่างน้อย 1 ส่วน'),
       h('div', { class: 'card' }, h('h3', {}, 'ผู้ตรวจธงติ๊กเมื่อทำได้'), DATA.COOP_CHECKS[w.id][s].map((t, k) => h('label', { class: 'ck' }, h('input', { type: 'checkbox', onchange: (e) => { checks[k] = e.target.checked; okBtn.disabled = !checks.every(Boolean); } }), t))),
