@@ -3,7 +3,7 @@
 import { doc, esc, arMarker, chunk } from './lib.mjs';
 import {
   TYPES, RESOURCES, GLASS_PER_TYPE, MISSIONS, SCENES, DREAM_CARDS, TALE_CARDS, TALE_ENDINGS, MISSION_REWARD, CHAOS, TEMPLATES, HINT_LEVELS,
-  CREATIVE, STAGES, ELAB_BROKEN, WONDERS, ROLES_JIGSAW, COACH, STORY_CUBES, STORY_MODES, STORY_SCORE,
+  CREATIVE, STAGES, ELAB_BROKEN, WONDERS, ROLES_JIGSAW, COACH, STORY_CUBES, STORY_MODES, STORY_SCORE, PRACTICE_CARDS,
 } from './data.mjs';
 
 const css = `
@@ -201,8 +201,22 @@ const coachBack = ([err, , b]) => lg({ style: 'background:#fff;border:.5mm solid
 <div class="crit">ยังติดอยู่? ชวนเพื่อนเปิด <b>การ์ดคำใบ้ขั้น 2 (แม่แบบ)</b> หรือขั้น 3 (ตัวอย่างคู่ขนาน) — ไม่เฉลยประโยคของภารกิจ</div>
 <div class="foot"><span>ชมที่ความพยายามและวิธีคิด ไม่ชมที่ความฉลาด</span></div></div>` });
 
+// ---------- การ์ดฝึกการคิดสร้างสรรค์ F / FL / O / E ----------
+const SHAPE_ICON = ['●', '■', '▲', '⬢'];
+const practiceFront = (c) => lg({ style: 'background:#fff;border:.5mm solid var(--spark-gold)', html: `<div class="band" style="background:var(--ink)"><span>🏋️ การ์ดฝึก ${c.code} · ${esc(c.area)} (${c.en})</span><span>${SHAPE_ICON[c.ci]} ⏳ ${c.minutes} นาที</span></div>
+<div class="bd"><h2>${esc(c.name)}</h2><div class="emoji" style="font-size:13mm;display:flex;gap:3mm;justify-content:center;line-height:1.1">${c.emoji.map((e) => `<span>${e}</span>`).join('')}</div>
+<p class="task">${esc(c.prompt)}</p>
+<div class="crit"><b>ตัวอย่าง</b><br>${c.examples.map((x) => `"${esc(x)}"`).join('<br>')}</div>
+<div class="foot"><span>📱 AR: ${esc(c.ar)}</span>${arMarker('practice' + c.code, '14mm')}</div></div>` });
+const practiceBack = (c) => lg({ style: 'background:#fff;border:.5mm solid var(--spark-gold)', html: `<div class="band" style="background:var(--ink)"><span>🏋️ ${c.code} · เกณฑ์ฝึก (ไม่ใช่เกณฑ์แบบวัด)</span><span>0–4 คะแนน</span></div>
+<div class="bd"><h3>หลักฐานที่ดู</h3><p>${esc(c.evidence)}</p>
+<table style="width:100%;border-collapse:collapse;font-size:9pt;line-height:1.35">${c.rubric.map((r, i) => `<tr><td style="border-bottom:.3mm solid var(--line);padding:1.2mm 0;width:7mm">☐ ${i + 1}</td><td style="border-bottom:.3mm solid var(--line);padding:1.2mm 0">${esc(r)}</td></tr>`).join('')}</table>
+<div class="crit"><b>บันทึกรายบุคคล</b> ทุกคนเขียนคำตอบของตัวเอง แม้ทำเป็นกลุ่ม · ได้ 2 คะแนนขึ้นไป = ประกายคิด 1<br>เป็นกิจกรรมฝึกระหว่างเรียน ไม่ใช่แบบวัดหลังเรียน</div>
+<div class="foot"><span>เล่นก่อนด่านที่ 1 ของภารกิจที่ ${c.ci + 1} ${esc(c.area)}</span></div></div>` });
+
 export function largeCardsHtml() {
   return doc('การ์ดใหญ่', css,
+    sheets(PRACTICE_CARDS, practiceFront, practiceBack, 'lg', 2, 4, 'การ์ดฝึกการคิดสร้างสรรค์') +
     sheets(crItems, crFront, crBack, 'lg', 2, 4, 'การ์ดภารกิจสร้างสรรค์') +
     sheets(coopItems, coopFront, coopBack, 'lg', 2, 4, 'การ์ดภารกิจร่วม') +
     sheets(COACH, coachFront, coachBack, 'lg', 2, 4, 'การ์ดคำถามโค้ช'));

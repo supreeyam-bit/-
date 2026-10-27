@@ -2,7 +2,7 @@
 import { doc, esc } from './lib.mjs';
 import {
   TITLE, TYPES, SUBJECTS, VERBS, OBJECTS, MODIFIERS, CHANGERS, GHOSTS, RESOURCES, GLASS_PER_TYPE,
-  MISSIONS, SCENES, MISSION_REWARD, CHAOS, CREATIVE, STAGES, INDICATORS, STORY_CUBES, CUBE_RULES, SPORT_CUBES, STORY_THEMES, STORY_MODES, STORY_SCORE, WONDERS, COACH, SPACE_KINDS, PATH, COST, PLAYERS, GAME_INSPIRATIONS, DREAM_RULES, TALE_RULES, TALE_CARDS, TALE_ENDINGS, BLANK_RULES, DOMINO_RULES, DREAM_CARDS,
+  MISSIONS, SCENES, MISSION_REWARD, CHAOS, CREATIVE, STAGES, INDICATORS, STORY_CUBES, CUBE_RULES, SPORT_CUBES, STORY_THEMES, STORY_MODES, STORY_SCORE, WONDERS, COACH, SPACE_KINDS, PATH, COST, PLAYERS, GAME_INSPIRATIONS, DREAM_RULES, TALE_RULES, TALE_CARDS, TALE_ENDINGS, BLANK_RULES, DOMINO_RULES, DREAM_CARDS, PRACTICE_CARDS, PRACTICE_NOTES,
 } from './data.mjs';
 
 const css = `
@@ -96,6 +96,7 @@ function components() {
     ['การ์ดภารกิจสร้างสรรค์: ภาพสถานการณ์ 4 + ด่าน 12', '16', 'ไฟล์ 05'],
     ['การ์ดภารกิจร่วม: สิ่งมหัศจรรย์ 3 + ด่าน 9', '12', 'ไฟล์ 05'],
     ['การ์ดคำถามโค้ช', String(COACH.length), 'ไฟล์ 05'],
+    ['การ์ดฝึกการคิดสร้างสรรค์ F01 · FL01 · O01 · E01 (ด้านหลังเป็นเกณฑ์ฝึก)', String(PRACTICE_CARDS.length), 'ไฟล์ 05'],
     ['โทเคน: ประกายคิด 30 · คำใบ้ 20 · มือช่วย 16 · ว้าว 8 · ดาว 4 รูปทรง × 10 · พัง 12 · มาตรวัด 1 · เครื่องหมายมหัศจรรย์ 9 · เครื่องหมายสร้างสรรค์ 12', '148', 'ไฟล์ 06'],
     ['หมุดผู้เล่น 4 · ลูกเต๋าประเภทประโยค 1 · ธงประเภทประโยค 30', '35', 'ไฟล์ 06'],
     ['ลูกเต๋าเรื่องเล่า 9 ลูก (แดง 3 · เหลือง 3 · น้ำเงิน 3) + การ์ดคำแนะนำภาพ', '9', 'ไฟล์ 06'],
@@ -197,6 +198,10 @@ function creative() {
 <li>ผู้ตรวจป้ายตรวจ <b>"ถูกก่อน แล้วค่อยแปลก"</b> — นับเฉพาะประโยคที่มีภาคประธานและภาคแสดงครบ และสื่อความหมายได้ถูกต้องสมบูรณ์</li>
 <li>ทุกคนที่ผ่านด่าน: <b>ประกายคิด 1 + ดาวของด้านนั้น 1</b> พร้อมรางวัลพิเศษตามด้าน ผู้หยุดที่ ★ ได้ประกายคิดเพิ่ม 1 · วางเครื่องหมาย ✓ บนกระดาน</li>
 <li>ผ่านครบ 3 ด่านของภารกิจเดียว: <b>+2 แต้มเมือง</b> · ให้โทเคน "ว้าว!" กับคำตอบของเพื่อนที่ชอบที่สุด (เจ้าของได้ประกายคิด +1)</li></ol>
+<h2>🏋️ การ์ดฝึกการคิดสร้างสรรค์ F / FL / O / E (รอบอุ่นเครื่อง)</h2>
+<div class="box gold"><ul style="margin:0">${PRACTICE_NOTES.map((n) => `<li>${esc(n)}</li>`).join('')}</ul></div>
+<table style="font-size:8.6pt"><tr><th style="width:17%">การ์ด</th><th>โจทย์ในเกม</th><th style="width:24%">ตัวอย่าง</th><th style="width:22%">หลักฐาน</th></tr>
+${PRACTICE_CARDS.map((c) => `<tr><td><b>${c.code}</b> ${esc(c.name)}<br><span class="small">${esc(c.area)} (${c.en}) · ${c.minutes} นาที</span></td><td>${esc(c.prompt)}<br><span class="small">AR: ${esc(c.ar)}</span></td><td>${c.examples.map((x) => `"${esc(x)}"`).join('<br>')}</td><td>${esc(c.evidence)}</td></tr>`).join('')}</table>
 <h2>ตารางที่ 2 ความสอดคล้องของการคิดสร้างสรรค์กับภารกิจ 4 ด้าน ตามกรอบเนื้อหาทั้ง 3 ด่าน</h2>
 <table style="font-size:8.4pt"><tr><th style="width:16%">ภารกิจ</th>${STAGES.map((s) => `<th>${s}</th>`).join('')}</tr>
 ${CREATIVE.map((c) => `<tr><td><b>ภารกิจที่ ${c.id} ${c.area} (${c.en})</b><br>${esc(c.scene)}</td>${c.stages.map(([t, ind]) => `<td>${esc(t)}<br><b>ตัวบ่งชี้ ${ind}</b></td>`).join('')}</tr>`).join('')}</table>
@@ -276,6 +281,11 @@ ${INDICATORS.map(([area, list], i) => list.map((t, k) => `<tr>${k === 0 ? `<td r
 <div class="box"><b>เกณฑ์ให้คะแนนแนะนำ (ต่อตัวบ่งชี้)</b> 3 = ทำได้ครบตามตัวบ่งชี้ ถูกต้อง โดยไม่ใช้คำใบ้หรือใช้ขั้น 1 · 2 = ทำได้บางส่วน หรือใช้คำใบ้ขั้น 2–3 · 1 = ยังทำไม่ได้แม้มีคำใบ้ · 0 = ไม่ได้ทำ<br><span class="small">เกณฑ์นี้เป็นข้อเสนอ ควรตรวจสอบความตรงเชิงเนื้อหาโดยผู้เชี่ยวชาญก่อนใช้เก็บข้อมูลวิจัย</span></div>
 <table class="form" style="font-size:8pt"><tr><th style="width:24%">ชื่อนักเรียน</th>${inds.map((x) => `<th style="text-align:center">${x}</th>`).join('')}<th>รวม</th></tr>
 ${Array.from({ length: 12 }, () => `<tr><td></td>${inds.map(() => '<td></td>').join('')}<td></td></tr>`).join('')}</table>
+<h2>แบบบันทึกผลงานรายบุคคล: การ์ดฝึก F / FL / O / E (คะแนนฝึก ไม่ใช่คะแนนแบบวัด)</h2>
+<table style="font-size:8pt"><tr><th>การ์ด</th><th>เกณฑ์ข้อ 1</th><th>เกณฑ์ข้อ 2</th><th>เกณฑ์ข้อ 3</th><th>เกณฑ์ข้อ 4</th></tr>
+${PRACTICE_CARDS.map((c) => `<tr><td><b>${c.code}</b></td>${c.rubric.map((r) => `<td>${esc(r)}</td>`).join('')}</tr>`).join('')}</table>
+<table class="form" style="font-size:8pt"><tr><th style="width:20%">ชื่อนักเรียน</th><th>กลุ่ม</th>${PRACTICE_CARDS.map((c) => `<th style="text-align:center">${c.code}<br>(0–4)</th>`).join('')}<th>รวม (16)</th><th style="width:26%">หลักฐาน / ข้อสังเกต</th></tr>
+${Array.from({ length: 12 }, () => `<tr>${'<td></td>'.repeat(8)}</tr>`).join('')}</table>
 <h2>ใบแต้มนักเล่าเรื่อง (ภารกิจที่ 3 การคิดริเริ่ม)</h2>
 <table class="form" style="font-size:8pt"><tr><th style="width:20%">ชื่อ</th><th>ด่าน</th><th>วิธีเล่า</th><th>ภาพที่ใช้ (×1)</th><th>พลิกแพลง (+1 ≤2)</th><th>ไม่ซ้ำ (+2)</th><th>ครบ 3 ประเภท (+2)</th><th>เรื่องเด็ด (+1)</th><th>รวม</th><th>ประกายคิด</th></tr>
 ${Array.from({ length: 8 }, () => `<tr>${'<td></td>'.repeat(10)}</tr>`).join('')}</table>

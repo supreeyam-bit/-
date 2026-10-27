@@ -181,6 +181,11 @@ input[type=text]{border-radius:10px;border:1.5px solid var(--line);background:va
 .cube small{font:500 11px/1.1 var(--display);color:var(--muted);text-align:center;padding:0 3px}
 .cube.spin{animation:shake .5s}
 @media (prefers-reduced-motion:reduce){.cube.spin{animation:none}}
+.scene-ar{display:flex;gap:14px;justify-content:center;font-size:44px;padding:8px 0}
+.scene-ar span{animation:bob 2.4s ease-in-out infinite}
+.scene-ar span:nth-child(2){animation-delay:.3s}.scene-ar span:nth-child(3){animation-delay:.6s}.scene-ar span:nth-child(4){animation-delay:.9s}
+@keyframes bob{50%{transform:translateY(-8px) rotate(-4deg)}}
+@media (prefers-reduced-motion:reduce){.scene-ar span{animation:none}}
 .timer{font:600 30px var(--display);font-variant-numeric:tabular-nums}
 .chunkdots{display:flex;gap:6px}
 .chunkdots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
@@ -408,6 +413,7 @@ function render() {
       h('div', { class: 'menu' },
         h('button', { class: 'btn small', type: 'button', onclick: () => openLibrary() }, '📚 คลังความรู้'),
         h('button', { class: 'btn small', type: 'button', onclick: openRules }, 'กติกา'),
+        h('button', { class: 'btn small', type: 'button', onclick: openPracticeMenu }, '🏋️ การ์ดฝึก'),
         h('button', { class: 'btn small', type: 'button', onclick: confirmEnd }, 'จบเกม'))),
     h('div', { class: 'main' }, boardEl(cur), sideEl())));
   if (S.ended && !ui.modal) openEnd();
@@ -869,6 +875,12 @@ function handleAttacks(crossed, next) {
 
 // ====================== ภารกิจสร้างสรรค์ ======================
 function openCreative() {
+  // รอบอุ่นเครื่อง: การ์ดฝึก F/FL/O/E ก่อนด่านที่ 1 ของภารกิจด้านเดียวกัน
+  S.practiced = S.practiced || {};
+  if (S.creative.m < 4 && S.creative.s === 0 && !S.practiced[S.creative.m]) {
+    const card = DATA.PRACTICE_CARDS.find((x) => x.ci === S.creative.m);
+    return openPractice(card, () => { S.practiced[S.creative.m] = true; openCreative(); });
+  }
   if (S.creative.m >= 4) { P().res.spark++; log(`ภารกิจสร้างสรรค์ครบทุกด่านแล้ว ${P().name} รับประกายคิด 1`); return afterResolve(); }
   const c = DATA.CREATIVE[S.creative.m]; const s = S.creative.s; const [task, ind] = c.stages[s];
   const lander = P();
@@ -1108,6 +1120,62 @@ function openDream() {
   }
   privacy(teller, draw);
   openModal({ title: '🔭 หอดูดาวภาพฝัน', color: '#2b2140', closable: false, body: [h('p', { class: 'muted', style: 'margin:0' }, 'เล่นแบบ Dixit: ผู้เล่าบรรยายการ์ดลับด้วยประโยค 1 ประโยค เพื่อนวางการ์ดหลอกแล้วทาย'), box] });
+}
+// ---------- การ์ดฝึกการคิดสร้างสรรค์ (ไม่ใช่แบบวัดหลังเรียน) ----------
+function openPracticeMenu() {
+  openModal({ title: '🏋️ การ์ดฝึกการคิดสร้างสรรค์', color: 'var(--ink)', onClose: render, body: [
+    h('div', { class: 'card', style: 'background:var(--sky);border-color:transparent' }, DATA.PRACTICE_NOTES.map((n) => h('div', { style: 'font-size:14px' }, '• ', n))),
+    h('div', { class: 'grid2' }, DATA.PRACTICE_CARDS.map((c) => h('button', { class: 'card', type: 'button', style: 'text-align:left;cursor:pointer', onclick: () => openPractice(c, () => { closeModal(); render(); }) },
+      h('h3', {}, `${c.code} ${c.name}`), h('span', { class: 'muted', style: 'font-size:14px' }, `${c.area} · ${c.minutes} นาที`)))),
+    h('button', { class: 'btn', type: 'button', onclick: copyPractice }, 'คัดลอกบันทึกรายบุคคลทั้งหมด')] });
+}
+function openPractice(c, after) {
+  const per = S.players.map((p) => ({ p, text: '', ticks: [false, false, false, false] }));
+  let left = c.minutes * 60; let iv = null;
+  const tm = h('span', { class: 'timer' }, `${c.minutes}:00`);
+  const startBtn = h('button', { class: 'btn gold', type: 'button', onclick: () => {
+    if (iv) return; startBtn.disabled = true;
+    iv = setInterval(() => { left--; tm.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`; if (left <= 0) { clearInterval(iv); toast('หมดเวลา!'); } }, 1000);
+  } }, `⏳ เริ่มจับเวลา ${c.minutes} นาที`);
+  const scoreOf = (x) => (c.code === 'F01' ? x.ticks.lastIndexOf(true) + 1 : x.ticks.filter(Boolean).length);
+  const cards = per.map((x) => {
+    const sc = h('b', {}, '0');
+    return h('div', { class: 'card' }, h('h3', {}, h('span', { class: 'emoji' }, x.p.animal), ' ', x.p.name, h('small', {}, 'บันทึกรายบุคคล')),
+      h('textarea', { id: `pr-${c.code}-${x.p.i}`, 'aria-label': `คำตอบของ${x.p.name}`, placeholder: 'เขียนคำตอบของตัวเอง แม้ทำเป็นกลุ่ม', oninput: (e) => { x.text = e.target.value; } }),
+      h('div', { class: 'muted', style: 'font-size:13px' }, c.code === 'F01' ? 'ติ๊กข้อที่ตรงกับจำนวนประโยคที่ถูก' : 'ติ๊กทุกข้อที่ทำได้'),
+      c.rubric.map((r, k) => h('label', { class: 'ck' }, h('input', { type: 'checkbox', onchange: (e) => { x.ticks[k] = e.target.checked; sc.textContent = scoreOf(x); } }), `${k + 1}. ${r}`)),
+      h('div', { style: 'font-size:14px' }, 'คะแนนฝึก: ', sc, ' / 4'));
+  });
+  const examples = h('details', {}, h('summary', { style: 'cursor:pointer' }, 'ดูตัวอย่าง (เปิดหลังทุกคนลองเองแล้ว)'), h('ul', { style: 'margin:6px 0 0;padding-left:20px' }, c.examples.map((x) => h('li', {}, `"${x}"`))));
+  const finish = () => {
+    if (iv) clearInterval(iv);
+    S.practiceLog = S.practiceLog || [];
+    const lines = per.map((x) => {
+      const score = scoreOf(x);
+      S.practiceLog.push({ code: c.code, name: x.p.name, score, text: x.text });
+      if (score >= 2) x.p.res.spark++;
+      return `${x.p.name}: คะแนนฝึก ${score}/4${score >= 2 ? ' · ประกายคิด +1' : ''}`;
+    });
+    log(`การ์ดฝึก ${c.code} ${c.name} จบแล้ว`);
+    openModal({ title: `ผลการ์ดฝึก ${c.code}`, color: 'var(--ink)', closable: false, body: [h('div', { class: 'card' }, lines.map((l) => h('div', {}, l))),
+      h('p', { class: 'muted', style: 'margin:0;font-size:14px' }, 'คะแนนฝึกใช้ให้ข้อมูลย้อนกลับเท่านั้น ไม่รวมกับคะแนนแบบวัดหลังเรียน'),
+      h('div', { class: 'row' }, h('button', { class: 'btn primary', type: 'button', onclick: () => { closeModal(); after(); } }, 'ไปภารกิจสร้างสรรค์ ➜'),
+        h('button', { class: 'btn', type: 'button', onclick: copyPractice }, 'คัดลอกบันทึกรายบุคคล (สำหรับครู)'))] });
+  };
+  openModal({ title: `🏋️ การ์ดฝึก ${c.code} · ${c.name}`, color: 'var(--ink)', closable: false, body: [
+    h('div', { class: 'row', style: 'justify-content:space-between' }, h('span', { class: 'chip' }, `${c.area} (${c.en})`), h('span', { class: 'chip' }, 'รอบอุ่นเครื่อง · ไม่ใช่แบบวัด')),
+    h('div', { class: 'scene-ar emoji', 'aria-hidden': 'true' }, c.emoji.map((e) => h('span', {}, e))),
+    h('p', { class: 'muted', style: 'margin:0;font-size:13px;text-align:center' }, `แทนภาพ AR: ${c.ar}`),
+    h('p', { class: 'task', style: 'margin:0' }, h('b', {}, c.prompt)),
+    h('div', { class: 'row', style: 'justify-content:flex-end' }, tm, startBtn),
+    owlEl(`ทุกคนเขียนคำตอบของตัวเองนะ หลักฐานที่ดูคือ ${c.evidence}`),
+    h('div', { class: 'grid2' }, cards), examples,
+    h('div', { class: 'row' }, h('button', { class: 'btn primary', type: 'button', onclick: finish }, 'สรุปผลการ์ดฝึก'),
+      h('button', { class: 'btn', type: 'button', onclick: () => { if (iv) clearInterval(iv); closeModal(); after(); } }, 'ข้ามรอบอุ่นเครื่อง'))] });
+}
+function copyPractice() {
+  const rows = (S.practiceLog || []).map((r) => `${r.code}\t${r.name}\t${r.score}\t${(r.text || '').replace(/\n/g, ' / ')}`);
+  navigator.clipboard.writeText(['การ์ด\tชื่อ\tคะแนนฝึก(0-4)\tคำตอบ', ...rows].join('\n')).then(() => toast('คัดลอกแล้ว วางในตารางคำนวณได้'), () => toast('คัดลอกไม่ได้'));
 }
 function wowPicker() {
   const wrap = h('div', { class: 'card' }, h('h3', {}, 'ให้โทเคน "ว้าว!" (ไม่บังคับ)'), h('p', { class: 'muted', style: 'margin:0;font-size:14px' }, 'ผู้ให้เลือกเพื่อนที่ชอบประโยคที่สุด เพื่อนได้ประกายคิด +1'));
