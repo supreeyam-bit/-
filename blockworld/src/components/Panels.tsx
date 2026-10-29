@@ -1,9 +1,9 @@
 // หน้าต่างย่อย: ผลของช่อง กติกา เรื่องนำ สถานการณ์ปัญหา เครื่องมือ ศูนย์แลกเปลี่ยน ประวัติผลงาน เมือง และฉากจบ
 import { useState } from 'react';
-import { BUILDINGS, CREATIVE_CARDS, REST_QUESTIONS, RULES_TEXT, SPACE_INFO, TAG_NAMES, WORD_CARDS } from '../data/learning';
-import { QUESTS, ZONES, words } from '../data/quests';
+import { BUILDINGS, REST_QUESTIONS, RULES_TEXT, SPACE_INFO, TAG_NAMES, WORD_CARDS } from '../data/learning';
+import { AREAS, MISSIONS, PRACTICE_CARDS, SCENARIOS, ZONES, words } from '../data/quests';
 import { useStarted } from '../game/store';
-import { activePlayer, addLog, addOnce, createWork, playerName, setAnswer, commitAnswers, updateWork } from '../game/rules';
+import { activePlayer, addLog, addOnce, createWork, playerName, setAnswer, commitAnswers, sheetKey, updateWork } from '../game/rules';
 import type { GameState, SpaceKind } from '../game/types';
 import { SentenceBuilder } from './SentenceBuilder';
 import { Modal, Scene, SpeakButton, StatusChip } from './ui';
@@ -14,7 +14,7 @@ const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 /** บันทึกผลงานสั้น (ช่องคำ ช่องสร้างสรรค์ ช่องพัก) ที่ไม่ต้องรอครูรับรอง */
 function saveQuick(s: GameState, kind: 'word' | 'creative' | 'rest', title: string, text: string, tags: ('F' | 'FL' | 'O' | 'E')[] = []): GameState {
   const [s2, id] = createWork(s, { kind, refId: kind, title, zone: s.zone, creativityTags: tags, status: 'saved' });
-  return updateWork(s2, id, (w) => ({ ...commitAnswers(setAnswer(w, 'answer', text, activePlayer(s).id), activePlayer(s).id), endedAt: Date.now() }));
+  return updateWork(s2, id, (w) => ({ ...commitAnswers(setAnswer(w, sheetKey(activePlayer(s).id, 'answer'), text, activePlayer(s).id), activePlayer(s).id), endedAt: Date.now() }));
 }
 
 export function SpaceModal({ kind }: { kind: SpaceKind }) {
@@ -22,7 +22,11 @@ export function SpaceModal({ kind }: { kind: SpaceKind }) {
   const info = SPACE_INFO[kind];
   const zone = state.zone;
   const [word] = useState(() => pick(WORD_CARDS[zone]));
-  const [card] = useState(() => pick(CREATIVE_CARDS[zone]));
+  // การ์ดฝึกอุ่นเครื่องของด้านที่ภารกิจหลักถัดไปในโซนนี้ใช้ (F01 ก่อนคิดคล่อง · FL01 ก่อนคิดยืดหยุ่น …)
+  const [card] = useState(() => {
+    const next = MISSIONS.find((m) => m.zone === zone && state.missionProgress[MISSIONS.indexOf(m)] !== 'done');
+    return PRACTICE_CARDS.find((c) => c.tag === next?.area) ?? pick(PRACTICE_CARDS);
+  });
   const [question] = useState(() => pick(REST_QUESTIONS));
   const [text, setText] = useState('');
   const me = activePlayer(state);
@@ -45,12 +49,17 @@ export function SpaceModal({ kind }: { kind: SpaceKind }) {
       )}
       {kind === 'creative' && (
         <div>
-          <div className="creative-card"><span className="tag-badge">{card.tag} {TAG_NAMES[card.tag]}</span> {card.text} <SpeakButton text={card.text} /></div>
-          <textarea className="answer" rows={4} value={text} onChange={(e) => setText(e.target.value)} placeholder="เขียนได้หลายบรรทัด ไม่มีคำตอบผิด" aria-label="คำตอบภารกิจสร้างสรรค์" />
+          <div className="creative-card">
+            <span className="tag-badge">{card.code} {TAG_NAMES[card.tag]}</span> <strong>{card.name}</strong> ({card.minutes} นาที)
+            <div className="scene-icons small-icons" aria-hidden="true">{card.icons.map((i) => <span key={i}>{i}</span>)}</div>
+            {card.prompt} <SpeakButton text={card.prompt} />
+          </div>
+          <p className="muted small">การ์ดฝึกเป็นรอบอุ่นเครื่องก่อนภารกิจหลักด้านเดียวกัน ใช้ภาพและโจทย์ต่างจากแบบวัดจริง ไม่นับเป็นคะแนนภารกิจหลักหรือคะแนนเครื่องมือวิจัย</p>
+          <textarea className="answer" rows={4} value={text} onChange={(e) => setText(e.target.value)} placeholder="เขียนได้หลายบรรทัด ไม่มีคำตอบผิด" aria-label="คำตอบการ์ดฝึก" />
           <button type="button" className="btn" disabled={!text.trim()} onClick={() => {
-            setState((s) => addLog({ ...saveQuick(s, 'creative', `สร้างสรรค์ระหว่างทาง (${card.tag}): ${card.text}`, text.trim(), [card.tag]), blocks: s.blocks + 1, turnActed: true }, `✨ ${me.name} ทำภารกิจสร้างสรรค์ ทีมได้บล็อก 1 ก้อน`));
-            done('✨ เก็บผลงานสร้างสรรค์แล้ว ทีมได้บล็อก 1 ก้อน');
-          }}>💾 เก็บผลงาน</button>
+            setState((s) => addLog({ ...saveQuick(s, 'creative', `การ์ดฝึกอุ่นเครื่อง ${card.code}: ${card.name}`, text.trim(), [card.tag]), blocks: s.blocks + 1, turnActed: true }, `✨ ${me.name} ทำการ์ดฝึก ${card.code} ทีมได้บล็อก 1 ก้อน`));
+            done('✨ เก็บผลงานฝึกแล้ว ทีมได้บล็อก 1 ก้อน');
+          }}>💾 เก็บผลงานฝึก</button>
         </div>
       )}
       {kind === 'rest' && (
@@ -117,8 +126,8 @@ export function ProblemModal() {
       <p><strong>❓ เกิดปัญหาอะไร?</strong> {z.problem}</p>
       <p><strong>🛠️ เราจะแก้ได้อย่างไร?</strong> เลือกภารกิจจากกระดานภารกิจ แต่ละภารกิจมีบัตรสถานการณ์ปัญหาให้ทีมบันทึกความคิดก่อนลงมือ</p>
       <ul className="mission-list compact">
-        {QUESTS.filter((q) => q.zone === state.zone).map((q) => (
-          <li key={q.id}>🧩 <strong>{q.title}</strong> — {q.story}</li>
+        {MISSIONS.filter((q) => q.zone === state.zone).map((q) => (
+          <li key={q.id}><span style={{ color: AREAS[q.area].color }}>{AREAS[q.area].symbol}</span> <strong>{q.areaName}</strong> · สถานการณ์ “{SCENARIOS[q.scenario].name}” — {SCENARIOS[q.scenario].text}</li>
         ))}
       </ul>
       <button type="button" className="btn" onClick={() => open({ type: 'missionBoard' })}>🗺️ ไปกระดานภารกิจ</button>
@@ -130,7 +139,7 @@ export function ProblemModal() {
 export function BuilderModal() {
   const { state, close } = useStarted();
   const [out, setOut] = useState<string[]>([]);
-  const zoneWords = QUESTS.filter((q) => q.zone === state.zone).flatMap((q) => q.starterWords);
+  const zoneWords = MISSIONS.filter((q) => q.zone === state.zone).flatMap((q) => q.starterWords);
   const uniq = zoneWords.filter((w, i) => zoneWords.findIndex((x) => x.text === w.text) === i).slice(0, 18);
   return (
     <Modal title="3. เครื่องมือทางปัญญา · ลานฝึกเรียงบล็อกคำ" icon="🧱" onClose={close} wide>

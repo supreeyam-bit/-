@@ -3,22 +3,26 @@
 export type ZoneId = 0 | 1 | 2;
 export type CreativityTag = 'F' | 'FL' | 'O' | 'E';
 export type Role = 'subject' | 'verb' | 'object' | 'modifier' | 'other';
-export type SpaceKind = 'gate' | 'learn' | 'mission' | 'word' | 'bonus' | 'creative' | 'build' | 'rest';
+/** ช่องภารกิจใช้รหัสด้าน F / FL / O / E (รูปทรงตามตารางที่ 2) */
+export type SpaceKind = 'gate' | 'learn' | 'word' | 'bonus' | 'creative' | 'build' | 'rest' | CreativityTag;
 export type HelpType = 'conceptual' | 'procedural' | 'strategic' | 'metacognitive';
+export type ScenarioId = 'A' | 'B' | 'C' | 'D';
 
 export interface StarterWord { text: string; role: Role }
 
-/** ช่องคำตอบหนึ่งช่องในภารกิจ (บางภารกิจต้องตอบหลายช่อง เช่น พูดกับเพื่อน / พูดกับคุณครู) */
+/** ช่องคำตอบหนึ่งช่องในใบงานของผู้เล่นแต่ละคน */
 export interface AnswerSlot {
   key: string;
   label: string;
   /** true = แสดงเครื่องมือเรียงบล็อกคำ */
   builder?: boolean;
-  /** มีตัวเลือกให้เลือกก่อน แล้วยังต้องเขียนเหตุผล/ปรับเอง */
-  choices?: string[];
   multiline?: boolean;
   placeholder?: string;
+  /** แสดงการ์ดผู้ฟัง (กลไกการ์ดผู้ฟัง) */
+  listener?: string;
 }
+
+export interface SlotGroup { title: string; slots: AnswerSlot[] }
 
 /** เกณฑ์ตรวจเบื้องต้น เป็นเพียงคำแนะนำ ไม่ใช่การตัดสินผ่าน/ไม่ผ่าน */
 export interface AutoCheck {
@@ -29,38 +33,51 @@ export interface AutoCheck {
   noneOf?: string[];
 }
 
-export interface Quest {
-  id: string;
-  zone: ZoneId;
-  topic: number; // 1–15
-  topicName: string;
-  title: string;
-  story: string;
-  scene: string[];
-  sceneCaption: string;
-  prompt: string;
-  starterWords: StarterWord[];
-  slots: AnswerSlot[];
-  needReason: boolean;
-  reasonLabel?: string;
-  hint: string;
-  examplesForTeacher: string[];
-  successCriteria: string[];
-  selfChecklist?: string[];
-  autoChecks: AutoCheck[];
-  creativityTags: CreativityTag[];
-  arSceneKey: string;
-  coachQuestions: string[];
+/** รายการคำตอบหลายข้อ (ภารกิจ "ให้ได้มากที่สุด" หรือ "หลายรูปแบบ") */
+export interface ListSpec {
+  label: string;
+  placeholder: string;
+  /** ป้ายกำกับแต่ละข้อ เช่น ส่วนที่ขยาย */
+  tagLabel?: string;
+  tags?: string[];
+  minItems: number;
+  /** ต้องมีป้ายกำกับไม่ซ้ำกันอย่างน้อยกี่แบบ */
+  minDistinctTags?: number;
+  itemChecks?: AutoCheck[];
 }
 
-export interface BossTask {
-  key: string;
+export interface Mission {
+  id: string;
+  zone: ZoneId;
+  area: CreativityTag;
+  areaName: string;
+  shape: string;
+  indicators: string[];
+  scenario: ScenarioId;
   title: string;
+  /** คำสั่งภารกิจตามตารางที่ 2 (คงข้อความเดิม) */
   prompt: string;
+  minutes?: number;
+  baseSentence?: string;
+  reuse?: { from: string; slot?: string; label: string; drawing?: boolean };
+  broken?: string[];
+  list?: ListSpec;
+  groups: SlotGroup[];
+  parts?: { key: string; label: string; placeholder: string }[];
+  needReason: boolean;
+  reasonLabel?: string;
+  drawing?: 'required' | 'optional';
+  cubes?: boolean;
+  dixit?: boolean;
+  listeners?: string[];
   starterWords: StarterWord[];
-  slots: AnswerSlot[];
-  selfChecklist?: string[];
+  criteria: string[];
   autoChecks: AutoCheck[];
+  reward: string;
+  lessons: number[];
+  hint: string;
+  examplesForTeacher: string[];
+  coachQuestions: string[];
 }
 
 export interface Boss {
@@ -71,21 +88,23 @@ export interface Boss {
   crystalColor: string;
   intro: string;
   defeatText: string;
-  tasks: BossTask[];
+  criteria: string[];
 }
 
 export interface Player { id: string; name: string; avatar: string; color: string }
 
-export type TopicStatus = 'todo' | 'doing' | 'pending' | 'revise' | 'done';
+export type MissionStatus = 'todo' | 'doing' | 'pending' | 'revise' | 'done';
 export type BossStatus = 'locked' | 'available' | 'attempted' | 'defeated';
 export type WorkStatus = 'draft' | 'pending' | 'revise' | 'approved' | 'saved';
 export type WorkKind = 'mission' | 'boss' | 'tower' | 'creative' | 'word' | 'rest';
 
 export interface SlotAnswer {
-  first: string; // คำตอบแรกที่ส่ง (ก่อนแก้)
+  first: string; // คำตอบแรกที่บันทึก (ก่อนแก้)
   final: string; // คำตอบล่าสุด (หลังแก้)
   history: { text: string; at: number; by: string }[];
 }
+
+export interface Item { text: string; first: string; by: string; tag?: string; at: number }
 
 export type ExchangeKind = 'listen' | 'alternative' | 'improve' | 'reply';
 export interface ExchangeEntry { by: string; kind: ExchangeKind; text: string; at: number }
@@ -98,22 +117,29 @@ export interface Work {
   refId: string;
   title: string;
   zone?: ZoneId;
-  topic?: number;
   authorId: string;
   participants: string[];
   problem?: { what: string; how: string };
+  /** คีย์ `${playerId}|${slot}` = ใบงานรายคน */
   answers: Record<string, SlotAnswer>;
-  /** สำหรับภารกิจหอคอยด่านคิดคล่อง/ยืดหยุ่น: รายการคำตอบหลายข้อ */
-  items?: { text: string; by: string; tag?: string; at: number }[];
+  items?: Item[];
   checklist?: Record<string, boolean>;
+  drawings?: Record<string, string>;
+  /** เวลาสิ้นสุดของตัวจับเวลารายคน */
+  timers?: Record<string, number>;
+  cubes?: Record<string, string[]>;
+  dixit?: { teller: string; secret: number; cards: number[]; guesses: Record<string, number>; sentence: string } | null;
   reason: string;
   exchange: ExchangeEntry[];
   help: HelpType[];
   status: WorkStatus;
   feedback: Feedback[];
+  /** คะแนนกิจกรรมในเกม 0–4 รายคน (ครูให้เพื่อข้อมูลย้อนกลับเท่านั้น ไม่ใช่คะแนนเครื่องมือวิจัย) */
+  ratings?: Record<string, number>;
   startedAt: number;
   endedAt?: number;
   creativityTags: CreativityTag[];
+  indicators?: string[];
 }
 
 export interface CoachNote {
@@ -132,7 +158,7 @@ export interface Settings {
 }
 
 export interface GameState {
-  version: 1;
+  version: 2;
   started: boolean;
   players: Player[];
   positions: number[];
@@ -140,7 +166,8 @@ export interface GameState {
   zone: ZoneId;
   phase: 'roll' | 'moving' | 'action';
   turnActed: boolean;
-  topicProgress: TopicStatus[];
+  /** 12 ภารกิจหลักตามตารางที่ 2 (โซนละ 4) */
+  missionProgress: MissionStatus[];
   bossStatus: BossStatus[];
   crystalCount: number;
   blocks: number;

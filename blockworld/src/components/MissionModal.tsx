@@ -1,19 +1,18 @@
-// หน้าต่างภารกิจ: สถานการณ์ปัญหา → สร้างคำตอบ → แลกเปลี่ยนเรียนรู้ → ตรวจและรับรอง และกระดานภารกิจ (Mission Board)
+// หน้าต่างภารกิจหลัก (ตารางที่ 2): สถานการณ์ปัญหา → ใบงานรายคน → แลกเปลี่ยนเรียนรู้ → ตรวจและรับรอง และกระดานภารกิจ
 import { useState } from 'react';
-import { BOSSES, EXTRA_PROMPTS, QUESTS, ZONES } from '../data/quests';
-import { TAG_NAMES } from '../data/learning';
+import { AREAS, BOSSES, MISSIONS, SCENARIOS, ZONES } from '../data/quests';
 import { useStarted } from '../game/store';
 import {
-  activePlayer, addCoachNote, approveWork, basicChecks, commitAnswers, createWork, findWork, questsOfZone,
-  requestRevision, runChecks, setAnswer, submitForReview, updateWork, workForRef,
+  activePlayer, addCoachNote, answerOf, approveWork, commitAnswers, createWork, findWork, missionById, missionReady, missionSlotKeys,
+  missionsOfZone, playerName, requestRevision, sheetMissing, submitForReview, updateWork, workForRef,
 } from '../game/rules';
-import type { GameState, Quest, Work } from '../game/types';
-import { ApprovalPanel, ExchangePanel, ProblemStep, SlotEditor, everyoneExchanged } from './Answering';
-import { Checks, Modal, Scene, SpeakButton, StatusChip } from './ui';
+import type { GameState, Mission, Work } from '../game/types';
+import { ApprovalPanel, ExchangePanel, ProblemStep, everyoneExchanged } from './Answering';
+import { DixitGame } from './Mechanics';
+import { PlayerTabs, Sheet } from './Sheet';
+import { Modal, Scene, SpeakButton, StatusChip } from './ui';
 
-const STEPS = ['1. สถานการณ์ปัญหา', '2. สร้างคำตอบ', '3. แลกเปลี่ยนเรียนรู้', '4. ตรวจและรับรอง'];
-
-export const answersFilled = (w: Work, keys: string[]) => keys.every((k) => (w.answers[k]?.final ?? '').trim().length > 0);
+const STEPS = ['1. สถานการณ์ปัญหา', '2. ใบงานของทุกคน', '3. แลกเปลี่ยนเรียนรู้', '4. ตรวจและรับรอง'];
 
 export function SupportBar({ topic }: { topic?: number }) {
   const { openDrawer } = useStarted();
@@ -27,98 +26,106 @@ export function SupportBar({ topic }: { topic?: number }) {
   );
 }
 
-export function TeacherOnly({ quest }: { quest: { hint: string; examplesForTeacher: string[] } }) {
+export function TeacherOnly({ mission }: { mission: Mission }) {
   const { coachUnlocked } = useStarted();
   if (!coachUnlocked) return null;
   return (
     <details className="teacher-only">
       <summary>🔐 สำหรับครูเท่านั้น: คำใบ้และตัวอย่างคำตอบ (ไม่ใช่เฉลยตายตัว)</summary>
-      <p><strong>คำใบ้:</strong> {quest.hint}</p>
-      <ul>{quest.examplesForTeacher.map((e) => <li key={e}>{e}</li>)}</ul>
+      <p><strong>คำใบ้:</strong> {mission.hint}</p>
+      <ul>{mission.examplesForTeacher.map((e) => <li key={e}>{e}</li>)}</ul>
     </details>
+  );
+}
+
+export function AreaBadge({ mission }: { mission: Mission }) {
+  const a = AREAS[mission.area];
+  return <span className="area-badge" style={{ background: a.color }} title={`รูป${a.shape}`}>{a.symbol} {a.name}</span>;
+}
+
+/** คะแนนกิจกรรมในเกม 0–4 รายคน (ครูให้เพื่อข้อมูลย้อนกลับ ไม่ใช่คะแนนเครื่องมือวิจัย) */
+function GameRatings({ work }: { work: Work }) {
+  const { state, setState, coachUnlocked } = useStarted();
+  if (!coachUnlocked) return null;
+  return (
+    <div className="ratings">
+      <strong>🎮 คะแนนกิจกรรมในเกม (0–4) รายคน</strong>
+      <p className="muted small">ใช้ให้ข้อมูลย้อนกลับเท่านั้น แยกจากคะแนนเครื่องมือวิจัย และไม่นำไปรวมกัน</p>
+      {state.players.map((p) => (
+        <div key={p.id} className="rating-row">
+          <span>{p.avatar} {p.name}</span>
+          {[0, 1, 2, 3, 4].map((n) => (
+            <button key={n} type="button" className={`rate ${work.ratings?.[p.id] === n ? 'on' : ''}`} aria-pressed={work.ratings?.[p.id] === n}
+              onClick={() => setState((s) => updateWork(s, work.id, (w) => ({ ...w, ratings: { ...w.ratings, [p.id]: n } })))}>{n}</button>
+          ))}
+        </div>
+      ))}
+    </div>
   );
 }
 
 export function MissionModal({ workId }: { workId: string }) {
   const { state, setState, close, toast } = useStarted();
   const work = findWork(state, workId);
-  const quest = QUESTS.find((q) => q.id === work?.refId);
+  const mission = missionById(work?.refId ?? '');
   const [step, setStep] = useState(() => (work && work.status !== 'draft' ? 3 : 0));
-  if (!work || !quest) return null;
-  const zone = ZONES[quest.zone];
-  const me = activePlayer(state);
-  const slotKeys = quest.slots.map((s) => s.key);
-  const values: Record<string, string> = { ...Object.fromEntries(slotKeys.map((k) => [k, work.answers[k]?.final ?? ''])), reason: work.reason };
+  const [pid, setPid] = useState(activePlayer(state).id);
+  if (!work || !mission) return null;
+  const zone = ZONES[mission.zone];
+  const scen = SCENARIOS[mission.scenario];
   const exchanged = everyoneExchanged(work, state.players.map((p) => p.id));
-  const filled = answersFilled(work, slotKeys) && (!quest.needReason || work.reason.trim().length > 0);
-  const locked = work.status === 'approved';
-
-  const change = (key: string, text: string) => setState((s) => updateWork(s, work.id, (w) => setAnswer(w, key, text, activePlayer(s).id)));
+  const ready = missionReady(work, mission, state.players);
+  const commitAll = (s: GameState) => updateWork(s, work.id, (w) => commitAnswers(w, activePlayer(s).id));
 
   return (
-    <Modal title={`${quest.id} · ${quest.title}`} icon="⚔️" onClose={close} wide tone={zone.colors.main}>
+    <Modal title={`${zone.stage} · ${mission.title}`} icon={AREAS[mission.area].symbol} onClose={close} wide tone={AREAS[mission.area].color}>
       <div className="mission-meta">
         <span className="zone-pill" style={{ background: zone.colors.main }}>{zone.name}</span>
-        <span>หัวข้อ {quest.topic}. {quest.topicName}</span>
+        <AreaBadge mission={mission} />
+        <span>ตัวบ่งชี้ {mission.indicators.join(', ')}</span>
+        {mission.minutes && <span>⏱️ {mission.minutes} นาที</span>}
         <StatusChip status={work.status} />
-        <span className="muted">ความคิดสร้างสรรค์: {quest.creativityTags.map((t) => TAG_NAMES[t]).join(' · ')}</span>
       </div>
-      <SupportBar topic={quest.topic} />
+      <SupportBar topic={mission.lessons[0]} />
       <nav className="steps" aria-label="ขั้นตอนภารกิจ">
         {STEPS.map((s, i) => (
           <button key={s} type="button" className={`step ${step === i ? 'on' : ''}`} onClick={() => setStep(i)} aria-current={step === i ? 'step' : undefined}>{s}</button>
         ))}
       </nav>
 
+      <div className="prompt">📜 <strong>คำสั่งภารกิจ (ตารางที่ 2):</strong> {mission.prompt} <SpeakButton text={mission.prompt} /></div>
+
       {step === 0 && (
         <section>
           <div className="story-card">
-            <p className="story">📖 {quest.story} <SpeakButton text={quest.story} /></p>
-            <Scene icons={quest.scene} caption={quest.sceneCaption} tone={zone.colors.main} />
+            <p className="story">📖 {zone.story} <SpeakButton text={zone.story} /></p>
+            <Scene icons={scen.icons} caption={`สถานการณ์ “${scen.name}” — ${scen.text}`} tone={AREAS[mission.area].color} />
           </div>
-          <ProblemStep work={work} zone={quest.zone} />
-          <div className="row-actions"><button type="button" className="btn" onClick={() => setStep(1)}>ไปสร้างคำตอบ ➡️</button></div>
+          <ProblemStep work={work} zone={mission.zone} />
+          <div className="row-actions"><button type="button" className="btn" onClick={() => setStep(1)}>ไปที่ใบงาน ➡️</button></div>
         </section>
       )}
 
       {step === 1 && (
         <section>
-          <div className="prompt">🎯 <strong>โจทย์:</strong> {quest.prompt} <SpeakButton text={quest.prompt} /></div>
-          <Scene icons={quest.scene} caption={quest.sceneCaption} tone={zone.colors.main} />
-          {work.status === 'revise' && <div className="tip">🔁 ครู/โค้ชให้ปรับปรุง: {work.feedback.filter((f) => f.kind === 'revise').slice(-1)[0]?.text}</div>}
-          <fieldset disabled={locked} className="plain">
-            {quest.slots.map((slot) => (
-              <SlotEditor key={slot.key} slot={slot} work={work} words={quest.starterWords} onChange={(t) => change(slot.key, t)} />
-            ))}
-            {quest.needReason && (
-              <div className="slot">
-                <label className="slot-label" htmlFor={`reason-${work.id}`}>💭 {quest.reasonLabel ?? 'อธิบายเหตุผล'}</label>
-                <textarea id={`reason-${work.id}`} className="answer" rows={2} value={work.reason} placeholder="เพราะ…"
-                  onChange={(e) => setState((s) => updateWork(s, work.id, (w) => ({ ...w, reason: e.target.value })))} />
-              </div>
-            )}
-            {quest.selfChecklist && <SelfChecklist work={work} items={quest.selfChecklist} />}
-          </fieldset>
-          <Checks results={[...basicChecks(Object.values(values).join(' ')), ...runChecks(quest.autoChecks, values)]} />
-          {quest.slots.filter((s) => s.builder).length > 1 && new Set(quest.slots.filter((s) => s.builder).map((s) => values[s.key].trim())).size < quest.slots.filter((s) => s.builder).length && values[quest.slots[0].key] && (
-            <div className="tip">💡 คำตอบบางช่องยังเหมือนกัน ลองคิดแบบที่ต่างออกไป</div>
-          )}
-          {EXTRA_PROMPTS[quest.topic] && (
-            <div className="extra">🌟 ภารกิจเสริม (ไม่บังคับ คำตอบได้หลายแบบ): {EXTRA_PROMPTS[quest.topic].join(' · ')}</div>
-          )}
+          <p className="muted">ทุกคนสร้างคำตอบด้วยตนเองในใบงานของตัวเอง ส่งเครื่องให้คนที่ถึงคิว แล้วแตะชื่อเพื่อเปิดใบงาน</p>
+          <PlayerTabs work={work} mission={mission} pid={pid} setPid={setPid} />
+          <Sheet key={pid} work={work} mission={mission} pid={pid} />
+          {mission.dixit && <DixitGame work={work} />}
+          <div className="criteria small">🏅 รางวัลในเกม: {mission.reward}</div>
           <div className="row-actions">
-            <button type="button" className="btn ghost" disabled={locked} onClick={() => { setState((s) => updateWork(s, work.id, (w) => commitAnswers(w, me.id))); toast('บันทึกฉบับนี้ไว้ในประวัติแล้ว'); }}>💾 บันทึกฉบับนี้</button>
-            <button type="button" className="btn" onClick={() => { setState((s) => updateWork(s, work.id, (w) => commitAnswers(w, me.id))); setStep(2); }}>ส่งให้เพื่อนช่วยดู ➡️</button>
+            <button type="button" className="btn ghost" onClick={() => { setState(commitAll); toast('บันทึกฉบับนี้ไว้ในประวัติแล้ว'); }}>💾 บันทึกฉบับนี้</button>
+            <button type="button" className="btn" onClick={() => { setState(commitAll); setStep(2); }}>ไปแลกเปลี่ยนเรียนรู้ ➡️</button>
           </div>
         </section>
       )}
 
       {step === 2 && (
         <section>
-          <AnswerSummary quest={quest} work={work} />
+          <TeamSummary work={work} mission={mission} />
           <ExchangePanel work={work} />
           <div className="row-actions">
-            <button type="button" className="btn ghost" onClick={() => setStep(1)} disabled={locked}>✏️ ปรับปรุงคำตอบ</button>
+            <button type="button" className="btn ghost" onClick={() => setStep(1)} disabled={work.status === 'approved'}>✏️ ปรับปรุงคำตอบ</button>
             <button type="button" className="btn" onClick={() => setStep(3)}>ไปตรวจและรับรอง ➡️</button>
           </div>
         </section>
@@ -126,95 +133,102 @@ export function MissionModal({ workId }: { workId: string }) {
 
       {step === 3 && (
         <section>
-          <AnswerSummary quest={quest} work={work} />
+          <TeamSummary work={work} mission={mission} />
           <div className="criteria">
-            <strong>🏅 เกณฑ์ความสำเร็จ</strong>
-            <ul>{quest.successCriteria.map((c) => <li key={c}>{c}</li>)}</ul>
+            <strong>🏅 เงื่อนไขของภารกิจ</strong>
+            <ul>{mission.criteria.map((c) => <li key={c}>{c}</li>)}</ul>
           </div>
-          <TeacherOnly quest={quest} />
+          <TeacherOnly mission={mission} />
           {(work.status === 'draft' || work.status === 'revise') && (
             <div className="row-actions">
               <button type="button" className="btn ghost" onClick={() => setStep(1)}>✏️ ปรับปรุงคำตอบ</button>
-              <button type="button" className="btn" disabled={!filled || !exchanged} onClick={() => { setState((s) => submitForReview(s, work.id, me.id)); toast('ส่งให้ครู/โค้ชแล้ว ครูตรวจตอนนี้หรือภายหลังก็ได้'); }}>
+              <button type="button" className="btn" disabled={!ready || !exchanged} onClick={() => { setState((s) => submitForReview(s, work.id, activePlayer(s).id)); toast('ส่งให้ครู/โค้ชแล้ว ครูตรวจตอนนี้หรือภายหลังก็ได้'); }}>
                 📤 ส่งให้เพื่อน/ครูช่วยตรวจ
               </button>
             </div>
           )}
+          <GameRatings work={work} />
           <ApprovalPanel
             work={work}
-            ready={filled && exchanged}
-            readyHint={!filled ? 'ยังมีช่องคำตอบหรือเหตุผลที่ว่างอยู่' : !exchanged ? 'เพื่อนทุกคนยังเสนอความคิดไม่ครบ (ขั้นที่ 3)' : undefined}
-            onApprove={(by, text) => { setState((s) => approveWork(s, work.id, by, text)); toast(`🎉 ผ่านภารกิจ “${quest.title}” ได้บล็อกก่อสร้าง 1 ก้อน`); }}
+            ready={ready && exchanged}
+            readyHint={!ready ? 'ใบงานของบางคนยังไม่ครบตามเงื่อนไข (ขั้นที่ 2)' : !exchanged ? 'เพื่อนทุกคนยังเสนอความคิดไม่ครบ (ขั้นที่ 3)' : undefined}
+            onApprove={(by, text) => { setState((s) => approveWork(s, work.id, by, text)); toast(`🎉 ผ่าน “${mission.title}” ได้บล็อกก่อสร้าง 1 ก้อน`); }}
             onRevise={(text) => setState((s) => requestRevision(s, work.id, text))}
-            onNote={(text) => setState((s) => addCoachNote(s, { text, workId: work.id, playerId: work.authorId }))}
+            onNote={(text) => setState((s) => addCoachNote(s, { text, workId: work.id }))}
           />
-          {work.status === 'pending' && <p className="muted">⏳ รอครู/โค้ชตรวจ กด “จบตา” เล่นต่อได้เลย ภารกิจจะนับว่าผ่านเมื่อได้รับการรับรอง</p>}
+          {work.status === 'pending' && <p className="muted">⏳ รอครู/โค้ชตรวจ กด “จบตา” เล่นต่อได้เลย ภารกิจนับว่าผ่านเมื่อได้รับการรับรอง</p>}
         </section>
       )}
     </Modal>
   );
 }
 
-export function SelfChecklist({ work, items }: { work: Work; items: string[] }) {
-  const { setState } = useStarted();
+/** สรุปคำตอบของทุกคน (ใช้ในขั้นแลกเปลี่ยนและขั้นตรวจ) */
+export function TeamSummary({ work, mission }: { work: Work; mission: Mission }) {
+  const { state } = useStarted();
+  const labels = Object.fromEntries([...(mission.parts ?? []), ...mission.groups.flatMap((g) => g.slots.map((x) => ({ key: x.key, label: g.slots.length > 1 || mission.groups.length > 1 ? `${g.title} · ${x.label}` : x.label })))].map((x) => [x.key, x.label]));
+  labels.reason = 'เหตุผล';
   return (
-    <div className="self-check">
-      <strong>📋 ตรวจด้วยตนเอง</strong>
-      {items.map((it) => (
-        <label key={it} className="agree">
-          <input type="checkbox" checked={!!work.checklist?.[it]} onChange={(e) => setState((s) => updateWork(s, work.id, (w) => ({ ...w, checklist: { ...w.checklist, [it]: e.target.checked } })))} /> {it}
-        </label>
-      ))}
+    <div className="team-summary">
+      {state.players.map((p) => {
+        const missing = sheetMissing(work, mission, p.id);
+        const items = (work.items ?? []).filter((i) => i.by === p.id);
+        return (
+          <article key={p.id} className="sum-card" style={{ borderColor: p.color }}>
+            <header>{p.avatar} <strong>{p.name}</strong> {missing.length ? <span className="chip st-doing">✏️ ยังขาด {missing.join(' · ')}</span> : <span className="chip st-done">✅ ครบ</span>}</header>
+            {items.length > 0 && <ol className="small">{items.map((i, n) => <li key={n}>{i.tag && <span className="tag-badge">{i.tag}</span>}{i.text}</li>)}</ol>}
+            {missionSlotKeys(mission).map((k) => answerOf(work, p.id, k) && (
+              <div key={k} className="small"><span className="muted">{labels[k]}:</span> {answerOf(work, p.id, k)}</div>
+            ))}
+            {work.drawings?.[p.id] && <img className="thumb" src={work.drawings[p.id]} alt={`ภาพประกอบของ${p.name}`} />}
+          </article>
+        );
+      })}
+      <p className="muted small">ผู้เริ่มภารกิจ: {playerName(state, work.authorId)}</p>
     </div>
   );
 }
 
-function AnswerSummary({ quest, work }: { quest: Quest; work: Work }) {
-  return (
-    <div className="summary">
-      <div className="muted">🎯 {quest.prompt}</div>
-      {quest.slots.map((s) => (
-        <div key={s.key}><strong>{s.label}:</strong> {work.answers[s.key]?.final || <span className="muted">(ยังว่าง)</span>}</div>
-      ))}
-      {quest.needReason && <div><strong>เหตุผล:</strong> {work.reason || <span className="muted">(ยังว่าง)</span>}</div>}
-    </div>
-  );
-}
-
-/** เริ่มหรือเปิดภารกิจของหัวข้อ คืน state ใหม่และ id ผลงาน (หรือ null ถ้าตานี้ทำภารกิจใหม่ไม่ได้แล้ว) */
-export function startMission(s: GameState, questId: string): [GameState, string | null] {
-  const q = QUESTS.find((x) => x.id === questId)!;
-  const existing = workForRef(s, 'mission', questId);
+/** เริ่มหรือเปิดภารกิจ คืน state ใหม่และ id ผลงาน (หรือ null ถ้าตานี้ทำภารกิจใหม่ไม่ได้แล้ว) */
+export function startMission(s: GameState, missionId: string): [GameState, string | null] {
+  const m = MISSIONS.find((x) => x.id === missionId)!;
+  const existing = workForRef(s, 'mission', missionId);
   if (existing) return [{ ...s, currentMission: existing.id }, existing.id];
   if (s.turnActed) return [s, null];
-  const [s2, id] = createWork(s, { kind: 'mission', refId: q.id, title: `${q.id} ${q.title}`, zone: q.zone, topic: q.topic, creativityTags: q.creativityTags });
+  const [s2, id] = createWork(s, { kind: 'mission', refId: m.id, title: `${ZONES[m.zone].short} · ${m.title}`, zone: m.zone, creativityTags: [m.area], indicators: m.indicators });
   return [{ ...s2, turnActed: true, currentMission: id }, id];
 }
 
-export function MissionBoard() {
-  const { state, setState, open, close, toast } = useStarted();
-  const zone = ZONES[state.zone];
-  const boss = BOSSES[state.zone];
-  const go = (qid: string) => {
-    const [s2, id] = startMission(state, qid);
-    if (!id) return toast('ตานี้ทำภารกิจใหม่ไปแล้ว กด “จบตา” ให้เพื่อนเล่นก่อนนะ (ภารกิจที่เริ่มไว้แล้วทำต่อได้เสมอ)');
+export function useStartMission() {
+  const { getState, setState, open, toast } = useStarted();
+  return (missionId: string) => {
+    // ใช้ state ล่าสุดเสมอ เพราะอาจถูกเรียกหลังตัวเดินเดินเสร็จ (closure เดิมยังเป็นตำแหน่งก่อนทอย)
+    const [s2, id] = startMission(getState()!, missionId);
+    if (!id) return toast('ตานี้เริ่มภารกิจใหม่ไปแล้ว กด “จบตา” ให้เพื่อนเล่นก่อนนะ (ภารกิจที่เริ่มไว้แล้วทำต่อได้เสมอ)');
     setState(() => s2);
     open({ type: 'mission', workId: id });
   };
+}
+
+export function MissionBoard() {
+  const { state, open, close } = useStarted();
+  const go = useStartMission();
+  const zone = ZONES[state.zone];
+  const boss = BOSSES[state.zone];
   return (
     <Modal title={`กระดานภารกิจ · ${zone.name}`} icon="🗺️" onClose={close} wide tone={zone.colors.main}>
-      <p>ทำให้ครบทั้ง 5 หัวข้อของโซน เลือกภารกิจใดก่อนก็ได้ ไม่ต้องรอทอยให้ตกช่อง (ตาละ 1 ภารกิจใหม่)</p>
+      <p>ภารกิจหลัก 4 ด้านของโซนนี้ (ตารางที่ 2) เลือกทำด้านใดก่อนก็ได้ ไม่ต้องรอทอยให้ตกช่อง (ตาละ 1 ภารกิจใหม่)</p>
       <ul className="mission-list">
-        {questsOfZone(state.zone).map((q) => {
-          const st = state.topicProgress[q.topic - 1];
+        {missionsOfZone(state.zone).map((m) => {
+          const st = state.missionProgress[MISSIONS.indexOf(m)];
           return (
-            <li key={q.id} className="mission-item">
+            <li key={m.id} className="mission-item">
               <div>
-                <div className="mi-title">{q.topic}. {q.topicName}</div>
-                <div className="muted">{q.id} · {q.title}</div>
+                <div className="mi-title"><AreaBadge mission={m} /> {m.title}</div>
+                <div className="muted small">สถานการณ์ “{SCENARIOS[m.scenario].name}” · ตัวบ่งชี้ {m.indicators.join(', ')}{m.minutes ? ` · ${m.minutes} นาที` : ''}</div>
               </div>
               <StatusChip status={st} />
-              <button type="button" className="btn small" onClick={() => go(q.id)}>
+              <button type="button" className="btn small" onClick={() => go(m.id)}>
                 {st === 'todo' ? '▶️ เริ่ม' : st === 'done' ? '👀 ดูผลงาน' : '✏️ ทำต่อ'}
               </button>
             </li>
@@ -224,8 +238,8 @@ export function MissionBoard() {
       <div className="boss-card">
         <span className="boss-emoji" aria-hidden="true">{boss.emoji}</span>
         <div>
-          <strong>บอสประจำโซน: {boss.name}</strong>
-          <div className="muted">ทำครบ 5 หัวข้อ (ผ่านการรับรอง) แล้วท้าสู้ได้ที่ประตูบอส</div>
+          <strong>ด่านตรวจประจำโซน: {boss.name}</strong>
+          <div className="muted">ผ่านภารกิจครบ 4 ด้าน (ได้รับการรับรอง) แล้วท้าสู้ได้ที่ประตูบอส</div>
         </div>
         <StatusChip status={state.bossStatus[state.zone]} />
         <button type="button" className="btn small" disabled={state.bossStatus[state.zone] === 'locked'} onClick={() => open({ type: 'boss' })}>⚡ ไปสู้บอส</button>

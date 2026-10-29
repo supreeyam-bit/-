@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { BOSSES, QUESTS, ZONES } from './data/quests';
+import { AREAS, BOSSES, MISSIONS, ZONES, missionOf } from './data/quests';
 import { ELEMENTS, SPACE_INFO } from './data/learning';
 import { GameProvider, useGame, useStarted, type Modal } from './game/store';
-import { DICE_FACES, SPACES_PER_ZONE, activePlayer, addLog, endTurn, questsOfZone, recordRoll, rollDie, spaceKind, stepActive } from './game/rules';
+import { DICE_FACES, SPACES_PER_ZONE, activePlayer, addLog, endTurn, missionsOfZone, recordRoll, rollDie, spaceKind, stepActive } from './game/rules';
 import { Board } from './components/Board';
 import { BossModal } from './components/Boss';
 import { CoachPanel } from './components/Coach';
 import { HelpCenter } from './components/Help';
-import { MissionBoard, MissionModal } from './components/MissionModal';
+import { MissionBoard, MissionModal, useStartMission } from './components/MissionModal';
 import { BuilderModal, CityModal, EndingModal, ExchangeLogModal, HistoryModal, IntroModal, ProblemModal, RulesModal, SpaceModal } from './components/Panels';
 import { LearningCenter } from './components/Resources';
 import { Setup } from './components/Setup';
@@ -19,25 +19,35 @@ const DIE_DOTS = ['⚀', '⚀', '⚁', '⚂'];
 const STEP_MS = 380;
 
 function TurnPanel() {
-  const { state, setState, open, openDrawer, modal, drawer } = useStarted();
+  const { state, setState, getState, open, openDrawer, modal, drawer } = useStarted();
   const [face, setFace] = useState<number | null>(null);
   const [rolling, setRolling] = useState(false);
   const me = activePlayer(state);
   const here = spaceKind(state.zone, state.positions[state.activePlayer]);
+  const startMission = useStartMission();
 
   const land = (kind: ReturnType<typeof spaceKind>) => {
     setState((s) => ({ ...s, phase: 'action' }));
     setRolling(false);
-    const firstTodo = questsOfZone(state.zone).find((q) => state.topicProgress[q.topic - 1] !== 'done');
+    const cur = getState() ?? state; // state ล่าสุดหลังเดินเสร็จ ไม่ใช่ตอนกดทอย
+    const firstTodo = missionsOfZone(cur.zone).find((m) => cur.missionProgress[MISSIONS.indexOf(m)] !== 'done');
     switch (kind) {
-      case 'mission': return open({ type: 'missionBoard', fromSpace: true });
-      case 'learn': return openDrawer({ type: 'learning', topic: firstTodo?.topic ?? state.zone * 5 + 1 });
+      case 'F':
+      case 'FL':
+      case 'O':
+      case 'E': {
+        // ตกช่องภารกิจด้านไหน เปิดภารกิจด้านนั้นของโซนนี้ ถ้าผ่านแล้วให้เลือกจากกระดานภารกิจ
+        const m = missionOf(cur.zone, kind);
+        if (cur.missionProgress[MISSIONS.indexOf(m)] === 'done') return open({ type: 'missionBoard', fromSpace: true });
+        return startMission(m.id);
+      }
+      case 'learn': return openDrawer({ type: 'learning', topic: firstTodo?.lessons[0] ?? state.zone * 5 + 1 });
       case 'build': return open({ type: 'city' });
       case 'bonus':
         setState((s) => addLog({ ...s, blocks: s.blocks + 1 }, `🎁 ${me.name} ได้บล็อกก่อสร้างฟรี 1 ก้อน`));
         return open({ type: 'space', kind });
       case 'gate':
-        if (state.bossStatus[state.zone] === 'available' || state.bossStatus[state.zone] === 'attempted') return open({ type: 'boss' });
+        if (cur.bossStatus[cur.zone] === 'available' || cur.bossStatus[cur.zone] === 'attempted') return open({ type: 'boss' });
         return open({ type: 'space', kind });
       default: return open({ type: 'space', kind });
     }
@@ -141,8 +151,8 @@ function MissionSummary() {
     <section className="panel" aria-label="ภารกิจในโซนนี้">
       <h2 style={{ color: z.colors.dark }}>🗺️ {z.name}</h2>
       <ul className="mini-missions">
-        {QUESTS.filter((q) => q.zone === state.zone).map((q) => (
-          <li key={q.id}><span>{q.topic}. {q.topicName}</span> <StatusChip status={state.topicProgress[q.topic - 1]} /></li>
+        {missionsOfZone(state.zone).map((m) => (
+          <li key={m.id}><span><span style={{ color: AREAS[m.area].color }} aria-hidden="true">{AREAS[m.area].symbol}</span> {m.areaName}: {m.title}</span> <StatusChip status={state.missionProgress[MISSIONS.indexOf(m)]} /></li>
         ))}
         <li><span>{BOSSES[state.zone].emoji} บอส {BOSSES[state.zone].name}</span> <StatusChip status={state.bossStatus[state.zone]} /></li>
       </ul>

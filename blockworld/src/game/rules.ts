@@ -1,15 +1,14 @@
 // กติกาและฟังก์ชันจัดการสถานะเกม (pure functions — รับ state เดิม คืน state ใหม่)
-import { BOSSES, ELAB_PARTS, QUESTS, TOWER_STAGES, TOPICS } from '../data/quests';
+import { AREA_ORDER, BOSSES, MISSIONS } from '../data/quests';
 import { ZONE_LAYOUTS } from '../data/learning';
 import type {
-  AutoCheck, Feedback, GameState, HelpType, Player, Settings, SpaceKind, Work, WorkKind, ZoneId,
+  AutoCheck, CreativityTag, Feedback, GameState, HelpType, Mission, Player, Settings, SpaceKind, Work, WorkKind, ZoneId,
 } from './types';
 
-export const STORAGE_KEY = 'blockworld-th-v1';
+export const STORAGE_KEY = 'blockworld-th-v2';
 export const DICE_FACES = [1, 1, 2, 2, 3, 3];
 export const SPACES_PER_ZONE = ZONE_LAYOUTS[0].length;
 export const TOTAL_SPACES = SPACES_PER_ZONE * ZONE_LAYOUTS.length;
-export const TOWER_SECONDS_F = 120;
 
 let counter = 0;
 export const uid = (prefix = 'id') => `${prefix}-${Date.now().toString(36)}-${(counter++).toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -18,7 +17,7 @@ export const DEFAULT_SETTINGS: Settings = { approvalMode: 'pin', pin: '1234', sp
 
 export function newGame(players: Player[], settings: Settings = DEFAULT_SETTINGS): GameState {
   const s: GameState = {
-    version: 1,
+    version: 2,
     started: true,
     players,
     positions: players.map(() => 0),
@@ -26,7 +25,7 @@ export function newGame(players: Player[], settings: Settings = DEFAULT_SETTINGS
     zone: 0,
     phase: 'roll',
     turnActed: false,
-    topicProgress: TOPICS.map(() => 'todo'),
+    missionProgress: MISSIONS.map(() => 'todo'),
     bossStatus: ['locked', 'locked', 'locked'],
     crystalCount: 0,
     blocks: 0,
@@ -51,7 +50,11 @@ export const rollDie = (rng: () => number = Math.random) => DICE_FACES[Math.floo
 export const spaceKind = (zone: ZoneId, pos: number): SpaceKind => ZONE_LAYOUTS[zone][pos % SPACES_PER_ZONE];
 export const activePlayer = (s: GameState) => s.players[s.activePlayer];
 export const playerName = (s: GameState, id: string) => s.players.find((p) => p.id === id)?.name ?? '—';
-export const questsOfZone = (zone: ZoneId) => QUESTS.filter((q) => q.zone === zone);
+export const missionsOfZone = (zone: ZoneId) => MISSIONS.filter((m) => m.zone === zone);
+export const missionById = (id: string) => MISSIONS.find((m) => m.id === id);
+/** คีย์ใบงานรายคน */
+export const sheetKey = (pid: string, slot: string) => `${pid}|${slot}`;
+export const answerOf = (w: Work | undefined, pid: string, slot: string) => w?.answers[sheetKey(pid, slot)]?.final ?? '';
 
 export function addLog(s: GameState, text: string): GameState {
   return { ...s, log: [...s.log.slice(-79), { at: Date.now(), text }] };
@@ -81,7 +84,7 @@ export function endTurn(s: GameState): GameState {
 
 export function createWork(
   s: GameState,
-  init: { kind: WorkKind; refId: string; title: string; zone?: ZoneId; topic?: number; creativityTags?: Work['creativityTags']; status?: Work['status'] },
+  init: { kind: WorkKind; refId: string; title: string; zone?: ZoneId; creativityTags?: Work['creativityTags']; indicators?: string[]; status?: Work['status'] },
 ): [GameState, string] {
   const author = activePlayer(s);
   const w: Work = {
@@ -90,7 +93,7 @@ export function createWork(
     refId: init.refId,
     title: init.title,
     zone: init.zone,
-    topic: init.topic,
+    indicators: init.indicators,
     authorId: author.id,
     participants: [author.id],
     answers: {},
@@ -179,25 +182,25 @@ export function recordHelp(s: GameState, type: HelpType, context: string, workId
 
 // ───────── สถานะที่คำนวณจากผลงาน ─────────
 
-export function zoneTopicsDone(s: GameState, zone: ZoneId) {
-  return questsOfZone(zone).every((q) => s.topicProgress[q.topic - 1] === 'done');
+export function zoneMissionsDone(s: GameState, zone: ZoneId) {
+  return missionsOfZone(zone).every((m) => s.missionProgress[MISSIONS.indexOf(m)] === 'done');
 }
 
 /** คำนวณความคืบหน้า บอส คริสตัล โซน และหอคอยจากผลงานทั้งหมด */
 export function recompute(s: GameState): GameState {
-  const topicProgress = QUESTS.map((q) => {
-    const list = s.works.filter((w) => w.kind === 'mission' && w.refId === q.id);
+  const missionProgress = MISSIONS.map((m) => {
+    const list = s.works.filter((w) => w.kind === 'mission' && w.refId === m.id);
     if (list.some((w) => w.status === 'approved')) return 'done' as const;
     if (list.some((w) => w.status === 'pending')) return 'pending' as const;
     if (list.some((w) => w.status === 'revise')) return 'revise' as const;
     if (list.length) return 'doing' as const;
     return 'todo' as const;
   });
-  const tmp = { ...s, topicProgress };
+  const tmp = { ...s, missionProgress };
   const bossStatus = BOSSES.map((b) => {
     const list = s.works.filter((w) => w.kind === 'boss' && w.refId === `B${b.zone + 1}`);
     if (list.some((w) => w.status === 'approved')) return 'defeated' as const;
-    if (!zoneTopicsDone(tmp, b.zone)) return 'locked' as const;
+    if (!zoneMissionsDone(tmp, b.zone)) return 'locked' as const;
     if (list.length) return 'attempted' as const;
     return 'available' as const;
   });
@@ -205,13 +208,57 @@ export function recompute(s: GameState): GameState {
   let crystalCount = 0;
   while (crystalCount < 3 && bossStatus[crystalCount] === 'defeated') crystalCount++;
   const zone = Math.min(2, crystalCount) as ZoneId;
-  const towerProgress = TOWER_STAGES.map((t) => s.works.some((w) => w.kind === 'tower' && w.refId === t.tag && w.status === 'approved'));
+  const towerProgress = AREA_ORDER.map((t) => s.works.some((w) => w.kind === 'tower' && w.refId === t && w.status === 'approved'));
   const responsesByStudent: Record<string, string[]> = Object.fromEntries(s.players.map((p) => [p.id, [] as string[]]));
   for (const w of s.works) for (const pid of w.participants) responsesByStudent[pid]?.push(w.id);
-  let out: GameState = { ...s, topicProgress, bossStatus, crystalCount, towerProgress, responsesByStudent, finished: towerProgress.every(Boolean) };
+  let out: GameState = { ...s, missionProgress, bossStatus, crystalCount, towerProgress, responsesByStudent, finished: towerProgress.every(Boolean) };
   if (zone !== s.zone) {
     out = { ...out, zone, positions: s.players.map(() => 0) };
     out = addLog(out, zone > s.zone ? `🔓 ปลดล็อก ${['โซน 1', 'โซน 2', 'โซน 3'][zone]} แล้ว! ทุกคนย้ายไปที่ประตูโซนใหม่` : 'ย้อนกลับโซนก่อนหน้า');
+  }
+  return out;
+}
+
+// ───────── ใบงานรายคนของภารกิจหลัก ─────────
+
+/** ช่องคำตอบทั้งหมดของภารกิจ (ไม่รวมรายการหลายข้อ) */
+export function missionSlotKeys(m: Mission): string[] {
+  return [...(m.parts ?? []).map((p) => p.key), ...m.groups.flatMap((g) => g.slots.map((x) => x.key)), ...(m.needReason ? ['reason'] : [])];
+}
+
+/** ใบงานของผู้เล่นคนนี้ครบตามเงื่อนไขภารกิจหรือยัง คืนรายการที่ยังขาด */
+export function sheetMissing(w: Work, m: Mission, pid: string): string[] {
+  const miss: string[] = [];
+  const empty = missionSlotKeys(m).filter((k) => !answerOf(w, pid, k).trim());
+  if (empty.length) miss.push(`ยังว่าง ${empty.length} ช่อง`);
+  if (m.list) {
+    const mine = (w.items ?? []).filter((i) => i.by === pid);
+    if (mine.length < m.list.minItems) miss.push(`${m.list.label} อย่างน้อย ${m.list.minItems} ข้อ`);
+    if (m.list.minDistinctTags && new Set(mine.map((i) => i.tag)).size < m.list.minDistinctTags) miss.push(`ต้องต่างกันอย่างน้อย ${m.list.minDistinctTags} รูปแบบ`);
+  }
+  if (m.drawing === 'required' && !w.drawings?.[pid]) miss.push('ยังไม่ได้วาดภาพประกอบ');
+  return miss;
+}
+
+export const missionReady = (w: Work, m: Mission, players: Player[]) => players.every((p) => sheetMissing(w, m, p.id).length === 0);
+
+/** จำนวนชิ้นคำตอบที่ผู้เล่นคนนี้สร้างเองในผลงาน (หลักฐานรายบุคคล) */
+export function contribution(w: Work, pid: string): number {
+  return Object.entries(w.answers).filter(([k, a]) => k.startsWith(`${pid}|`) && a.final.trim()).length + (w.items ?? []).filter((i) => i.by === pid).length;
+}
+
+/** สรุปหลักฐานรายบุคคลตามตัวบ่งชี้ 1.1–4.3 จากภารกิจหลักที่ผ่านการรับรอง */
+export function indicatorEvidence(s: GameState, pid: string): Record<string, { missions: number; pieces: number; rating: number; rated: number }> {
+  const out: Record<string, { missions: number; pieces: number; rating: number; rated: number }> = {};
+  for (const w of s.works) {
+    if (w.kind !== 'mission' || w.status !== 'approved') continue;
+    const n = contribution(w, pid);
+    for (const code of w.indicators ?? []) {
+      const e = (out[code] ??= { missions: 0, pieces: 0, rating: 0, rated: 0 });
+      if (n) e.missions++;
+      e.pieces += n;
+      if (w.ratings?.[pid] !== undefined) { e.rating += w.ratings[pid]; e.rated++; }
+    }
   }
   return out;
 }
@@ -266,7 +313,7 @@ export function load(): GameState | null {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const s = JSON.parse(raw) as GameState;
-    return s.version === 1 && s.started ? { ...s, phase: s.phase === 'moving' ? 'action' : s.phase } : null;
+    return s.version === 2 && s.started ? { ...s, phase: s.phase === 'moving' ? 'action' : s.phase } : null;
   } catch {
     return null;
   }
@@ -280,17 +327,20 @@ export function clearSave() {
   }
 }
 
-/** ชื่อช่องคำตอบที่อ่านเข้าใจ (แทนคีย์ภายใน เช่น t3.sentence) */
+/** ชื่อช่องคำตอบที่อ่านเข้าใจ (แทนคีย์ภายใน) */
 export function slotLabel(w: Work, key: string): string {
-  if (w.kind === 'mission') return QUESTS.find((q) => q.id === w.refId)?.slots.find((s) => s.key === key)?.label ?? key;
-  if (w.kind === 'boss') {
-    const [tk, sk] = key.split('.');
-    const boss = BOSSES.find((b) => `B${b.zone + 1}` === w.refId);
-    const i = boss?.tasks.findIndex((t) => t.key === tk) ?? -1;
-    const slot = boss?.tasks[i]?.slots.find((s) => s.key === sk);
-    return i >= 0 ? `ภารกิจย่อย ${i + 1} · ${slot?.label ?? sk}` : key;
+  const slot = key.includes('|') ? key.split('|')[1] : key;
+  if (slot === 'reason') return 'เหตุผล';
+  if (w.kind === 'mission') {
+    const m = missionById(w.refId);
+    const all = [...(m?.parts ?? []), ...(m?.groups.flatMap((g) => g.slots.map((x) => ({ ...x, label: `${g.title} · ${x.label}` }))) ?? [])];
+    return all.find((x) => x.key === slot)?.label ?? slot;
   }
-  if (w.kind === 'tower') return ELAB_PARTS.find((p) => p.key === key)?.label ?? ({ story: 'เรื่องราว', sentence: 'ประโยคที่ขยายแล้ว' } as Record<string, string>)[key] ?? key;
+  if (w.kind === 'boss' || w.kind === 'tower') {
+    const [area, part] = slot.split('.');
+    const name = { F: 'คิดคล่อง', FL: 'คิดยืดหยุ่น', O: 'คิดริเริ่ม', E: 'คิดละเอียดลออ' }[area as CreativityTag] ?? area;
+    return `${name} · ${{ pick: 'ผลงานที่เลือก', why: 'เหตุผล' }[part] ?? part}`;
+  }
   return 'คำตอบ';
 }
 
@@ -302,38 +352,29 @@ export function exportJSON(s: GameState): string {
 
 const csvCell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 
-/** CSV หนึ่งแถวต่อหนึ่งช่องคำตอบ ขึ้นต้นด้วย UTF-8 BOM เพื่อให้ Excel อ่านภาษาไทยถูก */
+/** CSV หนึ่งแถวต่อหนึ่งคำตอบของผู้เล่นแต่ละคน ขึ้นต้นด้วย UTF-8 BOM เพื่อให้ Excel อ่านภาษาไทยถูก */
 export function exportCSV(s: GameState): string {
-  const head = ['ผู้เขียนหลัก', 'ผู้มีส่วนร่วม', 'ประเภท', 'ผลงาน', 'หัวข้อ', 'ช่องคำตอบ', 'ก่อนแก้', 'หลังแก้', 'จำนวนครั้งที่แก้', 'เหตุผล', 'สถานะ', 'ความช่วยเหลือที่ใช้', 'ความเห็นเพื่อน', 'ความเห็นครู/โค้ช', 'ความคิดสร้างสรรค์', 'เริ่ม', 'จบ'];
+  const head = ['ผู้เล่น', 'ประเภท', 'ผลงาน', 'โซน', 'ด้าน', 'ตัวบ่งชี้', 'ช่องคำตอบ', 'ก่อนแก้', 'หลังแก้', 'จำนวนครั้งที่แก้', 'สถานะ', 'คะแนนกิจกรรมในเกม (0–4 ไม่ใช่คะแนนเครื่องมือวิจัย)', 'ความช่วยเหลือที่ทีมใช้', 'ความเห็นเพื่อน', 'ความเห็นครู/โค้ช', 'เริ่ม', 'จบ'];
   const rows: string[][] = [];
   for (const w of s.works) {
-    const slots = Object.entries(w.answers).filter(([k]) => k !== 'wordset');
-    const items = (w.items ?? []).map((i, n) => [`ข้อ ${n + 1}${i.tag ? ` (${i.tag})` : ''} · ${playerName(s, i.by)}`, { first: i.text, final: i.text, history: [] }] as const);
-    const all = [...slots, ...items];
-    if (!all.length) all.push(['—', { first: '', final: '', history: [] }]);
-    for (const [slot, a] of all) {
-      rows.push([
-        playerName(s, w.authorId),
-        w.participants.map((p) => playerName(s, p)).join(' / '),
-        w.kind,
-        w.title,
-        w.topic ? `${w.topic}. ${TOPICS[w.topic - 1]}` : '',
-        slot.startsWith('ข้อ ') ? slot : slotLabel(w, slot),
-        a.first,
-        a.final,
-        String(Math.max(0, a.history.length - 1)),
-        w.reason,
-        w.status,
-        w.help.join(' / '),
-        w.exchange.map((e) => `${playerName(s, e.by)}: ${e.text}`).join(' | '),
-        w.feedback.map((f) => `${f.kind}: ${f.text}`).join(' | '),
-        w.creativityTags.join(' '),
-        fmt(w.startedAt),
-        fmt(w.endedAt),
-      ]);
+    const m = w.kind === 'mission' ? missionById(w.refId) : undefined;
+    const row = (pid: string, slot: string, first: string, final: string, edits: number) => rows.push([
+      playerName(s, pid), w.kind, w.title, w.zone !== undefined ? String(w.zone + 1) : '', m ? m.areaName : w.creativityTags.join(' '),
+      (w.indicators ?? []).join(' '), slot, first, final, String(edits), w.status,
+      w.ratings?.[pid] !== undefined ? String(w.ratings[pid]) : '',
+      w.help.join(' / '),
+      w.exchange.map((e) => `${playerName(s, e.by)}: ${e.text}`).join(' | '),
+      w.feedback.map((f) => `${f.kind}: ${f.text}`).join(' | '),
+      fmt(w.startedAt), fmt(w.endedAt),
+    ]);
+    for (const [k, a] of Object.entries(w.answers)) {
+      const pid = k.includes('|') ? k.split('|')[0] : w.authorId;
+      row(pid, slotLabel(w, k), a.first, a.final, Math.max(0, a.history.length - 1));
     }
+    (w.items ?? []).forEach((i, n) => row(i.by, `ข้อ ${n + 1}${i.tag ? ` (${i.tag})` : ''}`, i.first, i.text, i.first !== i.text ? 1 : 0));
+    if (!Object.keys(w.answers).length && !(w.items ?? []).length) row(w.authorId, '—', '', '', 0);
   }
-  return '﻿' + [head, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n');
+  return '\uFEFF' + [head, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n');
 }
 
 export function download(name: string, content: string, type: string) {

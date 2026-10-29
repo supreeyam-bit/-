@@ -25,6 +25,8 @@ export type Drawer = { type: 'learning'; topic?: number } | { type: 'help' } | {
 interface Ctx {
   state: GameState | null;
   setState: (fn: (s: GameState) => GameState) => void;
+  /** state ล่าสุดที่แสดงผลแล้ว (ใช้ใน callback ที่ถูกเรียกช้า เช่น หลังตัวเดินเดินเสร็จ) */
+  getState: () => GameState | null;
   replaceState: (s: GameState | null) => void;
   modal: Modal | null;
   open: (m: Modal) => void;
@@ -47,6 +49,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [coachUnlocked, setCoachUnlocked] = useState(false);
   const [toasts, setToasts] = useState<{ id: number; text: string }[]>([]);
   const seq = useRef(0);
+  const latest = useRef(state);
+  latest.current = state;
+  const getState = useCallback(() => latest.current, []);
 
   useEffect(() => {
     if (state) save(state);
@@ -70,6 +75,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     () => ({
       state,
       setState,
+      getState,
       replaceState: setRaw,
       modal,
       open: setModal,
@@ -82,7 +88,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       toast,
       say,
     }),
-    [state, setState, modal, drawer, coachUnlocked, toasts, toast, say],
+    [state, setState, getState, modal, drawer, coachUnlocked, toasts, toast, say],
   );
   return <GameCtx.Provider value={value}>{children}</GameCtx.Provider>;
 }

@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useGame } from '../game/store';
 import type { CheckResult } from '../game/rules';
-import type { BossStatus, TopicStatus, WorkStatus } from '../game/types';
+import type { BossStatus, MissionStatus, WorkStatus } from '../game/types';
 
 export function Modal({ title, icon, onClose, children, wide, tone }: { title: string; icon?: string; onClose: () => void; children: ReactNode; wide?: boolean; tone?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -85,7 +85,7 @@ const STATUS: Record<string, { text: string; icon: string; cls: string }> = {
   defeated: { text: 'ชนะแล้ว', icon: '💎', cls: 'st-done' },
 };
 
-export function StatusChip({ status }: { status: TopicStatus | WorkStatus | BossStatus }) {
+export function StatusChip({ status }: { status: MissionStatus | WorkStatus | BossStatus }) {
   const s = STATUS[status];
   return (
     <span className={`chip ${s.cls}`}>

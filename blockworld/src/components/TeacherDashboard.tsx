@@ -1,9 +1,9 @@
-// แดชบอร์ดครู: ความคืบหน้า 15 หัวข้อ ผลงานรายคน (ก่อนแก้/หลังแก้) บันทึกพฤติกรรม 4 ด้าน และการส่งออกข้อมูล
+// แดชบอร์ดครู: ความคืบหน้า 12 ภารกิจหลักตามตารางที่ 2 ตารางตัวบ่งชี้ 1.1–4.3 รายคน ผลงานรายคน (ก่อนแก้/หลังแก้) บันทึกพฤติกรรม 4 ด้าน และการส่งออกข้อมูล
 import { useState } from 'react';
 import { HELP_TYPES, INDICATORS, TAG_NAMES } from '../data/learning';
-import { BOSSES, QUESTS, ZONES } from '../data/quests';
+import { AREAS, BOSSES, MISSIONS, ZONES } from '../data/quests';
 import { useStarted } from '../game/store';
-import { clearSave, download, exportCSV, exportJSON, playerName, slotLabel } from '../game/rules';
+import { clearSave, download, exportCSV, exportJSON, indicatorEvidence, playerName, slotLabel } from '../game/rules';
 import { PinGate } from './Coach';
 import { Modal, StatusChip } from './ui';
 
@@ -29,14 +29,14 @@ export function TeacherDashboard() {
       <PinGate>
         <div className="disclaimer" role="note">⚠️ {DISCLAIMER} — ระบบตรวจเบื้องต้นเป็นเพียงคำแนะนำ การให้ผ่านขึ้นกับการพิจารณาของครู/โค้ช ตัวบ่งชี้ด้านล่างเป็นช่องบันทึก ยังไม่เท่ากับการให้คะแนนตาม rubric จริง</div>
 
-        <h3>📈 ความคืบหน้า 15 หัวข้อ</h3>
+        <h3>📈 ความคืบหน้า 12 ภารกิจหลัก (ตารางที่ 2)</h3>
         <div className="dash-zones">
           {ZONES.map((z) => (
             <div key={z.id} className="dash-zone" style={{ borderColor: z.colors.main }}>
               <strong style={{ color: z.colors.dark }}>{z.name}</strong>
-              <ol start={z.id * 5 + 1}>
-                {QUESTS.filter((q) => q.zone === z.id).map((q) => (
-                  <li key={q.id}>{q.topicName} <StatusChip status={state.topicProgress[q.topic - 1]} /></li>
+              <ol>
+                {MISSIONS.filter((q) => q.zone === z.id).map((q) => (
+                  <li key={q.id}>{AREAS[q.area].symbol} {q.areaName} ({q.indicators.join(', ')}) <StatusChip status={state.missionProgress[MISSIONS.indexOf(q)]} /></li>
                 ))}
               </ol>
               <div>บอส {BOSSES[z.id].name}: <StatusChip status={state.bossStatus[z.id]} /></div>
@@ -80,7 +80,7 @@ export function TeacherDashboard() {
                 <span className="muted small"> {w.authorId === student ? 'ผู้เขียนหลัก' : 'ผู้ร่วมคิด'} · {new Date(w.startedAt).toLocaleString('th-TH')}{w.endedAt ? ` – ${new Date(w.endedAt).toLocaleTimeString('th-TH')}` : ''}</span>
               </header>
               {w.problem && (w.problem.what || w.problem.how) && <div className="small">🧩 ปัญหา: {w.problem.what} · แนวทาง: {w.problem.how}</div>}
-              {Object.entries(w.answers).filter(([k]) => k !== 'wordset').map(([k, a]) => (
+              {Object.entries(w.answers).filter(([k]) => k.startsWith(`${student}|`) || (!k.includes('|') && w.authorId === student)).map(([k, a]) => (
                 <div key={k} className="ba">
                   <span className="muted">{slotLabel(w, k)}</span>
                   <div>ก่อนแก้: {a.first || a.final || '—'}</div>
@@ -88,8 +88,10 @@ export function TeacherDashboard() {
                 </div>
               ))}
               {(w.items ?? []).length > 0 && (
-                <ul className="small">{w.items!.map((i, n) => <li key={n}>{i.text} <span className="muted">— {playerName(state, i.by)}{i.tag ? ` · ${i.tag}` : ''}</span></li>)}</ul>
+                <ul className="small">{w.items!.filter((i) => i.by === student).map((i, n) => <li key={n}>{i.tag ? `[${i.tag}] ` : ''}{i.first !== i.text ? <><s className="muted">{i.first}</s> → </> : null}{i.text}</li>)}</ul>
               )}
+              {w.drawings?.[student] && <img className="thumb" src={w.drawings[student]} alt="ภาพประกอบ" />}
+              {w.ratings?.[student] !== undefined && <div className="small">🎮 คะแนนกิจกรรมในเกม: {w.ratings[student]}/4</div>}
               {w.reason && <div className="small">💭 เหตุผล: {w.reason}</div>}
               {w.exchange.length > 0 && <div className="small">💬 {w.exchange.map((e) => `${playerName(state, e.by)}: ${e.text}`).join(' | ')}</div>}
               {w.help.length > 0 && <div className="small">🆘 ใช้ความช่วยเหลือ: {w.help.join(', ')}</div>}
@@ -98,6 +100,36 @@ export function TeacherDashboard() {
             </article>
           ))}
         </div>
+
+        <h3>🧮 ผลงานรายบุคคลตามตัวบ่งชี้ 1.1–4.3 (จากภารกิจหลักที่ผ่านการรับรอง)</h3>
+        <div className="score-split">
+          <div><strong>🎮 คะแนนกิจกรรมในเกม</strong> — ครูให้ 0–4 ต่อคนต่อภารกิจ เพื่อให้ข้อมูลย้อนกลับเท่านั้น</div>
+          <div><strong>📋 คะแนนเครื่องมือวิจัย</strong> — วัดด้วยแบบวัดการคิดสร้างสรรค์ฉบับจริงนอกเกม ระบบนี้ไม่คำนวณ ไม่เก็บ และไม่นำคะแนนในเกมไปรวมด้วย</div>
+        </div>
+        <table className="dash-table matrix">
+          <thead>
+            <tr><th>ผู้เล่น</th>{INDICATORS.flatMap((g) => g.items).map((i) => <th key={i.code} title={i.text}>{i.code}</th>)}</tr>
+          </thead>
+          <tbody>
+            {state.players.map((p) => {
+              const ev = indicatorEvidence(state, p.id);
+              return (
+                <tr key={p.id}>
+                  <td>{p.avatar} {p.name}</td>
+                  {INDICATORS.flatMap((g) => g.items).map((i) => {
+                    const e = ev[i.code];
+                    return (
+                      <td key={i.code} title={i.text}>
+                        {e ? <>📄{e.pieces}{e.rated ? <><br />🎮{(e.rating / e.rated).toFixed(1)}</> : null}</> : <span className="muted">—</span>}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <p className="muted small">📄 = จำนวนชิ้นคำตอบที่ผู้เล่นสร้างเองในภารกิจของตัวบ่งชี้นั้น · 🎮 = คะแนนกิจกรรมในเกมเฉลี่ย (0–4) · ชี้ที่รหัสเพื่อดูข้อความตัวบ่งชี้</p>
 
         <h3>✨ บันทึกเชิงพฤติกรรม 4 ด้าน</h3>
         <div className="indicator-grid">

@@ -21,19 +21,10 @@ export const getArProvider = (): ArProvider => SIMULATED_AR;
 
 const s = (key: string, title: string, ground: string, props: ArScene['props']): ArScene => ({ key, title, ground, props });
 
+/** ฉากของสถานการณ์ทั้งสี่ในตารางที่ 2 */
 export const AR_SCENES: Record<string, ArScene> = {
-  canteen: s('canteen', 'โรงอาหาร', '#c9b6ff', [{ icon: '🧒', x: -0.5, z: 0.2, label: 'เด็ก' }, { icon: '🍚', x: 0.3, z: 0.1, label: 'ข้าว' }, { icon: '🏫', x: 0, z: -0.7 }]),
-  garden: s('garden', 'สวนหลังโรงเรียน', '#bde7a8', [{ icon: '👧', x: -0.6, z: 0.3 }, { icon: '👦', x: 0.6, z: 0.3 }, { icon: '🌱', x: 0, z: 0 }, { icon: '🚿', x: 0.2, z: -0.5 }]),
-  classroom: s('classroom', 'ห้องเรียน', '#d9d4ff', [{ icon: '👩‍🏫', x: -0.4, z: 0, label: 'คุณครู' }, { icon: '📚', x: 0, z: 0.3 }, { icon: '🧒', x: 0.5, z: 0, label: 'นักเรียน' }]),
-  'cat-fish': s('cat-fish', 'แมว กิน ปลา', '#d9d4ff', [{ icon: '🐱', x: -0.5, z: 0, label: 'ผู้ทำ' }, { icon: '🍽️', x: 0, z: 0, label: 'การกระทำ' }, { icon: '🐟', x: 0.5, z: 0, label: 'ผู้รับ' }]),
-  'girl-watering': s('girl-watering', 'เด็กหญิงรดน้ำต้นไม้', '#bde7a8', [{ icon: '👧', x: -0.4, z: 0 }, { icon: '🚿', x: 0, z: 0, y: 0.3 }, { icon: '🌳', x: 0.5, z: -0.2 }]),
-  'buffalo-field': s('buffalo-field', 'ควายในทุ่งนา', '#e6f6c8', [{ icon: '🐃', x: -0.2, z: 0.1 }, { icon: '🌿', x: 0.4, z: 0.3 }, { icon: '🌾', x: -0.6, z: -0.5 }, { icon: '🌾', x: 0.6, z: -0.5 }]),
-  'buffalo-walk': s('buffalo-walk', 'ควายเดินบนคันนา', '#e6f6c8', [{ icon: '🐃', x: -0.3, z: 0 }, { icon: '👣', x: 0.3, z: 0.1 }, { icon: '💧', x: 0.7, z: -0.4 }]),
-  'boy-search': s('boy-search', 'เด็กชายตามหาควาย', '#ffe9a8', [{ icon: '👦', x: -0.5, z: 0.2 }, { icon: '🔦', x: -0.2, z: 0.2, y: 0.3 }, { icon: '🌅', x: 0.3, z: -0.7 }, { icon: '🐃', x: 0.6, z: -0.1 }]),
-  'notice-board': s('notice-board', 'ป้ายประกาศหน้าศาลา', '#e6f6c8', [{ icon: '📜', x: 0, z: 0, y: 0.3 }, { icon: '🏠', x: -0.6, z: -0.4 }, { icon: '🐃', x: 0.6, z: 0.2 }]),
-  boxes: s('boxes', 'กล่องหลังตลาดนัด', '#ffe2c4', [{ icon: '📦', x: 0, z: 0 }, { icon: '🧑', x: -0.6, z: 0.2, label: 'เพื่อน' }, { icon: '👩‍🏫', x: 0.6, z: 0.2, label: 'คุณครู' }]),
-  'fruit-stall': s('fruit-stall', 'แผงผลไม้', '#ffe2c4', [{ icon: '👵', x: 0.4, z: -0.2 }, { icon: '🥭', x: 0, z: 0.2 }, { icon: '🧒', x: -0.5, z: 0.3 }]),
-  merchant: s('merchant', 'ลุงพ่อค้าแบกของ', '#ffd6c9', [{ icon: '👴', x: -0.3, z: 0 }, { icon: '📦', x: -0.3, z: 0, y: 0.5 }, { icon: '🚚', x: 0.6, z: -0.4 }]),
-  oranges: s('oranges', 'ส้มกลิ้งในตลาด', '#ffe2c4', [{ icon: '🍊', x: -0.4, z: 0.4 }, { icon: '🍊', x: 0.2, z: 0.5 }, { icon: '🛍️', x: 0, z: -0.1 }, { icon: '🧑', x: 0.6, z: -0.3 }]),
-  'dessert-shop': s('dessert-shop', 'ร้านขนมไทย', '#ffd6e8', [{ icon: '🧁', x: -0.5, z: -0.1 }, { icon: '🍡', x: 0, z: -0.1 }, { icon: '🍮', x: 0.5, z: -0.1 }, { icon: '🧒', x: 0, z: 0.5 }]),
+  'cat-fish': s('cat-fish', 'แมวกินปลา', '#ffe2c4', [{ icon: '🐈', x: -0.5, z: 0.1, label: 'แมว' }, { icon: '🐟', x: 0.1, z: 0.1, y: 0.2, label: 'ปลาทู' }, { icon: '🍽️', x: 0.1, z: 0.1 }, { icon: '👵', x: 0.6, z: -0.5 }]),
+  'dog-ball': s('dog-ball', 'น้องกับสุนัขเล่นลูกบอล', '#bde7a8', [{ icon: '👧', x: -0.5, z: 0.2, label: 'น้อง' }, { icon: '⚽', x: 0, z: 0.3, label: 'ลูกบอล' }, { icon: '🐕', x: 0.5, z: 0.1, label: 'สุนัข' }, { icon: '🏡', x: 0, z: -0.7 }]),
+  'kite-field': s('kite-field', 'ว่าว ทุ่งนา ลม', '#e6f6c8', [{ icon: '🪁', x: 0.2, z: -0.2, y: 0.8, label: 'ว่าว' }, { icon: '💨', x: -0.4, z: 0, y: 0.5, label: 'ลม' }, { icon: '🌾', x: -0.5, z: 0.4, label: 'ทุ่งนา' }, { icon: '🌾', x: 0.5, z: 0.4 }]),
+  'sweep-class': s('sweep-class', 'นักเรียนกวาดห้องเรียน', '#d9d4ff', [{ icon: '🧒', x: -0.4, z: 0.2, label: 'นักเรียน' }, { icon: '🧹', x: -0.1, z: 0.2, y: 0.2, label: 'ไม้กวาด' }, { icon: '🏫', x: 0.3, z: -0.6, label: 'ห้องเรียน' }, { icon: '🪑', x: 0.6, z: 0.2 }]),
 };

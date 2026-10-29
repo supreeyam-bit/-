@@ -1,7 +1,7 @@
 // 6. ฐานการช่วยเหลือ — 4 แบบ เปิดได้ทุกเวลา ไม่หักคะแนน
 import { useState } from 'react';
-import { HELP_TYPES, LESSONS, METACOG_QUESTIONS, PROCEDURAL_STEPS, STRATEGIES } from '../data/learning';
-import { QUESTS, TOPICS } from '../data/quests';
+import { HELP_TYPES, LESSONS, METACOG_QUESTIONS, PROCEDURAL_STEPS, STRATEGIES, TOPICS } from '../data/learning';
+import { MISSIONS } from '../data/quests';
 import { useStarted } from '../game/store';
 import { findWork, recordHelp } from '../game/rules';
 import type { HelpType } from '../game/types';
@@ -11,8 +11,8 @@ export function HelpCenter() {
   const { state, setState, openDrawer } = useStarted();
   const [type, setType] = useState<HelpType | null>(null);
   const work = findWork(state, state.currentMission);
-  const quest = QUESTS.find((q) => q.id === work?.refId);
-  const topic = quest?.topic ?? state.zone * 5 + 1;
+  const quest = MISSIONS.find((q) => q.id === work?.refId);
+  const topic = quest?.lessons[0] ?? state.zone * 5 + 1;
   const lesson = LESSONS[topic - 1];
   const context = work ? work.title : `โซน ${state.zone + 1}`;
 
@@ -24,7 +24,7 @@ export function HelpCenter() {
   return (
     <Drawer title="6. ฐานการช่วยเหลือ" icon="🆘" onClose={() => openDrawer(null)}>
       <p className="good-note">💚 ขอความช่วยเหลือได้ทุกเวลา ไม่หักคะแนน ไม่เสียตา</p>
-      <p className="muted">ตอนนี้กำลังช่วยเรื่อง: {work ? `${work.title} (หัวข้อ ${topic}. ${TOPICS[topic - 1]})` : `หัวข้อในโซนที่ ${state.zone + 1}`}</p>
+      <p className="muted">ตอนนี้กำลังช่วยเรื่อง: {work ? `${work.title} (บทเรียน ${topic}. ${TOPICS[topic - 1]})` : `หัวข้อในโซนที่ ${state.zone + 1}`}</p>
       <div className="help-types">
         {HELP_TYPES.map((h) => (
           <button key={h.type} type="button" className={`help-btn ${type === h.type ? 'on' : ''}`} onClick={() => pick(h.type)} aria-pressed={type === h.type}>

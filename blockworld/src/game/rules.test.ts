@@ -1,65 +1,89 @@
 import { describe, expect, it } from 'vitest';
-import { BOSSES, QUESTS, TOPICS, TOWER_STAGES, ZONES } from '../data/quests';
-import { ELEMENTS, LESSONS, ZONE_LAYOUTS } from '../data/learning';
+// @ts-expect-error — ไฟล์ข้อมูลของชุดพิมพ์เป็น JavaScript ไม่มีชนิดข้อมูล ใช้ตรวจว่าคำสั่งภารกิจตรงกับตารางที่ 2 ฉบับเดียวกัน
+import { CREATIVE } from '../../../print-and-play/src/data.mjs';
+import { AREAS, AREA_ORDER, BOSSES, MISSIONS, SCENARIOS, ZONES } from '../data/quests';
+import { ELEMENTS, INDICATORS, LESSONS, ZONE_LAYOUTS } from '../data/learning';
 import { AR_SCENES } from '../ar/arScenes';
 import {
-  TOTAL_SPACES, approveWork, createWork, endTurn, exportCSV, newGame, recordRoll, requestRevision, rollDie, runChecks, stepActive, towerUnlocked, workForRef,
+  TOTAL_SPACES, approveWork, createWork, endTurn, exportCSV, indicatorEvidence, missionReady, newGame, recordRoll, requestRevision, rollDie, runChecks,
+  setAnswer, sheetKey, sheetMissing, stepActive, towerUnlocked, workForRef,
 } from './rules';
-import type { GameState } from './types';
+import type { GameState, ZoneId } from './types';
 
 const players = [
   { id: 'a', name: 'น้องฟ้า', avatar: '🧙', color: '#f00' },
   { id: 'b', name: 'น้องต้นกล้า', avatar: '🤖', color: '#00f' },
 ];
 
-function passZone(s: GameState, zone: 0 | 1 | 2): GameState {
-  for (const q of QUESTS.filter((x) => x.zone === zone)) {
-    const [s2, id] = createWork(s, { kind: 'mission', refId: q.id, title: q.title, zone, topic: q.topic });
+function passZone(s: GameState, zone: ZoneId): GameState {
+  for (const m of MISSIONS.filter((x) => x.zone === zone)) {
+    const [s2, id] = createWork(s, { kind: 'mission', refId: m.id, title: m.title, zone, indicators: m.indicators });
     s = approveWork(s2, id, 'coach');
   }
   return s;
 }
 
-describe('เนื้อหา', () => {
-  it('มีสามโซนเท่านั้น ชื่อถูกต้อง', () => {
+describe('ตารางที่ 2', () => {
+  it('มี 3 โซนตามลำดับ การสร้างประโยค → การขยายประโยค → การใช้ภาษา', () => {
     expect(ZONES.map((z) => z.name)).toEqual(['โซน 1 การสร้างประโยค', 'โซน 2 การขยายประโยค', 'โซน 3 การใช้ภาษา']);
   });
-  it('มี 15 หัวข้อ โซนละ 5 ตามลำดับในไฟล์เนื้อหา', () => {
-    expect(QUESTS).toHaveLength(15);
-    expect(QUESTS.map((q) => q.id)).toEqual(Array.from({ length: 15 }, (_, i) => `P${String(i + 1).padStart(2, '0')}`));
-    for (const z of [0, 1, 2]) expect(QUESTS.filter((q) => q.zone === z)).toHaveLength(5);
-    expect(TOPICS.slice(0, 5)).toEqual(['ประโยคต้องได้ใจความ', 'ใคร ทำอะไร', 'ใคร ทำอะไร กับใครหรืออะไร', 'ลำดับคำกับความหมาย', 'ประโยคตรงกับเหตุการณ์']);
-    expect(TOPICS.slice(5, 10)).toEqual(['ประโยคหลัก', 'การขยายผู้ทำ', 'การขยายการกระทำ', 'การบอกเวลาและสถานที่', 'เกณฑ์ตรวจประโยค']);
-    expect(TOPICS.slice(10)).toEqual(['ถ้อยคำเหมาะกับผู้ฟัง', 'คำสุภาพและคำลงท้าย', 'ถ้อยคำขอความช่วยเหลือ', 'ถ้อยคำขอบคุณและขอโทษ', 'พูดให้ผู้ฟังรู้ว่าต้องการอะไร']);
+  it('มีภารกิจหลัก 12 ภารกิจ โซนละ 4 ด้าน F / FL / O / E', () => {
+    expect(MISSIONS).toHaveLength(12);
+    for (const z of [0, 1, 2]) expect(MISSIONS.filter((m) => m.zone === z).map((m) => m.area)).toEqual(AREA_ORDER);
   });
-  it('ทุกภารกิจมีข้อมูลครบ ไม่ใช่ placeholder', () => {
-    for (const q of QUESTS) {
-      expect(q.story.length).toBeGreaterThan(20);
-      expect(q.prompt.length).toBeGreaterThan(10);
-      expect(q.starterWords.length).toBeGreaterThan(2);
-      expect(q.examplesForTeacher.length).toBeGreaterThan(0);
-      expect(q.successCriteria.length).toBeGreaterThan(0);
-      expect(q.creativityTags.length).toBeGreaterThan(0);
-      expect(AR_SCENES[q.arSceneKey]).toBeDefined();
-      expect(LESSONS[q.topic - 1].topic).toBe(q.topic);
+  it('แต่ละด้านใช้สถานการณ์เดิมตลอด 3 โซน', () => {
+    const expected = { F: 'แมวกินปลา', FL: 'น้องกับสุนัขเล่นลูกบอล', O: 'ว่าว ทุ่งนา ลม', E: 'นักเรียนกวาดห้องเรียน' };
+    for (const m of MISSIONS) expect(SCENARIOS[m.scenario].name).toBe(expected[m.area]);
+  });
+  it('คำสั่งภารกิจและตัวบ่งชี้ตรงกับตารางที่ 2 ทุกช่อง (ไม่ตัดไม่แก้)', () => {
+    const areaIdx = { F: 0, FL: 1, O: 2, E: 3 } as const;
+    for (const m of MISSIONS) {
+      const [prompt, ind] = CREATIVE[areaIdx[m.area]].stages[m.zone] as [string, string];
+      expect(m.prompt).toBe(prompt);
+      expect(m.indicators).toEqual(ind.split(',').map((x) => x.trim()));
+      expect(m.areaName).toBe(CREATIVE[areaIdx[m.area]].area);
     }
   });
-  it('เจ็ดองค์ประกอบใช้ชื่อตรงตามข้อกำหนด', () => {
+  it('คงเงื่อนไขเฉพาะ: เวลา 5 นาที จำนวนรูปแบบ ชนิดประโยค คำขยาย เหตุผล', () => {
+    const by = (id: string) => MISSIONS.find((m) => m.id === id)!;
+    for (const id of ['Z1F', 'Z1E', 'Z2F', 'Z2E', 'Z3F', 'Z3E']) expect(by(id).minutes).toBe(5);
+    for (const id of ['Z1FL', 'Z1O', 'Z2FL', 'Z2O', 'Z3FL', 'Z3O']) expect(by(id).minutes).toBeUndefined();
+    const keys = (id: string) => by(id).groups.flatMap((g) => g.slots.map((s) => s.key));
+    expect(keys('Z1FL')).toEqual(['two', 'three', 'statement', 'negative', 'question', 'request']);
+    expect(by('Z2FL').list?.minDistinctTags).toBe(3);
+    expect(keys('Z2FL')).toEqual(expect.arrayContaining(['statement', 'negative', 'question', 'request']));
+    expect(keys('Z3FL')).toHaveLength(9); // ผู้ใหญ่ เพื่อน น้อง × เล่าเรื่อง คำถาม ขอร้อง/คำสั่ง
+    expect(by('Z2O').parts?.map((p) => p.key)).toEqual(['look', 'action', 'time', 'place']);
+    expect(by('Z2E').parts?.map((p) => p.key)).toEqual(['look', 'action', 'time', 'place']);
+    for (const id of ['Z1O', 'Z2O', 'Z3O', 'Z3E']) expect(by(id).needReason).toBe(true);
+    expect(by('Z1O').drawing).toBe('required');
+    expect(by('Z2O').drawing).toBe('required');
+  });
+  it('เจ็ดองค์ประกอบใช้ชื่อตามกรอบวิจัย', () => {
     expect(ELEMENTS.map((e) => e.name)).toEqual([
       '1. สถานการณ์ปัญหา', '2. ศูนย์การเรียนรู้', '3. เครื่องมือทางปัญญา', '4. ศูนย์แลกเปลี่ยนเรียนรู้',
       '5. ศูนย์ส่งเสริมการคิดสร้างสรรค์', '6. ฐานการช่วยเหลือ', '7. การโค้ช',
     ]);
   });
-  it('กระดาน 27 ช่อง 9 ช่องต่อโซน เริ่มที่ประตูบอส', () => {
+  it('ตัวบ่งชี้ครบ 1.1–4.3 และทุกตัวบ่งชี้มีภารกิจรองรับ', () => {
+    const codes = INDICATORS.flatMap((g) => g.items.map((i) => i.code));
+    expect(codes).toEqual(['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3.1', '3.2', '3.3', '4.1', '4.2', '4.3']);
+    for (const c of codes) expect(MISSIONS.some((m) => m.indicators.includes(c))).toBe(true);
+  });
+  it('กระดาน 27 ช่อง แต่ละโซนมีช่องภารกิจ F / FL / O / E และประตูบอส', () => {
     expect(TOTAL_SPACES).toBe(27);
     for (const l of ZONE_LAYOUTS) {
       expect(l).toHaveLength(9);
       expect(l[0]).toBe('gate');
+      for (const a of AREA_ORDER) expect(l).toContain(a);
     }
   });
-  it('บอส 3 ตัว หอคอย 4 ด่าน F/FL/O/E', () => {
+  it('ข้อมูลประกอบครบ: บทเรียน ฉาก AR บอส', () => {
+    expect(LESSONS).toHaveLength(15);
+    for (const l of LESSONS) expect(AR_SCENES[l.arKey]).toBeDefined();
+    for (const s of Object.values(SCENARIOS)) expect(AR_SCENES[s.arKey]).toBeDefined();
     expect(BOSSES.map((b) => b.name)).toEqual(['ปีศาจลบคำ', 'ควายเงามายา', 'จอมเวทสลับถ้อยคำ']);
-    expect(TOWER_STAGES.map((t) => t.tag)).toEqual(['F', 'FL', 'O', 'E']);
+    expect(Object.keys(AREAS)).toEqual(AREA_ORDER);
   });
 });
 
@@ -74,33 +98,50 @@ describe('การเล่น', () => {
     expect(s.positions).toEqual([2, 0]);
     s = endTurn(s);
     expect(s.activePlayer).toBe(1);
-    expect(s.phase).toBe('roll');
   });
-  it('ภารกิจนับว่าผ่านเมื่อครู/โค้ชรับรองเท่านั้น', () => {
+  it('ใบงานรายคน: ทุกคนต้องทำครบตามเงื่อนไขภารกิจ', () => {
+    const m = MISSIONS.find((x) => x.id === 'Z1FL')!;
     let s = newGame(players);
-    const [s2, id] = createWork(s, { kind: 'mission', refId: 'P01', title: 'x', zone: 0, topic: 1 });
-    expect(s2.topicProgress[0]).toBe('doing');
-    s = requestRevision(s2, id, 'เพิ่มเหตุผล');
-    expect(s.topicProgress[0]).toBe('revise');
+    const [s2, id] = createWork(s, { kind: 'mission', refId: m.id, title: m.title, zone: 0 });
+    s = s2;
+    let w = workForRef(s, 'mission', m.id)!;
+    expect(sheetMissing(w, m, 'a').length).toBeGreaterThan(0);
+    for (const p of players) for (const k of ['two', 'three', 'statement', 'negative', 'question', 'request']) w = setAnswer(w, sheetKey(p.id, k), 'สุนัขวิ่ง', p.id);
+    expect(missionReady(w, m, players)).toBe(true);
+    expect(id).toBe(w.id);
+  });
+  it('ขยายหลายรูปแบบต้องต่างกันอย่างน้อย 3 แบบ', () => {
+    const m = MISSIONS.find((x) => x.id === 'Z2FL')!;
+    const [s] = createWork(newGame(players), { kind: 'mission', refId: m.id, title: m.title, zone: 1 });
+    const base = workForRef(s, 'mission', m.id)!;
+    const items = ['ผู้ทำ', 'ผู้ทำ', 'เวลา'].map((tag) => ({ text: 'น้องเตะบอล', first: 'น้องเตะบอล', by: 'a', tag, at: 0 }));
+    expect(sheetMissing({ ...base, items }, m, 'a').some((x) => x.includes('3 รูปแบบ'))).toBe(true);
+    items[1].tag = 'สถานที่';
+    expect(sheetMissing({ ...base, items }, m, 'a').some((x) => x.includes('3 รูปแบบ'))).toBe(false);
+  });
+  it('ภารกิจนับว่าผ่านเมื่อครู/โค้ชรับรอง', () => {
+    let s = newGame(players);
+    const [s2, id] = createWork(s, { kind: 'mission', refId: 'Z1F', title: 'x', zone: 0 });
+    expect(s2.missionProgress[0]).toBe('doing');
+    s = requestRevision(s2, id, 'เพิ่มประโยค');
+    expect(s.missionProgress[0]).toBe('revise');
     s = approveWork(s, id, 'coach');
-    expect(s.topicProgress[0]).toBe('done');
+    expect(s.missionProgress[0]).toBe('done');
     expect(s.blocks).toBe(1);
   });
-  it('บอสล็อกจนครบ 5 หัวข้อ ชนะแล้วได้คริสตัลและปลดล็อกโซนถัดไป', () => {
+  it('บอสล็อกจนครบ 4 ด้าน ชนะแล้วได้คริสตัลและปลดล็อกโซนถัดไป', () => {
     let s = newGame(players);
     expect(s.bossStatus[0]).toBe('locked');
     s = passZone(s, 0);
     expect(s.bossStatus[0]).toBe('available');
-    expect(s.zone).toBe(0);
     const [s2, id] = createWork(s, { kind: 'boss', refId: 'B1', title: 'boss', zone: 0 });
     expect(s2.bossStatus[0]).toBe('attempted');
     s = approveWork(s2, id, 'coach');
     expect(s.bossStatus[0]).toBe('defeated');
     expect(s.crystalCount).toBe(1);
     expect(s.zone).toBe(1);
-    expect(s.positions).toEqual([0, 0]);
   });
-  it('หอคอยล็อกจนครบ 3 คริสตัล และจบเกมเมื่อผ่าน 4 ด่าน', () => {
+  it('ศูนย์ส่งเสริมการคิดสร้างสรรค์ล็อกจนครบ 3 คริสตัล และจบเกมเมื่อครบ 4 ชั้น', () => {
     let s = newGame(players);
     for (const z of [0, 1, 2] as const) {
       s = passZone(s, z);
@@ -109,20 +150,27 @@ describe('การเล่น', () => {
       s = approveWork(s2, id, 'coach');
     }
     expect(towerUnlocked(s)).toBe(true);
-    for (const t of TOWER_STAGES) {
+    for (const a of AREA_ORDER) {
       expect(s.finished).toBe(false);
-      const [s2, id] = createWork(s, { kind: 'tower', refId: t.tag, title: t.title });
+      const [s2, id] = createWork(s, { kind: 'tower', refId: a, title: a });
       s = approveWork(s2, id, 'peer');
     }
     expect(s.finished).toBe(true);
-    expect(workForRef(s, 'tower', 'E')?.status).toBe('approved');
+  });
+  it('บันทึกหลักฐานรายบุคคลตามตัวบ่งชี้ และแยกคะแนนกิจกรรมในเกม', () => {
+    let s = newGame(players);
+    const [s2, id] = createWork(s, { kind: 'mission', refId: 'Z1F', title: 'x', zone: 0, indicators: ['1.1'] });
+    s = { ...s2, works: s2.works.map((w) => (w.id === id ? { ...w, items: [{ text: 'แมวกินปลา', first: 'แมวกินปลา', by: 'a', at: 0 }, { text: 'แมวนอน', first: 'แมวนอน', by: 'a', at: 0 }], ratings: { a: 3 } } : w)) };
+    s = approveWork(s, id, 'coach');
+    expect(indicatorEvidence(s, 'a')['1.1']).toEqual({ missions: 1, pieces: 2, rating: 3, rated: 1 });
+    expect(indicatorEvidence(s, 'b')['1.1']).toEqual({ missions: 0, pieces: 0, rating: 0, rated: 0 });
   });
   it('ตรวจเบื้องต้นด้วยกลุ่มคำ ไม่ใช่เทียบสตริงทั้งประโยค', () => {
-    const r = runChecks(QUESTS[8].autoChecks, { sentence: 'ตอนเย็นเด็กชายตามหาควายริมคลอง' });
+    const m = MISSIONS.find((x) => x.id === 'Z1FL')!;
+    const r = runChecks(m.autoChecks, { negative: 'สุนัขไม่ได้กัดลูกบอล', question: 'น้องเล่นกับใคร', request: 'ช่วยส่งลูกบอลหน่อยนะ' });
     expect(r.every((x) => x.ok)).toBe(true);
   });
   it('CSV ขึ้นต้นด้วย UTF-8 BOM', () => {
-    const s = newGame(players);
-    expect(exportCSV(s).charCodeAt(0)).toBe(0xfeff);
+    expect(exportCSV(newGame(players)).charCodeAt(0)).toBe(0xfeff);
   });
 });

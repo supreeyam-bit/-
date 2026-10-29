@@ -1,7 +1,7 @@
 // 7. การโค้ช — คำถามปลายเปิดสำหรับทุกคน และแผงครู (ล็อกด้วย PIN แบบง่าย ไม่ใช่ระบบรักษาความปลอดภัยเชิงบัญชี)
 import { useState } from 'react';
 import { COACH_GENERAL, INDICATORS } from '../data/learning';
-import { QUESTS } from '../data/quests';
+import { MISSIONS } from '../data/quests';
 import { useStarted } from '../game/store';
 import { addCoachNote, approveWork, findWork, playerName, requestRevision } from '../game/rules';
 import type { Work } from '../game/types';
@@ -32,7 +32,7 @@ export function openWorkModal(w: Work) {
 export function CoachPanel() {
   const { state, setState, openDrawer, open, coachUnlocked, setCoachUnlocked } = useStarted();
   const work = findWork(state, state.currentMission);
-  const quest = QUESTS.find((q) => q.id === work?.refId);
+  const quest = MISSIONS.find((q) => q.id === work?.refId);
   const questions = [...(quest?.coachQuestions ?? []), ...COACH_GENERAL];
   const pending = state.works.filter((w) => w.status === 'pending');
   const [note, setNote] = useState('');

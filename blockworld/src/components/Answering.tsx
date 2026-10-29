@@ -1,41 +1,28 @@
 // ส่วนที่ใช้ร่วมกันระหว่างภารกิจ บอส และหอคอย: ช่องคำตอบ บัตรสถานการณ์ปัญหา ศูนย์แลกเปลี่ยนเรียนรู้ และการรับรอง
 import { useState } from 'react';
 import { useStarted } from '../game/store';
-import { activePlayer, addOnce, playerName, updateWork } from '../game/rules';
+import { addOnce, playerName, updateWork } from '../game/rules';
 import type { AnswerSlot, ExchangeKind, StarterWord, Work, ZoneId } from '../game/types';
 import { SentenceBuilder } from './SentenceBuilder';
 import { SpeakButton } from './ui';
 
-export function SlotEditor({ slot, work, words, onChange }: { slot: AnswerSlot; work: Work; words: StarterWord[]; onChange: (text: string) => void }) {
+export function SlotEditor({ slot, work, words, extraWords = [], onChange, disabled }: {
+  slot: AnswerSlot; work: Work; words: StarterWord[]; extraWords?: string[]; onChange: (text: string) => void; disabled?: boolean;
+}) {
   const { state } = useStarted();
   const a = work.answers[slot.key];
   const value = a?.final ?? '';
-  const choiceKey = `${slot.key}__choice`;
+  const id = `slot-${work.id}-${slot.key}`.replace(/[^\w-]/g, '_');
   return (
     <div className="slot">
-      <label className="slot-label" htmlFor={`slot-${work.id}-${slot.key}`}>
+      <label className="slot-label" htmlFor={id}>
         ✍️ {slot.label} <SpeakButton text={slot.label} />
       </label>
-      {slot.choices && (
-        <ChoiceList slot={slot} work={work} choiceKey={choiceKey} />
+      {slot.builder && !disabled && (
+        <SentenceBuilder words={words} extraWords={[...extraWords, ...state.wordBank]} onUse={(t, mode) => onChange(mode === 'append' && value.trim() ? `${value.trim()} ${t}` : t)} />
       )}
-      {slot.builder && (
-        <SentenceBuilder
-          words={words}
-          extraWords={state.wordBank}
-          onUse={(t, mode) => onChange(mode === 'append' && value.trim() ? `${value.trim()} ${t}` : t)}
-        />
-      )}
-      {!slot.choices || slot.builder ? (
-        <textarea
-          id={`slot-${work.id}-${slot.key}`}
-          className="answer"
-          rows={slot.multiline ? 4 : 2}
-          value={value}
-          placeholder={slot.placeholder ?? 'พิมพ์หรือแก้คำตอบได้ที่นี่'}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      ) : null}
+      <textarea id={id} className="answer" rows={slot.multiline ? 4 : 2} value={value} disabled={disabled}
+        placeholder={slot.placeholder ?? 'พิมพ์หรือแก้คำตอบได้ที่นี่'} onChange={(e) => onChange(e.target.value)} />
       {a && a.history.length > 0 && (
         <details className="history">
           <summary>📜 ประวัติการแก้ไข ({a.history.length} ครั้ง)</summary>
@@ -48,23 +35,6 @@ export function SlotEditor({ slot, work, words, onChange }: { slot: AnswerSlot; 
           </ol>
         </details>
       )}
-    </div>
-  );
-}
-
-function ChoiceList({ slot, work, choiceKey }: { slot: AnswerSlot; work: Work; choiceKey: string }) {
-  const { setState } = useStarted();
-  const chosen = work.answers[slot.key]?.final ?? '';
-  const pick = (c: string) =>
-    setState((s) => updateWork(s, work.id, (w) => ({ ...w, answers: { ...w.answers, [slot.key]: { ...(w.answers[slot.key] ?? { first: '', history: [] }), final: c } }, participants: addOnce(w.participants, activePlayer(s).id) })));
-  return (
-    <div className="choices" role="radiogroup" aria-label={slot.label}>
-      {slot.choices!.map((c) => (
-        <label key={c} className={`choice ${chosen === c ? 'on' : ''}`}>
-          <input type="radio" name={`${work.id}-${choiceKey}`} checked={chosen === c} onChange={() => pick(c)} /> {c}
-        </label>
-      ))}
-      <span className="muted small">การเลือกเป็นเพียงจุดเริ่ม ต้องอธิบายเหตุผลและปรับถ้อยคำด้วยตนเองในช่องถัดไป</span>
     </div>
   );
 }

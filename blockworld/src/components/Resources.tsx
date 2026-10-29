@@ -1,8 +1,8 @@
 // 2. ศูนย์การเรียนรู้ — คลังความรู้ 15 หัวข้อ ค้นหาได้ พร้อมตัวอย่าง AR จำลอง
 import { useMemo, useState } from 'react';
 import { AR_SCENES, getArProvider } from '../ar/arScenes';
-import { LESSONS } from '../data/learning';
-import { QUESTS, TOPICS, ZONES } from '../data/quests';
+import { LESSONS, TOPICS } from '../data/learning';
+import { ZONES } from '../data/quests';
 import { useStarted } from '../game/store';
 import { Drawer, SpeakButton } from './ui';
 
@@ -36,7 +36,6 @@ export function LearningCenter({ topic: initial }: { topic?: number }) {
   const [query, setQuery] = useState('');
   const [ar, setAr] = useState(false);
   const lesson = LESSONS.find((l) => l.topic === topic)!;
-  const quest = QUESTS.find((q) => q.topic === topic)!;
   const hits = useMemo(() => {
     const q = query.trim();
     return LESSONS.filter((l) => !q || TOPICS[l.topic - 1].includes(q) || l.explain.includes(q) || l.examples.some((e) => e.includes(q)));
@@ -50,7 +49,7 @@ export function LearningCenter({ topic: initial }: { topic?: number }) {
           <div key={z.id}>
             <div className="zone-label" style={{ color: z.colors.dark }}>{z.name}</div>
             <div className="topic-chips">
-              {hits.filter((l) => QUESTS[l.topic - 1].zone === z.id).map((l) => (
+              {hits.filter((l) => l.zone === z.id).map((l) => (
                 <button key={l.topic} type="button" className={`topic-chip ${l.topic === topic ? 'on' : ''}`} onClick={() => { setTopic(l.topic); setAr(false); }} style={{ borderColor: z.colors.main }}>
                   {l.icon} {l.topic}. {TOPICS[l.topic - 1]}
                 </button>
@@ -73,7 +72,7 @@ export function LearningCenter({ topic: initial }: { topic?: number }) {
           {lesson.near.map((n) => <li key={n.text}>🤔 {n.text} <span className="muted">— {n.note}</span></li>)}
         </ul>
         <button type="button" className="btn" onClick={() => setAr((v) => !v)} aria-expanded={ar}>📱 {ar ? 'ซ่อน' : 'เปิด'}ตัวอย่างการแสดงผล AR</button>
-        {ar && <ArPreview sceneKey={quest.arSceneKey} />}
+        {ar && <ArPreview sceneKey={lesson.arKey} />}
       </article>
     </Drawer>
   );

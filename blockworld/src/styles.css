@@ -90,7 +90,7 @@ fieldset.plain { border: 0; margin: 0; padding: 0; min-width: 0; }
 .board .zone-title { font-size: 21px; }
 .board .place-label { fill: #e0e7ff; font-size: 15px; font-family: 'Mitr', sans-serif; }
 .board .lock-label { fill: #fff; font-size: 16px; font-family: 'Mitr', sans-serif; }
-.board .tower-tag { fill: #1e1b4b; font-size: 13px; font-weight: 700; font-family: 'Mitr', sans-serif; }
+.board .tower-tag { font-size: 15px; font-weight: 700; font-family: 'Mitr', sans-serif; }
 .board .tower-label { fill: #7c2d12; font-size: 15px; font-family: 'Mitr', sans-serif; }
 .board .tile { cursor: pointer; }
 .board .tile:hover polygon:last-of-type, .board .tile:focus polygon:last-of-type { stroke: #fde047; stroke-width: 4; }
@@ -322,3 +322,67 @@ fieldset.plain { border: 0; margin: 0; padding: 0; min-width: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ───── ตารางที่ 2: ใบงานรายคน กลไกเสริม และแผนที่ isometric ───── */
+.board .bridge-rail { stroke: #713f12; stroke-width: 22; stroke-linecap: round; opacity: 0.85; }
+.board .bridge { stroke: #d97706; stroke-width: 14; stroke-dasharray: 7 4; stroke-linecap: butt; }
+.board .cloud { animation: drift 12s ease-in-out infinite alternate; }
+@keyframes drift { to { transform: translateX(24px); } }
+.area-badge { color: #fff; border-radius: 999px; padding: 1px 12px; font-family: 'Mitr', sans-serif; white-space: nowrap; }
+.sheet { border: 3px solid var(--line); border-radius: 16px; padding: 10px 14px; background: #fcfcff; }
+.slot-group h4 { margin: 14px 0 4px; color: var(--purple); }
+.timer-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 10px; background: #eef2ff; border-radius: 12px; margin-bottom: 8px; }
+.reuse { background: #ecfeff; border: 2px dashed #67e8f9; border-radius: 12px; padding: 8px 12px; margin: 8px 0; }
+.reuse-text { font-size: 1.1rem; margin: 4px 0; }
+.reuse-img, .thumb { max-width: 220px; width: 100%; border-radius: 10px; border: 2px solid var(--line); display: block; margin: 6px 0; }
+.broken { background: #fef2f2; border-radius: 12px; padding: 6px 12px; margin: 8px 0; }
+.broken ul { margin: 4px 0; padding-left: 4px; list-style: none; font-size: 1.1rem; }
+.listeners { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.listener-card { border: 3px solid #f9a8d4; background: #fdf2f8; border-radius: 14px; padding: 6px 12px; text-align: left; color: var(--ink); max-width: 320px; }
+.listener-card .lc-icon { font-size: 1.6rem; margin-right: 6px; }
+.listener-card .lc-name { font-family: 'Mitr', sans-serif; }
+.listener-card ul { margin: 4px 0 0; padding-left: 18px; font-size: 0.88rem; }
+.cubes { background: #fffbeb; border: 2px solid #fde68a; border-radius: 14px; padding: 8px 12px; margin: 8px 0; }
+.cubes-head { display: flex; gap: 8px; align-items: center; }
+.cube-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
+.cube { width: 72px; height: 72px; border-radius: 14px; background: #fff; border: 3px solid #f59e0b; display: grid; place-items: center; box-shadow: 0 4px 0 #d97706; }
+.cube.fixed { border-color: #7c3aed; box-shadow: 0 4px 0 #5b21b6; }
+.cube-ic { font-size: 1.8rem; line-height: 1; }
+.cube small { font-size: 0.72rem; }
+.drawpad { display: grid; gap: 6px; }
+.draw-tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.swatch { width: 34px; height: 34px; border-radius: 10px; border: 3px solid #fff; box-shadow: 0 0 0 2px var(--line); }
+.swatch.on { box-shadow: 0 0 0 3px var(--purple); }
+.canvas { width: 100%; max-width: 640px; aspect-ratio: 16 / 10; border: 3px solid var(--line); border-radius: 12px; background: #fff; touch-action: none; cursor: crosshair; }
+.dixit { background: #f5f3ff; border-radius: 14px; padding: 8px 12px; margin: 10px 0; }
+.dixit summary { font-family: 'Mitr', sans-serif; cursor: pointer; }
+.dream-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.dream { width: 96px; min-height: 120px; border-radius: 14px; border: 3px solid #c4b5fd; background: linear-gradient(160deg, #ede9fe, #fdf4ff); font-size: 1.6rem; display: grid; place-items: center; gap: 2px; }
+.dream.on { border-color: #f59e0b; box-shadow: 0 0 0 3px #fde68a; }
+.dream small { font-size: 0.7rem; }
+.items-editor { margin: 10px 0; }
+.items li { margin: 4px 0; }
+.item-input { width: min(100%, 520px); font-size: 1.05rem; }
+.icon-btn.small { width: 32px; height: 32px; font-size: 0.9rem; }
+.mini-check { display: inline-block; font-size: 0.78rem; margin-left: 6px; color: #9a3412; }
+.mini-check.ok { color: #166534; }
+.team-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin: 10px 0; }
+.sum-card { border: 3px solid; border-radius: 14px; padding: 8px 12px; background: #fff; }
+.sum-card header { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ratings { background: #f0f9ff; border: 2px solid #bae6fd; border-radius: 12px; padding: 8px 12px; margin: 10px 0; }
+.rating-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0; }
+.rating-row > span { min-width: 150px; }
+.rate { width: 40px; height: 40px; border-radius: 10px; border: 2px solid var(--line); background: #fff; font-family: 'Mitr', sans-serif; }
+.rate.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+.seal { font-size: 1.6rem; margin: 0 4px; }
+.seal-row { border-left: 6px solid; padding: 6px 10px; margin: 8px 0; background: #f8fafc; border-radius: 10px; display: grid; gap: 6px; }
+.checks-inline { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.exhibit { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin: 10px 0; }
+.exhibit-card { border: 3px solid; border-radius: 16px; padding: 10px; display: grid; gap: 6px; background: #fffdf5; }
+.exhibit-card select { max-width: 100%; }
+.exhibit-pick { margin: 0; padding: 8px 10px; background: #fff; border-radius: 10px; border-left: 5px solid var(--gold); font-size: 1.05rem; }
+.score-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px; margin: 8px 0; }
+.score-split > div { border-radius: 12px; padding: 8px 12px; background: #f8fafc; border: 2px solid var(--line); }
+.matrix td, .matrix th { text-align: center; }
+.matrix td:first-child { text-align: left; }
+.small-icons { font-size: 1.6rem; justify-content: flex-start; }
