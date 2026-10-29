@@ -16,8 +16,10 @@ export function TeacherDashboard() {
   const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
   const works = state.works.filter((w) => w.participants.includes(student));
 
+  // ยืนยันในหน้าเอง (กดสองครั้ง) เพราะบางที่เปิดเกม เช่น หน้า Artifact ไม่แสดงกล่อง confirm ของเบราว์เซอร์
+  const [confirmReset, setConfirmReset] = useState(false);
   const reset = () => {
-    if (!window.confirm('รีเซ็ตเกมใช่ไหม? ความคืบหน้าและผลงานทั้งหมดในเครื่องนี้จะถูกลบ (แนะนำให้ส่งออกข้อมูลก่อน)')) return;
+    if (!confirmReset) return setConfirmReset(true);
     clearSave();
     setCoachUnlocked(false);
     close();
@@ -177,7 +179,13 @@ export function TeacherDashboard() {
             PIN ครู: <input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} size={8} inputMode="numeric" />
             <button type="button" className="btn small" disabled={pin.length < 4} onClick={() => setState((s) => ({ ...s, settings: { ...s.settings, pin } }))}>บันทึก PIN</button>
           </label>
-          <button type="button" className="btn warn" onClick={reset}>🗑️ รีเซ็ตเกม</button>
+          <button type="button" className="btn warn" onClick={reset}>{confirmReset ? '⚠️ กดอีกครั้งเพื่อลบความคืบหน้าทั้งหมด' : '🗑️ รีเซ็ตเกม'}</button>
+          {confirmReset && (
+            <p className="tip">
+              ความคืบหน้าและผลงานทั้งหมดในเครื่องนี้จะถูกลบ แนะนำให้ส่งออกข้อมูลก่อน{' '}
+              <button type="button" className="btn small ghost" onClick={() => setConfirmReset(false)}>ยกเลิก</button>
+            </p>
+          )}
         </div>
       </PinGate>
     </Modal>
