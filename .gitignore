@@ -1,2 +1,5 @@
 node_modules/
 print-and-play/html/
+blockworld/dist/
+blockworld/dist-single/
+blockworld/e2e-shots/
