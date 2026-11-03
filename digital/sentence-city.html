@@ -1,0 +1,1376 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ตำนานสร้างเมืองประโยค</title>
+<script>
+/* =====================================================================
+   คลังข้อมูลของเกม (ครูแก้ไขหรือเพิ่มได้)
+   ---------------------------------------------------------------------
+   - เขียนแบบ JSON: ข้อความอยู่ใน "..." คั่นแต่ละรายการด้วยเครื่องหมายจุลภาค ,
+   - tileSet      : จำนวนแผ่นภาพแต่ละประเภท (รวม 48 แผ่น) ครูปรับให้ตรงกับตารางที่ 12 ได้
+                    ประเภทแผ่นที่ใช้ได้ดูในหน้า "วิธีเล่น" (ชื่อ type ต้องสะกดตามเดิม)
+   - topics       : หัวข้อของแต่ละเมือง และรหัสตัวบ่งชี้ที่บันทึกลงไฟล์ CSV
+   - cityQuestions: คำถามของแต่ละเมือง
+        type "choice" = เลือกตอบ 3 ตัวเลือก  (answer = ลำดับตัวเลือกที่ถูก เริ่มนับ 0)
+        type "order"  = ลากคำมาเรียงเป็นประโยค (answer = ลำดับคำที่ถูก)
+        pic = ภาพประกอบ (อีโมจิ) · scene = คำบรรยายภาพ · hint = คำใบ้ · explain = คำอธิบายเฉลย
+   - towerMissions: ภารกิจหอคอย 4 สี (เวลาเป็นวินาที)
+   ===================================================================== */
+const GAME_DATA = {
+  "title": "ตำนานสร้างเมืองประโยค",
+  "winnerTitle": "ผู้สร้างตำนานเมืองประโยค",
+  "meeplesPerPlayer": 6,
+  "helperCardsPerPlayer": 2,
+  "scoring": { "road": 1, "city": 2, "shield": 2, "tower": 9, "endTile": 1, "endShield": 1, "farmCity": 3 },
+
+  "playerColors": [
+    { "name": "แดง", "hex": "#e53935" },
+    { "name": "น้ำเงิน", "hex": "#1e63d6" },
+    { "name": "เหลือง", "hex": "#f6c000" },
+    { "name": "ดำ", "hex": "#37404a" }
+  ],
+
+  "cityThemes": {
+    "build":  { "name": "เมืองสร้างประโยค", "roof": "#f57c00", "icon": "🧱", "light": "#fff1e0" },
+    "expand": { "name": "เมืองขยายประโยค", "roof": "#2e9d48", "icon": "🌱", "light": "#e6f6e9" },
+    "use":    { "name": "เมืองใช้ภาษา",    "roof": "#e0457b", "icon": "💬", "light": "#fde7ef" }
+  },
+
+  "towerColors": {
+    "green":  { "name": "หอคอยสีเขียว", "skill": "คิดคล่อง",     "hex": "#3fae4f", "icon": "⚡", "ind": "4.1" },
+    "blue":   { "name": "หอคอยสีฟ้า",   "skill": "คิดยืดหยุ่น",   "hex": "#2b8fe0", "icon": "🔄", "ind": "4.2" },
+    "orange": { "name": "หอคอยสีส้ม",   "skill": "คิดริเริ่ม",     "hex": "#ff8a1f", "icon": "💡", "ind": "4.3" },
+    "purple": { "name": "หอคอยสีม่วง",  "skill": "คิดละเอียดลออ", "hex": "#8e4fc9", "icon": "🔍", "ind": "4.3" }
+  },
+
+  "tileSet": [
+    { "type": "TOWER",           "count": 4, "shields": 0 },
+    { "type": "TOWER_ROAD",      "count": 4, "shields": 0 },
+    { "type": "CITY_FULL",       "count": 1, "shields": 1 },
+    { "type": "CITY_3",          "count": 3, "shields": 1 },
+    { "type": "CITY_3_ROAD",     "count": 2, "shields": 1 },
+    { "type": "CITY_2_ADJ",      "count": 4, "shields": 1 },
+    { "type": "CITY_2_ADJ_ROAD", "count": 4, "shields": 2 },
+    { "type": "CITY_2_OPP",      "count": 2, "shields": 1 },
+    { "type": "CITY_2_SEP_ADJ",  "count": 2, "shields": 0 },
+    { "type": "CITY_2_SEP_OPP",  "count": 2, "shields": 0 },
+    { "type": "CITY_1",          "count": 3, "shields": 0 },
+    { "type": "CITY_1_RS",       "count": 2, "shields": 0 },
+    { "type": "CITY_1_RCL",      "count": 2, "shields": 0 },
+    { "type": "CITY_1_RCR",      "count": 2, "shields": 0 },
+    { "type": "CITY_1_RT",       "count": 2, "shields": 0 },
+    { "type": "ROAD_S",          "count": 3, "shields": 0 },
+    { "type": "ROAD_C",          "count": 3, "shields": 0 },
+    { "type": "ROAD_T",          "count": 2, "shields": 0 },
+    { "type": "ROAD_X",          "count": 1, "shields": 0 }
+  ],
+  "startTile": { "type": "CITY_1_RS", "theme": "build" },
+
+  "indicators": {
+    "1.1": "บอกได้ว่าประโยคที่สมบูรณ์มีภาคประธานและภาคแสดง",
+    "1.2": "แต่งประโยค 2 ส่วนและ 3 ส่วนได้",
+    "1.3": "เรียงคำและแต่งประโยคให้ตรงกับภาพได้",
+    "2.1": "บอกประโยคหลักก่อนการขยายได้",
+    "2.2": "ขยายภาคประธานและภาคแสดงได้",
+    "2.3": "ใช้คำบอกเวลา สถานที่ และตรวจประโยคที่มีส่วนขยายได้",
+    "3.1": "เลือกถ้อยคำและคำสุภาพให้เหมาะกับบุคคลและโอกาส",
+    "3.2": "ใช้ประโยคขอร้อง ขอบคุณ และขอโทษได้",
+    "3.3": "แยกและใช้ประโยคคำถามกับประโยคคำสั่งได้",
+    "4.1": "คิดคล่อง: แต่งประโยคได้หลายประโยคในเวลาที่กำหนด",
+    "4.2": "คิดยืดหยุ่น: เปลี่ยนชนิดประโยคและถ้อยคำตามผู้ฟังได้",
+    "4.3": "คิดริเริ่มและคิดละเอียดลออ: แต่งเรื่องแปลกใหม่และเติมรายละเอียดได้"
+  },
+
+  "topics": {
+    "build": [
+      { "name": "ประโยคที่สมบูรณ์", "ind": "1.1" },
+      { "name": "ประโยค 2 ส่วน", "ind": "1.2" },
+      { "name": "ประโยค 3 ส่วน", "ind": "1.2" },
+      { "name": "การเรียงลำดับคำ", "ind": "1.3" },
+      { "name": "แต่งประโยคให้ตรงกับภาพ", "ind": "1.3" }
+    ],
+    "expand": [
+      { "name": "ประโยคหลักก่อนการขยาย", "ind": "2.1" },
+      { "name": "การขยายภาคประธาน", "ind": "2.2" },
+      { "name": "การขยายภาคแสดง", "ind": "2.2" },
+      { "name": "คำบอกเวลาและสถานที่", "ind": "2.3" },
+      { "name": "ตรวจประโยคที่มีส่วนขยาย", "ind": "2.3" }
+    ],
+    "use": [
+      { "name": "ถ้อยคำเหมาะกับบุคคลและโอกาส", "ind": "3.1" },
+      { "name": "คำสุภาพและคำลงท้าย", "ind": "3.1" },
+      { "name": "ประโยคขอร้องขอความช่วยเหลือ", "ind": "3.2" },
+      { "name": "ประโยคขอบคุณและขอโทษ", "ind": "3.2" },
+      { "name": "ประโยคคำถามกับคำสั่ง", "ind": "3.3" }
+    ]
+  },
+
+  "cityQuestions": {
+    "build": [
+      { "topic": "ประโยคที่สมบูรณ์", "type": "choice", "pic": "🐱🐟🍽️", "scene": "แมวกินปลาบนโต๊ะอาหาร",
+        "q": "ข้อใดเป็นประโยคที่สมบูรณ์", "choices": ["แมวกินปลา", "แมวตัวนั้น", "บนโต๊ะอาหาร"], "answer": 0,
+        "hint": "ประโยคต้องบอกว่า ใคร และ ทำอะไร", "explain": "แมวกินปลา มีภาคประธาน (แมว) และภาคแสดง (กินปลา) ครบ" },
+      { "topic": "ประโยคที่สมบูรณ์", "type": "choice", "pic": "👧🎤🎶", "scene": "น้องร้องเพลงบนเวที",
+        "q": "ประโยค “น้องร้องเพลง” คำใดเป็นภาคประธาน", "choices": ["น้อง", "ร้อง", "เพลง"], "answer": 0,
+        "hint": "ภาคประธาน คือ ผู้ที่ทำ (ใคร)", "explain": "น้อง เป็นผู้ร้องเพลง จึงเป็นภาคประธาน ส่วน ร้องเพลง เป็นภาคแสดง" },
+      { "topic": "ประโยคที่สมบูรณ์", "type": "choice", "pic": "🐶⚽🔴", "scene": "สุนัขกับลูกบอลสีแดง",
+        "q": "ข้อใดยังไม่เป็นประโยค", "choices": ["สุนัขเล่นลูกบอล", "ลูกบอลสีแดง", "พ่ออ่านหนังสือ"], "answer": 1,
+        "hint": "หาข้อที่ยังไม่บอกว่า ทำอะไร", "explain": "ลูกบอลสีแดง ยังไม่บอกว่าทำอะไร จึงไม่มีภาคแสดง ยังไม่เป็นประโยค" },
+
+      { "topic": "ประโยค 2 ส่วน", "type": "choice", "pic": "🐦🌳☁️", "scene": "นกบินเหนือต้นไม้",
+        "q": "ข้อใดเป็นประโยค 2 ส่วน (ใคร + ทำอะไร)", "choices": ["นกบิน", "นกกินหนอน", "แม่ทำกับข้าว"], "answer": 0,
+        "hint": "ประโยค 2 ส่วนมีแค่ ใคร กับ ทำอะไร ไม่มีสิ่งที่ถูกทำ", "explain": "นกบิน มี 2 ส่วน คือ นก (ใคร) และ บิน (ทำอะไร)" },
+      { "topic": "ประโยค 2 ส่วน", "type": "order", "pic": "👶😢", "scene": "น้องร้องไห้",
+        "q": "ลากคำมาเรียงเป็นประโยค 2 ส่วน", "words": ["ร้องไห้", "น้อง"], "answer": ["น้อง", "ร้องไห้"],
+        "hint": "ใครอยู่หน้า ทำอะไรอยู่หลัง", "explain": "น้องร้องไห้ = น้อง (ใคร) + ร้องไห้ (ทำอะไร)" },
+      { "topic": "ประโยค 2 ส่วน", "type": "choice", "pic": "🧒🧒🏃", "scene": "เด็ก ๆ วิ่งในสนาม",
+        "q": "เติมคำให้เป็นประโยค 2 ส่วน : เด็ก ๆ ……", "choices": ["วิ่ง", "สนาม", "ตัวเล็ก"], "answer": 0,
+        "hint": "คำที่เติมต้องบอกว่า ทำอะไร", "explain": "เด็ก ๆ วิ่ง เป็นประโยค 2 ส่วน เพราะ วิ่ง บอกว่าเด็ก ๆ ทำอะไร" },
+
+      { "topic": "ประโยค 3 ส่วน", "type": "choice", "pic": "👦⚽🥅", "scene": "พี่เตะลูกบอลเข้าประตู",
+        "q": "ข้อใดเป็นประโยค 3 ส่วน (ใคร + ทำอะไร + อะไร)", "choices": ["พี่เตะลูกบอล", "พี่วิ่ง", "พี่ยิ้ม"], "answer": 0,
+        "hint": "ประโยค 3 ส่วนต้องมีสิ่งที่ถูกทำด้วย", "explain": "พี่เตะลูกบอล = พี่ (ใคร) + เตะ (ทำอะไร) + ลูกบอล (อะไร)" },
+      { "topic": "ประโยค 3 ส่วน", "type": "order", "pic": "🐱🐟🍽️", "scene": "แมวกินปลาบนโต๊ะอาหาร",
+        "q": "ลากคำมาเรียงเป็นประโยค 3 ส่วน", "words": ["ปลา", "กิน", "แมว"], "answer": ["แมว", "กิน", "ปลา"],
+        "hint": "เรียง ใคร → ทำอะไร → อะไร", "explain": "แมวกินปลา = แมว (ใคร) + กิน (ทำอะไร) + ปลา (อะไร)" },
+      { "topic": "ประโยค 3 ส่วน", "type": "choice", "pic": "👩🍚🔥", "scene": "แม่หุงข้าวในครัว",
+        "q": "ประโยค “แม่หุงข้าว” คำใดเป็นสิ่งที่ถูกทำ", "choices": ["แม่", "หุง", "ข้าว"], "answer": 2,
+        "hint": "ถามว่า แม่หุง อะไร", "explain": "ข้าว เป็นสิ่งที่แม่หุง จึงเป็นส่วนที่ 3 ของประโยค" },
+
+      { "topic": "การเรียงลำดับคำ", "type": "choice", "pic": "🐱🐟🍽️", "scene": "แมวกินปลาบนโต๊ะอาหาร",
+        "q": "ประโยคใดเรียงคำถูกต้อง", "choices": ["ปลากินแมว", "แมวกินปลา", "กินแมวปลา"], "answer": 1,
+        "hint": "ดูภาพ ใครเป็นผู้กิน ใครถูกกิน", "explain": "แมวเป็นผู้กินจึงอยู่หน้า ปลาเป็นสิ่งที่ถูกกินจึงอยู่ท้าย" },
+      { "topic": "การเรียงลำดับคำ", "type": "order", "pic": "👩‍🏫📖", "scene": "ครูอ่านหนังสือให้นักเรียนฟัง",
+        "q": "ลากคำมาเรียงให้ถูกลำดับ", "words": ["หนังสือ", "อ่าน", "ครู"], "answer": ["ครู", "อ่าน", "หนังสือ"],
+        "hint": "ใครอ่าน อ่านอะไร", "explain": "ครูอ่านหนังสือ = ครู (ใคร) + อ่าน (ทำอะไร) + หนังสือ (อะไร)" },
+      { "topic": "การเรียงลำดับคำ", "type": "choice", "pic": "🐔🥚", "scene": "แม่ไก่ออกไข่",
+        "q": "ข้อใดเรียงคำถูกต้อง", "choices": ["ไข่ไก่ออก", "ไก่ออกไข่", "ออกไก่ไข่"], "answer": 1,
+        "hint": "ใครเป็นผู้ทำ ต้องอยู่หน้าประโยค", "explain": "ไก่เป็นผู้ออกไข่ จึงเรียงว่า ไก่ออกไข่" },
+
+      { "topic": "แต่งประโยคให้ตรงกับภาพ", "type": "choice", "pic": "👦🚲🌳", "scene": "พี่ขี่จักรยานในสวน",
+        "q": "ประโยคใดตรงกับภาพ", "choices": ["พี่ว่ายน้ำ", "พี่ขี่จักรยาน", "พี่กินขนม"], "answer": 1,
+        "hint": "ดูว่าคนในภาพกำลังทำอะไร", "explain": "ในภาพพี่กำลังขี่จักรยาน ประโยคจึงต้องเป็น พี่ขี่จักรยาน" },
+      { "topic": "แต่งประโยคให้ตรงกับภาพ", "type": "choice", "pic": "🐘💦", "scene": "ช้างอาบน้ำ",
+        "q": "ประโยคใดตรงกับภาพ", "choices": ["ช้างกินกล้วย", "ช้างนอนหลับ", "ช้างอาบน้ำ"], "answer": 2,
+        "hint": "ในภาพมีน้ำกระเซ็น", "explain": "ภาพช้างกับน้ำกระเซ็น จึงเป็นประโยค ช้างอาบน้ำ" },
+      { "topic": "แต่งประโยคให้ตรงกับภาพ", "type": "order", "pic": "👧💧🌳", "scene": "น้องรดน้ำต้นไม้",
+        "q": "ลากคำแต่งประโยคให้ตรงกับภาพ", "words": ["ต้นไม้", "น้อง", "รดน้ำ"], "answer": ["น้อง", "รดน้ำ", "ต้นไม้"],
+        "hint": "ใคร ทำอะไร กับอะไร", "explain": "น้องรดน้ำต้นไม้ ตรงกับภาพน้องถือบัวรดน้ำ" }
+    ],
+
+    "expand": [
+      { "topic": "ประโยคหลักก่อนการขยาย", "type": "choice", "pic": "🐶🔊", "scene": "สุนัขสีขาวเห่าเสียงดัง",
+        "q": "ประโยค “สุนัขสีขาวเห่าเสียงดัง” ประโยคหลักคือข้อใด", "choices": ["สุนัขสีขาว", "สุนัขเห่า", "เห่าเสียงดัง"], "answer": 1,
+        "hint": "ตัดคำที่บอกลักษณะออก เหลือ ใคร + ทำอะไร", "explain": "ตัด สีขาว และ เสียงดัง ออก จะเหลือประโยคหลัก สุนัขเห่า" },
+      { "topic": "ประโยคหลักก่อนการขยาย", "type": "choice", "pic": "🧑‍🎓📚🏫", "scene": "นักเรียนอ่านหนังสือในห้องสมุด",
+        "q": "“นักเรียนชั้น ป.3 อ่านหนังสือในห้องสมุด” ประโยคหลักคือข้อใด", "choices": ["นักเรียนอ่านหนังสือ", "นักเรียนชั้น ป.3", "ในห้องสมุด"], "answer": 0,
+        "hint": "หาว่า ใคร ทำอะไร กับอะไร", "explain": "ประโยคหลัก คือ นักเรียนอ่านหนังสือ ส่วน ชั้น ป.3 และ ในห้องสมุด เป็นส่วนขยาย" },
+      { "topic": "ประโยคหลักก่อนการขยาย", "type": "choice", "pic": "🐟🌊", "scene": "ปลาว่ายน้ำ",
+        "q": "ข้อใดเป็นประโยคหลักที่ยังไม่มีส่วนขยาย", "choices": ["ปลาตัวเล็กว่ายน้ำ", "ปลาว่ายน้ำเร็ว", "ปลาว่ายน้ำ"], "answer": 2,
+        "hint": "หาข้อที่สั้นที่สุด ไม่มีคำบอกลักษณะ", "explain": "ปลาว่ายน้ำ ยังไม่มีคำขยาย ส่วนข้ออื่นมี ตัวเล็ก หรือ เร็ว มาขยาย" },
+
+      { "topic": "การขยายภาคประธาน", "type": "choice", "pic": "🐈‍⬛", "scene": "แมวสีดำ",
+        "q": "คำใดช่วยขยายคำว่า “แมว” ให้รู้ว่าเป็นแมวแบบไหน", "choices": ["วิ่ง", "สีดำ", "เมื่อเช้า"], "answer": 1,
+        "hint": "คำขยายประธานบอกลักษณะ เช่น สี ขนาด", "explain": "สีดำ บอกลักษณะของแมว จึงขยายภาคประธาน" },
+      { "topic": "การขยายภาคประธาน", "type": "choice", "pic": "👵🧺🏪", "scene": "คุณยายใจดีไปตลาด",
+        "q": "ข้อใดขยายภาคประธาน", "choices": ["คุณยายใจดีไปตลาด", "คุณยายไปตลาดตอนเช้า", "คุณยายไปตลาดใกล้บ้าน"], "answer": 0,
+        "hint": "หาคำที่อยู่ติดกับ คุณยาย และบอกว่าคุณยายเป็นอย่างไร", "explain": "ใจดี ขยายคำว่า คุณยาย ซึ่งเป็นภาคประธาน" },
+      { "topic": "การขยายภาคประธาน", "type": "order", "pic": "🐷💤", "scene": "หมูตัวอ้วนนอนหลับ",
+        "q": "ลากคำให้คำขยายอยู่ติดกับประธาน", "words": ["นอน", "หมู", "ตัวอ้วน"], "answer": ["หมู", "ตัวอ้วน", "นอน"],
+        "hint": "คำขยายประธานวางต่อจากประธานทันที", "explain": "หมูตัวอ้วนนอน : ตัวอ้วน ขยาย หมู จึงวางต่อจาก หมู" },
+
+      { "topic": "การขยายภาคแสดง", "type": "choice", "pic": "🐇💨", "scene": "กระต่ายวิ่งเร็ว",
+        "q": "คำใดขยายคำว่า “วิ่ง” ให้รู้ว่าวิ่งอย่างไร", "choices": ["ตัวขาว", "กระต่าย", "เร็ว"], "answer": 2,
+        "hint": "ถามว่า วิ่ง อย่างไร", "explain": "เร็ว บอกว่าวิ่งอย่างไร จึงขยายภาคแสดง" },
+      { "topic": "การขยายภาคแสดง", "type": "choice", "pic": "👧🎤✨", "scene": "น้องร้องเพลงเพราะ",
+        "q": "ข้อใดขยายภาคแสดง", "choices": ["น้องตัวเล็กร้องเพลง", "น้องร้องเพลงเพราะ", "น้องคนเล็กร้องเพลง"], "answer": 1,
+        "hint": "หาคำที่อยู่หลังคำกริยา และบอกว่าทำอย่างไร", "explain": "เพราะ บอกว่าร้องเพลงอย่างไร จึงขยายภาคแสดง" },
+      { "topic": "การขยายภาคแสดง", "type": "order", "pic": "🧒😂", "scene": "เด็ก ๆ หัวเราะเสียงดัง",
+        "q": "ลากคำเรียงประโยคที่ขยายภาคแสดง", "words": ["เสียงดัง", "เด็ก ๆ", "หัวเราะ"], "answer": ["เด็ก ๆ", "หัวเราะ", "เสียงดัง"],
+        "hint": "คำขยายภาคแสดงวางหลังคำกริยา", "explain": "เด็ก ๆ หัวเราะเสียงดัง : เสียงดัง ขยาย หัวเราะ" },
+
+      { "topic": "คำบอกเวลาและสถานที่", "type": "choice", "pic": "🐶❓🌿", "scene": "สุนัขหายไปที่สนามหญ้า",
+        "q": "คำใดช่วยบอกว่าสุนัขหายไปเมื่อไร", "choices": ["สีขาว", "เมื่อวานนี้", "ตัวเล็ก"], "answer": 1,
+        "hint": "คำบอกเวลาตอบคำถามว่า เมื่อไร", "explain": "เมื่อวานนี้ บอกเวลา ส่วน สีขาว และ ตัวเล็ก บอกลักษณะ" },
+      { "topic": "คำบอกเวลาและสถานที่", "type": "choice", "pic": "🐶🌿⛳", "scene": "สุนัขหายไปที่สนามหญ้า",
+        "q": "ประโยค “สุนัขหายไปที่สนามหญ้า” คำใดบอกสถานที่", "choices": ["สุนัข", "หายไป", "ที่สนามหญ้า"], "answer": 2,
+        "hint": "คำบอกสถานที่ตอบคำถามว่า ที่ไหน", "explain": "ที่สนามหญ้า บอกว่าสุนัขหายไปที่ไหน" },
+      { "topic": "คำบอกเวลาและสถานที่", "type": "choice", "pic": "🧒🏫☀️", "scene": "เด็กเล่นที่โรงเรียนตอนเช้า",
+        "q": "ข้อใดมีทั้งคำบอกเวลาและสถานที่", "choices": ["ฉันเล่นกับเพื่อน", "เช้านี้ฉันเล่นที่โรงเรียน", "ฉันเล่นสนุก"], "answer": 1,
+        "hint": "หาข้อที่ตอบได้ทั้ง เมื่อไร และ ที่ไหน", "explain": "เช้านี้ บอกเวลา และ ที่โรงเรียน บอกสถานที่" },
+
+      { "topic": "ตรวจประโยคที่มีส่วนขยาย", "type": "choice", "pic": "🐶🌙", "scene": "สุนัขหายไป",
+        "q": "ข้อใดใช้คำบอกเวลาถูกต้อง", "choices": ["สุนัขหายไปเมื่อวานพรุ่งนี้", "สุนัขหายไปเมื่อวานนี้", "สุนัขหายไปพรุ่งนี้เมื่อวาน"], "answer": 1,
+        "hint": "เมื่อวาน กับ พรุ่งนี้ เป็นคนละวันกัน", "explain": "ใช้ เมื่อวาน คู่กับ พรุ่งนี้ ไม่ได้ เพราะเป็นเวลาที่ขัดกัน" },
+      { "topic": "ตรวจประโยคที่มีส่วนขยาย", "type": "choice", "pic": "🐈‍⬛🛋️", "scene": "แมวสีดำนอนบนโซฟา",
+        "q": "ประโยคใดวางส่วนขยายถูกที่", "choices": ["แมวสีดำนอนบนโซฟา", "แมวนอนสีดำบนโซฟา", "สีดำแมวนอนบนโซฟา"], "answer": 0,
+        "hint": "คำขยายแมวต้องอยู่ติดกับคำว่า แมว", "explain": "สีดำ ขยาย แมว จึงต้องวางต่อจาก แมว ทันที" },
+      { "topic": "ตรวจประโยคที่มีส่วนขยาย", "type": "choice", "pic": "🍚🕰️", "scene": "กินข้าวตอนเย็น",
+        "q": "“ฉันกินข้าวเมื่อวานนี้พรุ่งนี้” ผิดเพราะอะไร", "choices": ["ไม่มีภาคประธาน", "บอกเวลาขัดกัน", "ไม่มีคำกริยา"], "answer": 1,
+        "hint": "ดูคำที่บอกเวลา", "explain": "เมื่อวานนี้ กับ พรุ่งนี้ ขัดกัน ควรเลือกใช้เพียงคำเดียว" }
+    ],
+
+    "use": [
+      { "topic": "ถ้อยคำเหมาะกับบุคคลและโอกาส", "type": "choice", "pic": "🧒🙏👩‍🏫", "scene": "พบคุณครูตอนเช้า",
+        "q": "เมื่อพบคุณครูตอนเช้า ควรพูดว่าอย่างไร", "choices": ["ไง ครู", "สวัสดีครับ/ค่ะ คุณครู", "หวัดดี"], "answer": 1,
+        "hint": "พูดกับผู้ใหญ่ต้องใช้คำสุภาพ", "explain": "พูดกับคุณครูควรใช้คำสุภาพและมีคำลงท้าย ครับ/ค่ะ" },
+      { "topic": "ถ้อยคำเหมาะกับบุคคลและโอกาส", "type": "choice", "pic": "🧒🧒⚽", "scene": "ชวนเพื่อนเล่นฟุตบอล",
+        "q": "ถ้าอยากชวนเพื่อนเล่นฟุตบอล ควรพูดข้อใด", "choices": ["ไปเล่นฟุตบอลกันไหม", "เล่นด้วยเดี๋ยวนี้", "ห้ามไม่เล่นนะ"], "answer": 0,
+        "hint": "ชวนเพื่อนควรใช้คำที่เป็นมิตร", "explain": "ไปเล่นฟุตบอลกันไหม เป็นคำชวนที่สุภาพและเป็นมิตร" },
+      { "topic": "ถ้อยคำเหมาะกับบุคคลและโอกาส", "type": "choice", "pic": "👵🎂🎉", "scene": "งานวันเกิดคุณยาย",
+        "q": "ในงานวันเกิดของคุณยาย ควรพูดว่าอย่างไร", "choices": ["ขอเค้กเยอะ ๆ", "ยายแก่แล้ว", "สุขสันต์วันเกิดครับ/ค่ะ คุณยาย"], "answer": 2,
+        "hint": "วันเกิดควรพูดอวยพร", "explain": "วันเกิดควรอวยพรด้วยคำสุภาพ ว่า สุขสันต์วันเกิด" },
+
+      { "topic": "คำสุภาพและคำลงท้าย", "type": "choice", "pic": "👦👋", "scene": "ลาคุณครูกลับบ้าน",
+        "q": "ข้อใดใช้คำลงท้ายสุภาพเมื่อลาคุณครู", "choices": ["ผมกลับบ้านก่อนนะครับ", "กลับละ", "ไปนะ"], "answer": 0,
+        "hint": "หาข้อที่มีคำลงท้าย", "explain": "ผมกลับบ้านก่อนนะครับ มีคำลงท้าย ครับ จึงสุภาพ" },
+      { "topic": "คำสุภาพและคำลงท้าย", "type": "choice", "pic": "👧👨‍🏫", "scene": "นักเรียนหญิงตอบคุณครู",
+        "q": "นักเรียนหญิงตอบคุณครูว่า “ทำการบ้านเสร็จแล้ว……” ควรเติมคำใด", "choices": ["ค่ะ", "จ้ะ", "เหรอ"], "answer": 0,
+        "hint": "ผู้หญิงพูดกับผู้ใหญ่ใช้คำลงท้ายสุภาพ", "explain": "ผู้หญิงตอบผู้ใหญ่ใช้ ค่ะ ผู้ชายใช้ ครับ" },
+      { "topic": "คำสุภาพและคำลงท้าย", "type": "choice", "pic": "👴🍚", "scene": "คุณตากินข้าว",
+        "q": "คำสุภาพของคำว่า “กิน” ใช้กับผู้ใหญ่คือคำใด", "choices": ["ชิม", "รับประทาน", "เคี้ยว"], "answer": 1,
+        "hint": "เป็นคำที่ยาวและฟังสุภาพ", "explain": "รับประทาน เป็นคำสุภาพของ กิน เช่น คุณตารับประทานข้าว" },
+
+      { "topic": "ประโยคขอร้องขอความช่วยเหลือ", "type": "choice", "pic": "📚🧒⬆️", "scene": "หยิบหนังสือบนชั้นสูงไม่ถึง",
+        "q": "หยิบหนังสือบนชั้นสูงไม่ถึง ควรพูดกับพี่ว่าอย่างไร", "choices": ["หยิบให้เดี๋ยวนี้", "หนังสืออยู่สูง", "พี่ช่วยหยิบหนังสือให้หน่อยได้ไหม"], "answer": 2,
+        "hint": "ขอร้องใช้คำว่า ช่วย…หน่อย…ได้ไหม", "explain": "พี่ช่วยหยิบหนังสือให้หน่อยได้ไหม เป็นประโยคขอร้องที่สุภาพ" },
+      { "topic": "ประโยคขอร้องขอความช่วยเหลือ", "type": "choice", "pic": "🙏", "scene": "ขอร้องอย่างสุภาพ",
+        "q": "คำใดช่วยให้ประโยคขอร้องสุภาพขึ้น", "choices": ["ห้าม", "กรุณา", "อย่า"], "answer": 1,
+        "hint": "หาคำที่ใช้ขอร้อง ไม่ใช่ห้าม", "explain": "กรุณา ใช้ขอร้อง เช่น กรุณาปิดประตูด้วย ส่วน ห้าม อย่า ใช้ห้าม" },
+      { "topic": "ประโยคขอร้องขอความช่วยเหลือ", "type": "order", "pic": "👜🙏", "scene": "ขอให้เพื่อนช่วยถือกระเป๋า",
+        "q": "ลากคำเรียงเป็นประโยคขอร้อง", "words": ["หน่อย", "ช่วย", "ได้ไหม", "ถือกระเป๋า"], "answer": ["ช่วย", "ถือกระเป๋า", "หน่อย", "ได้ไหม"],
+        "hint": "ช่วย … หน่อย … ได้ไหม", "explain": "ช่วยถือกระเป๋าหน่อยได้ไหม เป็นประโยคขอร้อง" },
+
+      { "topic": "ประโยคขอบคุณและขอโทษ", "type": "choice", "pic": "🏺💥🏫", "scene": "แจกันแตกในห้องเรียน",
+        "q": "ถ้าทำแจกันของคุณครูแตก ควรพูดว่าอย่างไร", "choices": ["หนูขอโทษค่ะคุณครู", "แจกันแตกแล้ว", "ไม่ใช่หนูนะ"], "answer": 0,
+        "hint": "เมื่อทำผิด ควรยอมรับและพูดขอโทษ", "explain": "เมื่อทำผิดควรยอมรับและพูดขอโทษอย่างสุภาพ" },
+      { "topic": "ประโยคขอบคุณและขอโทษ", "type": "choice", "pic": "✏️🤝", "scene": "เพื่อนให้ยืมดินสอ",
+        "q": "เพื่อนให้ยืมดินสอ ควรพูดว่าอย่างไร", "choices": ["เอามาอีก", "ขอบคุณนะ", "ไม่ต้องให้"], "answer": 1,
+        "hint": "มีคนช่วยเหลือ ควรพูดอะไร", "explain": "เมื่อมีคนช่วยเหลือ ควรพูด ขอบคุณ" },
+      { "topic": "ประโยคขอบคุณและขอโทษ", "type": "choice", "pic": "🧒💥👶", "scene": "เดินชนน้อง",
+        "q": "เดินชนน้องจนล้ม ควรพูดว่าอย่างไร", "choices": ["ทำไมเดินช้า", "ล้มเองนะ", "ขอโทษนะ พี่ไม่ได้ตั้งใจ"], "answer": 2,
+        "hint": "ทำให้คนอื่นเจ็บ ควรพูดอะไร", "explain": "ควรขอโทษ และบอกว่าไม่ได้ตั้งใจ แล้วช่วยพยุงน้อง" },
+
+      { "topic": "ประโยคคำถามกับคำสั่ง", "type": "choice", "pic": "❓🧒", "scene": "ถามชื่อเพื่อนใหม่",
+        "q": "ข้อใดเป็นประโยคคำถาม", "choices": ["เธอชื่ออะไร", "ปิดประตูด้วย", "ฉันชื่อแก้ว"], "answer": 0,
+        "hint": "ประโยคคำถามมีคำว่า อะไร ไหม หรือ ใคร", "explain": "เธอชื่ออะไร มีคำว่า อะไร จึงเป็นประโยคคำถาม" },
+      { "topic": "ประโยคคำถามกับคำสั่ง", "type": "choice", "pic": "🚪💨", "scene": "ลมพัดประตู",
+        "q": "ข้อใดเป็นประโยคคำสั่ง", "choices": ["ประตูสีอะไร", "ปิดประตูด้วย", "ประตูเปิดอยู่"], "answer": 1,
+        "hint": "ประโยคคำสั่งบอกให้ทำ มักขึ้นต้นด้วยคำกริยา", "explain": "ปิดประตูด้วย บอกให้คนฟังทำ จึงเป็นประโยคคำสั่ง" },
+      { "topic": "ประโยคคำถามกับคำสั่ง", "type": "choice", "pic": "🍚❓", "scene": "แม่ถามลูก",
+        "q": "“เธอกินข้าวหรือยัง” เป็นประโยคชนิดใด", "choices": ["ประโยคคำสั่ง", "ประโยคบอกเล่า", "ประโยคคำถาม"], "answer": 2,
+        "hint": "มีคำว่า หรือยัง", "explain": "หรือยัง เป็นคำที่ใช้ถาม ประโยคนี้จึงเป็นประโยคคำถาม" }
+    ]
+  },
+
+  "towerMissions": {
+    "green": {
+      "time": 120, "passMin": 3,
+      "task": "ดูภาพ แล้วพิมพ์ประโยคเกี่ยวกับภาพให้ได้มากที่สุด บรรทัดละ 1 ประโยค",
+      "scenes": [
+        { "pic": "🏫🧒⚽🌳🐦", "scene": "สนามโรงเรียนตอนพักกลางวัน" },
+        { "pic": "🏖️🌊🦀👨‍👩‍👧⛱️", "scene": "ครอบครัวเที่ยวทะเล" },
+        { "pic": "🛒🍎🥦👩🐱", "scene": "ตลาดตอนเช้า" },
+        { "pic": "🐱🐟🍽️🐶", "scene": "แมวกับสุนัขในห้องครัว" }
+      ],
+      "example": "เด็กเตะลูกบอล / นกเกาะต้นไม้ / ครูเป่านกหวีด"
+    },
+    "blue": {
+      "time": 180,
+      "task": "แต่งประโยคใหม่จากประโยคตั้งต้นให้ได้หลายแบบ",
+      "typesBases": ["แมวกินปลา", "น้องอ่านหนังสือ", "พี่เตะฟุตบอล", "แม่ปลูกต้นไม้"],
+      "typesSlots": ["ประโยคบอกเล่า", "ประโยคปฏิเสธ", "ประโยคคำถาม", "ประโยคขอร้องหรือคำสั่ง"],
+      "listenerBases": ["ขอยืมดินสอ", "ชวนไปกินขนม", "ขอให้ช่วยถือของ"],
+      "listenerSlots": ["พูดกับคุณครู", "พูดกับเพื่อน", "พูดกับน้อง"],
+      "example": "แมวกินปลา / แมวไม่กินปลา / แมวกินปลาไหม / กินปลาสิแมวน้อย"
+    },
+    "orange": {
+      "time": 180,
+      "task": "ใช้คำ 3 คำ แต่งเรื่องสั้น 3 ประโยคที่แปลกใหม่ ไม่ซ้ำใคร",
+      "words": {
+        "build":  ["แมว", "ช้าง", "คุณครู", "จรวด", "ไดโนเสาร์", "ร่ม", "หุ่นยนต์", "เต่า"],
+        "expand": ["สีรุ้ง", "ตัวจิ๋ว", "เมื่อวานนี้", "ใต้ทะเล", "เสียงดัง", "บนดวงจันทร์", "ตอนกลางคืน", "ในป่า"],
+        "use":    ["ขอบคุณ", "ขอโทษ", "ช่วยหน่อย", "กรุณา", "สวัสดี", "ได้ไหม", "ยินดีด้วย", "ไม่เป็นไร"]
+      },
+      "example": "ช้างตัวจิ๋วขึ้นจรวดไปดวงจันทร์ / ช้างพูดว่า สวัสดี กับกระต่าย / กระต่ายพาช้างไปเก็บดาว"
+    },
+    "purple": {
+      "time": 180,
+      "task": "แก้ประโยคให้ถูก และเติมรายละเอียดบอก ลักษณะ เวลา และสถานที่",
+      "items": [
+        { "broken": "สุนัขหายไป", "pic": "🐶❓",
+          "reasons": ["ประโยคขาดรายละเอียด ไม่รู้ว่าสุนัขเป็นอย่างไร หายเมื่อไร ที่ไหน", "ประโยคไม่มีภาคประธาน", "ประโยคไม่มีคำกริยา"], "answer": 0,
+          "example": "สุนัขสีขาวตัวเล็กหายไปที่สนามหญ้าเมื่อวานนี้" },
+        { "broken": "หายไปเมื่อวานพรุ่งนี้", "pic": "❓📅",
+          "reasons": ["ไม่มีภาคประธาน และบอกเวลาขัดกัน", "ประโยคยาวเกินไป", "ไม่มีคำกริยา"], "answer": 0,
+          "example": "แมวสีส้มตัวอ้วนหายไปที่ตลาดเมื่อวานนี้" },
+        { "broken": "นกร้องเพลง", "pic": "🐦🎶",
+          "reasons": ["ประโยคขาดรายละเอียด ไม่บอกลักษณะ เวลา และสถานที่", "ประโยคไม่มีภาคแสดง", "ประโยคใช้คำไม่สุภาพ"], "answer": 0,
+          "example": "นกสีเหลืองตัวน้อยร้องเพลงบนต้นมะม่วงตอนเช้า" },
+        { "broken": "ที่สวนเมื่อเช้าเล่นว่าว", "pic": "🪁🌳",
+          "reasons": ["ไม่มีภาคประธาน และเรียงคำสลับที่", "ไม่มีคำบอกเวลา", "ไม่มีคำบอกสถานที่"], "answer": 0,
+          "example": "เด็กชายตัวสูงเล่นว่าวสีแดงที่สวนเมื่อเช้า" },
+        { "broken": "ปลาว่ายน้ำบนต้นไม้ตอนพรุ่งนี้เมื่อวาน", "pic": "🐟🌳",
+          "reasons": ["สถานที่ไม่สมเหตุสมผล และบอกเวลาขัดกัน", "ไม่มีภาคประธาน", "ไม่มีคำกริยา"], "answer": 0,
+          "example": "ปลาทองตัวเล็กว่ายน้ำในตู้ปลาเมื่อเช้านี้" }
+      ]
+    }
+  },
+
+  "knowledge": {
+    "build": [
+      { "h": "ประโยคที่สมบูรณ์", "t": "มี 2 ภาค คือ ภาคประธาน (ใคร/อะไร) และ ภาคแสดง (ทำอะไร)", "ex": "แมว | กินปลา" },
+      { "h": "ประโยค 2 ส่วน", "t": "ใคร + ทำอะไร", "ex": "นก + บิน" },
+      { "h": "ประโยค 3 ส่วน", "t": "ใคร + ทำอะไร + อะไร (สิ่งที่ถูกทำ)", "ex": "แม่ + หุง + ข้าว" },
+      { "h": "การเรียงลำดับคำ", "t": "เรียงผิดที่ ความหมายเปลี่ยน ผู้ทำอยู่หน้า สิ่งที่ถูกทำอยู่หลัง", "ex": "แมวกินปลา ✔  ปลากินแมว ✘" },
+      { "h": "แต่งประโยคตามภาพ", "t": "ดูภาพแล้วถามตัวเองว่า ใคร ทำอะไร กับอะไร", "ex": "ภาพน้องรดน้ำ → น้องรดน้ำต้นไม้" }
+    ],
+    "expand": [
+      { "h": "ประโยคหลัก", "t": "ประโยคที่ยังไม่มีคำขยาย ตัดคำขยายออกจะเหลือประโยคหลัก", "ex": "สุนัขสีขาวเห่าเสียงดัง → สุนัขเห่า" },
+      { "h": "ขยายภาคประธาน", "t": "เติมคำบอกลักษณะ สี ขนาด ต่อจากประธาน", "ex": "แมว → แมวสีดำ" },
+      { "h": "ขยายภาคแสดง", "t": "เติมคำบอกว่าทำอย่างไร ต่อจากกริยา", "ex": "วิ่ง → วิ่งเร็ว" },
+      { "h": "คำบอกเวลาและสถานที่", "t": "เวลาตอบ เมื่อไร สถานที่ตอบ ที่ไหน", "ex": "เมื่อวานนี้ · ที่สนามหญ้า" },
+      { "h": "ตรวจประโยค", "t": "คำขยายต้องอยู่ถูกที่ และเวลาต้องไม่ขัดกัน", "ex": "หายไปเมื่อวานพรุ่งนี้ ✘" }
+    ],
+    "use": [
+      { "h": "เหมาะกับบุคคลและโอกาส", "t": "พูดกับผู้ใหญ่ใช้คำสุภาพ พูดกับเพื่อนใช้คำเป็นมิตร", "ex": "สวัสดีครับคุณครู" },
+      { "h": "คำสุภาพและคำลงท้าย", "t": "ผู้ชายใช้ ครับ ผู้หญิงใช้ ค่ะ/คะ", "ex": "กิน → รับประทาน" },
+      { "h": "ประโยคขอร้อง", "t": "ใช้ ช่วย… หน่อย… ได้ไหม หรือ กรุณา", "ex": "ช่วยถือกระเป๋าหน่อยได้ไหม" },
+      { "h": "ขอบคุณและขอโทษ", "t": "มีคนช่วยพูด ขอบคุณ ทำผิดพูด ขอโทษ", "ex": "หนูขอโทษค่ะคุณครู" },
+      { "h": "คำถามกับคำสั่ง", "t": "คำถามมี อะไร ใคร ไหม หรือยัง · คำสั่งบอกให้ทำ", "ex": "เธอชื่ออะไร · ปิดประตูด้วย" }
+    ],
+    "towers": [
+      { "h": "คิดคล่อง (สีเขียว)", "t": "คิดได้มาก ได้เร็ว แต่งประโยคได้หลายประโยค" },
+      { "h": "คิดยืดหยุ่น (สีฟ้า)", "t": "คิดได้หลายแบบ เปลี่ยนชนิดประโยคและคำพูดตามผู้ฟัง" },
+      { "h": "คิดริเริ่ม (สีส้ม)", "t": "คิดแปลกใหม่ ไม่ซ้ำใคร" },
+      { "h": "คิดละเอียดลออ (สีม่วง)", "t": "เติมรายละเอียดให้ครบ ทั้งลักษณะ เวลา และสถานที่" }
+    ]
+  }
+};
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Sarabun:wght@400;600;700&display=swap">
+<style>
+:root{
+  --bg:#e9f6ff;--panel:#ffffff;--ink:#22303c;--muted:#5d6b78;--line:#cfdce6;--accent:#ff8a1f;--good:#2e9d48;--bad:#d64545;
+  --sky:#bfe6ff;--focus:#1e63d6;--display:Mitr,"Noto Sans Thai",Tahoma,sans-serif;--body:Sarabun,"Noto Sans Thai",Tahoma,sans-serif;
+  --emoji:"Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif;--cell:104px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:20px/1.5 var(--body);-webkit-tap-highlight-color:transparent}
+h1,h2,h3{font-family:var(--display);font-weight:500;margin:0;line-height:1.25}
+button{font:500 19px/1.2 var(--display);color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.em{font-family:var(--emoji)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:10px 20px;border-radius:16px;background:#fff;border:3px solid var(--line);box-shadow:0 4px 0 var(--line);transition:transform .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+.btn.go{background:var(--good);border-color:#23803a;color:#fff;box-shadow:0 4px 0 #1d6a30}
+.btn.warn{background:var(--accent);border-color:#e0700a;color:#fff;box-shadow:0 4px 0 #b95a06}
+.btn.blue{background:var(--focus);border-color:#174fae;color:#fff;box-shadow:0 4px 0 #123f8a}
+.btn.red{background:var(--bad);border-color:#b23535;color:#fff;box-shadow:0 4px 0 #8f2a2a}
+.btn.sm{min-height:44px;padding:6px 14px;font-size:17px;border-radius:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.hidden{display:none!important}
+
+/* หัว */
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:8px 16px;background:#fff;border-bottom:3px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand h1{font-size:24px}
+.logo{display:grid;grid-template-columns:repeat(3,12px);gap:2px}
+.logo i{width:12px;height:12px;border-radius:2px}
+.menu{display:flex;gap:6px;flex-wrap:wrap}
+
+/* หน้าเริ่ม */
+.screen{position:fixed;inset:0;overflow:auto;background:linear-gradient(#bfe6ff,#e9f6ff 60%,#d6f0c8);z-index:30;padding:16px}
+.setup{max-width:760px;margin:20px auto;background:#fff;border-radius:24px;border:4px solid var(--line);padding:24px;display:flex;flex-direction:column;gap:18px;box-shadow:0 8px 0 var(--line)}
+.setup h1{font-size:40px;text-align:center;color:#e0700a}
+.setup .sub{text-align:center;color:var(--muted)}
+.count-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.count-row .btn.on{background:var(--focus);color:#fff;border-color:#174fae;box-shadow:0 4px 0 #123f8a}
+.names{display:grid;gap:10px}
+.names label{display:flex;align-items:center;gap:10px;font-family:var(--display)}
+.names input{flex:1;font:20px var(--body);padding:10px 14px;border-radius:12px;border:3px solid var(--line);min-width:0}
+.dot{width:26px;height:26px;border-radius:7px;flex:none;border:2px solid rgba(0,0,0,.25)}
+.setup .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.hero{display:flex;justify-content:center;gap:6px}
+.hero svg{width:84px;height:84px;border-radius:8px}
+
+/* พื้นที่เล่น */
+.game{display:grid;grid-template-columns:minmax(0,1fr) 360px;height:calc(100vh - 74px);min-height:520px}
+@media (max-width:900px){.game{grid-template-columns:1fr;grid-template-rows:56vh auto;height:auto}}
+.board-wrap{position:relative;overflow:auto;background:radial-gradient(circle at 50% 40%,#d9f2ff,#b9e0f5);touch-action:pan-x pan-y}
+.board{position:relative}
+.cell{position:absolute;width:var(--cell);height:var(--cell)}
+.cell svg.tile{width:100%;height:100%;display:block;border-radius:4px}
+.cell.spot{border:4px dashed #ffb300;border-radius:10px;background:rgba(255,236,150,.55);cursor:pointer;animation:pulse 1.2s infinite}
+.cell.spot:hover{background:rgba(255,220,90,.8)}
+.cell.preview{outline:5px solid var(--good);border-radius:6px;z-index:3;cursor:pointer}
+.cell.preview.badfit{outline-color:var(--bad)}
+.cell.last{outline:4px solid #fff;outline-offset:-2px;border-radius:4px;z-index:2}
+@keyframes pulse{50%{background:rgba(255,236,150,.15)}}
+.mspot{position:absolute;width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;border:3px solid #fff;background:rgba(30,99,214,.85);color:#fff;font-size:18px;display:grid;place-items:center;z-index:5;box-shadow:0 0 0 3px rgba(0,0,0,.25);animation:bob 1s infinite}
+.mspot.sel{background:var(--good);animation:none}
+@keyframes bob{50%{transform:scale(1.15)}}
+.zoom{position:sticky;left:10px;top:10px;z-index:8;display:flex;gap:6px;height:0;overflow:visible;padding-left:10px}
+.zoom .btn{min-height:44px;width:48px;padding:0}
+
+aside{background:#fff;border-left:3px solid var(--line);overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px}
+@media (max-width:900px){aside{border-left:0;border-top:3px solid var(--line)}}
+.turn{border-radius:16px;padding:10px 14px;color:#fff;font-family:var(--display);font-size:22px;display:flex;align-items:center;gap:10px}
+.turn small{font-size:15px;opacity:.9;display:block}
+.players{display:grid;gap:6px}
+.pl{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;padding:8px 10px;border-radius:14px;border:3px solid var(--line)}
+.pl.cur{border-color:var(--ink);background:#fffbe6}
+.pl .nm{font-family:var(--display);font-size:18px}
+.pl .sc{font:600 26px var(--display)}
+.pl .meta{grid-column:2/4;font-size:15px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.mee{display:inline-flex;gap:2px}
+.mee i{width:10px;height:14px;border-radius:3px 3px 1px 1px;display:inline-block;border:1px solid rgba(0,0,0,.3)}
+.mee i.off{opacity:.2}
+.box{border:3px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px;align-items:stretch}
+.box h3{font-size:19px}
+.cur-tile{display:flex;gap:12px;align-items:center}
+.cur-tile svg{width:132px;height:132px;flex:none;border-radius:6px;box-shadow:0 4px 0 rgba(0,0,0,.15);transition:transform .2s}
+.info{font-size:17px;color:var(--muted)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row .btn{flex:1}
+.deck{font-family:var(--display);font-size:17px;display:flex;align-items:center;gap:8px}
+.deck b{font-size:24px}
+.feed{font-size:15px;max-height:170px;overflow:auto;display:flex;flex-direction:column;gap:4px}
+.feed div{padding:4px 8px;border-radius:8px;background:#f2f7fb}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:999px;font:500 15px var(--display);color:#fff}
+
+/* โมดัล */
+.scrim{position:fixed;inset:0;background:rgba(20,35,50,.55);z-index:40;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:16px}
+.modal{background:#fff;border-radius:24px;max-width:820px;width:100%;margin:auto;padding:20px;display:flex;flex-direction:column;gap:14px;border:4px solid var(--line);box-shadow:0 10px 0 rgba(0,0,0,.18)}
+.modal h2{font-size:26px}
+.mhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between}
+.pic{font-family:var(--emoji);font-size:64px;line-height:1.2;text-align:center;padding:12px;border-radius:18px;background:var(--sky);letter-spacing:6px}
+.pic small{display:block;font:500 17px var(--display);letter-spacing:0;color:var(--muted)}
+.qtext{font:500 25px/1.45 var(--display)}
+.choices{display:grid;gap:10px}
+.choice{display:flex;align-items:center;gap:12px;text-align:left;padding:14px 16px;border-radius:16px;border:3px solid var(--line);background:#fff;font:500 23px var(--display);min-height:64px;box-shadow:0 4px 0 var(--line)}
+.choice .k{width:40px;height:40px;border-radius:50%;background:var(--sky);display:grid;place-items:center;flex:none}
+.choice.wrong{border-color:var(--bad);background:#fde8e8;opacity:.6}
+.choice.right{border-color:var(--good);background:#e3f6e7}
+.choice.cut{opacity:.25;text-decoration:line-through}
+.zone{min-height:72px;border-radius:16px;border:3px dashed var(--line);padding:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.zone.ans{background:#fffbe6;border-color:#ffc94d}
+.zone .ph{color:var(--muted);font-size:17px}
+.chip{padding:10px 18px;border-radius:12px;background:#fff;border:3px solid #7aa7d9;box-shadow:0 3px 0 #7aa7d9;font:500 24px var(--display);touch-action:none;user-select:none;cursor:grab}
+.chip.fixed{border-color:var(--good);box-shadow:0 3px 0 var(--good)}
+.ghost{position:fixed;z-index:99;pointer-events:none;transform:translate(-50%,-50%) rotate(-3deg);opacity:.9}
+.fb{border-radius:16px;padding:12px 14px;font-size:20px}
+.fb.good{background:#e3f6e7;border:3px solid var(--good)}
+.fb.bad{background:#fde8e8;border:3px solid var(--bad)}
+.fb.hint{background:#fff6dc;border:3px solid #ffc94d}
+.timer{font:600 30px var(--display);padding:4px 16px;border-radius:14px;background:var(--sky)}
+.timer.low{background:#fde8e8;color:var(--bad)}
+textarea,.inp{width:100%;font:22px/1.6 var(--body);padding:10px 14px;border-radius:14px;border:3px solid var(--line);resize:vertical}
+textarea{min-height:170px}
+.slot{display:grid;gap:4px}
+.slot label{font:500 18px var(--display)}
+.checks{display:grid;gap:8px}
+.ck{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:12px;border:2px solid var(--line);font-size:20px}
+.ck input{width:28px;height:28px;flex:none;margin-top:2px}
+.words3{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.wcard{padding:12px 22px;border-radius:16px;color:#fff;font:600 28px var(--display);box-shadow:0 4px 0 rgba(0,0,0,.2)}
+.vote{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px;border-radius:12px;border:2px solid var(--line)}
+.vote .nm{font-family:var(--display);min-width:110px}
+.vote .btn.on{outline:4px solid var(--ink)}
+.note{font-size:16px;color:var(--muted)}
+.helper{align-self:flex-start}
+
+/* หน้าความรู้/วิธีเล่น/สรุป */
+.doc{max-width:980px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.kcard{border-radius:16px;padding:12px;border:3px solid var(--line)}
+.kcard h3{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.kcard ul{margin:0;padding-left:20px;font-size:17px}
+.kcard li{margin-bottom:6px}
+.kcard .ex{display:block;color:var(--muted);font-size:16px}
+.steps{display:grid;gap:10px}
+.step{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;padding:10px;border-radius:16px;background:#f4f9fd}
+.step .n{width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font:600 22px var(--display)}
+.mini{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.mini svg{width:70px;height:70px;border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:17px}
+th,td{border:2px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#f2f7fb;font-family:var(--display);font-weight:500}
+.rank1{background:#fff6dc}
+.crown{font-size:46px;text-align:center}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:#22303c;color:#fff;padding:12px 22px;border-radius:16px;font:500 21px var(--display);box-shadow:0 6px 0 rgba(0,0,0,.25);max-width:90vw;text-align:center;animation:pop .25s}
+.toast.score{background:var(--good)}
+@keyframes pop{from{transform:translate(-50%,10px);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- ลายพื้นผิวสำหรับแผ่นภาพ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="pGrass" width="20" height="20" patternUnits="userSpaceOnUse">
+      <rect width="20" height="20" fill="#7cc35a"/><rect width="10" height="10" fill="#88cd66"/><rect x="10" y="10" width="10" height="10" fill="#72b851"/>
+    </pattern>
+    <pattern id="pStone" width="20" height="12" patternUnits="userSpaceOnUse">
+      <rect width="20" height="12" fill="#d9ccb4"/><path d="M0 6H20M0 12H20M10 0V6M0 6V12M20 6V12" stroke="#b5a589" stroke-width="1"/>
+    </pattern>
+  </defs>
+</svg>
+
+<header id="topbar" class="hidden">
+  <div class="brand"><div class="logo"><i style="background:#f57c00"></i><i style="background:#2e9d48"></i><i style="background:#e0457b"></i></div><h1>ตำนานสร้างเมืองประโยค</h1></div>
+  <div class="menu">
+    <button class="btn sm" data-act="howto"><span class="em">📖</span> วิธีเล่น</button>
+    <button class="btn sm" data-act="library"><span class="em">📚</span> คลังความรู้</button>
+    <button class="btn sm" data-act="sound" id="soundBtn"><span class="em">🔊</span> เสียง</button>
+    <button class="btn sm" data-act="csv"><span class="em">💾</span> CSV</button>
+    <button class="btn sm" data-act="end"><span class="em">🏁</span> จบเกม</button>
+  </div>
+</header>
+
+<main id="game" class="game hidden">
+  <div class="board-wrap" id="boardWrap">
+    <div class="zoom"><button class="btn sm" data-act="zin" aria-label="ขยาย">＋</button><button class="btn sm" data-act="zout" aria-label="ย่อ">－</button><button class="btn sm" data-act="center" aria-label="กลับกลางกระดาน"><span class="em">🎯</span></button></div>
+    <div class="board" id="board"></div>
+  </div>
+  <aside id="panel"></aside>
+</main>
+
+<div id="setup" class="screen"></div>
+<div id="scrim" class="scrim hidden"><div class="modal" id="modal"></div></div>
+
+<script>
+'use strict';
+/* ============================ ข้อมูลพื้นฐาน ============================ */
+const D = GAME_DATA;
+const THEMES = D.cityThemes, TOWERS = D.towerColors;
+const THEME_KEYS = Object.keys(THEMES), TOWER_KEYS = Object.keys(TOWERS);
+const KIND = { city: { name: 'อัศวิน', where: 'เมือง', icon: '🛡️' }, road: { name: 'นักเดินทาง', where: 'ถนน', icon: '🧭' },
+  field: { name: 'ชาวนา', where: 'ทุ่ง', icon: '🌾' }, tower: { name: 'นักปราชญ์', where: 'หอคอย', icon: '📜' } };
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pick = a => a[Math.random() * a.length | 0];
+
+/* ---------- รูปทรงแผ่นภาพ ----------
+   ช่องขอบ (slot) 12 ช่อง : ขอบบน 0-2 ขวา 3-5 ล่าง 6-8 ซ้าย 9-11 (วนตามเข็มนาฬิกา ช่องกลางของขอบคือ 1,4,7,10) */
+const ALL = [0,1,2,3,4,5,6,7,8,9,10,11];
+const Fi = (s, pos, adj) => ({ t: 'field', s, pos, adj: adj || [] });
+const Ro = (s, pos, extra) => Object.assign({ t: 'road', s, pos }, extra || {});
+const Ci = (s, shape, o, pos, houses) => ({ t: 'city', s, shape, o, pos, houses: houses || [] });
+const To = () => ({ t: 'tower', s: [], pos: [50, 50] });
+const TD = {
+  TOWER:           { name: 'หอคอยกลางทุ่ง', f: [Fi(ALL, [18, 84]), To()] },
+  TOWER_ROAD:      { name: 'หอคอยมีถนน', f: [Fi([0,1,2,3,4,5,6,8,9,10,11], [18, 84]), Ro([7], [50, 88], { end: [50, 64] }), To()] },
+  CITY_FULL:       { name: 'เมืองเต็มแผ่น', f: [Ci(ALL, 'full', 0, [50, 50], [[24, 26], [76, 26], [24, 74]])], sh: [76, 76], bd: [50, 18] },
+  CITY_3:          { name: 'เมือง 3 ด้าน', f: [Ci([0,1,2,3,4,5,9,10,11], 'three', 0, [50, 32], [[20, 22], [80, 22]]), Fi([6,7,8], [50, 90], [0])], sh: [50, 54], bd: [12, 12] },
+  CITY_3_ROAD:     { name: 'เมือง 3 ด้านมีถนน', f: [Ci([0,1,2,3,4,5,9,10,11], 'three', 0, [50, 30], [[20, 22], [80, 22]]), Ro([7], [50, 88], { end: [50, 70] }), Fi([8], [20, 92], [0]), Fi([6], [80, 92], [0])], sh: [50, 52], bd: [12, 12] },
+  CITY_2_ADJ:      { name: 'เมืองมุม', f: [Ci([0,1,2,3,4,5], 'corner', 0, [66, 32], [[42, 14], [86, 56]]), Fi([6,7,8,9,10,11], [24, 76], [0])], sh: [86, 14], bd: [12, 12] },
+  CITY_2_ADJ_ROAD: { name: 'เมืองมุมมีถนนโค้ง', f: [Ci([9,10,11,0,1,2], 'corner', 3, [30, 30], [[12, 56], [56, 12]]), Ro([4, 7], [76, 76], { c: [78, 78] }), Fi([5, 6], [91, 91]), Fi([3, 8], [84, 34], [0])], sh: [14, 14], bd: [12, 86] },
+  CITY_2_OPP:      { name: 'เมืองสะพาน', f: [Ci([0,1,2,6,7,8], 'band', 0, [50, 50], [[50, 14], [50, 86]]), Fi([3,4,5], [91, 50], [0]), Fi([9,10,11], [9, 50], [0])], sh: [33, 50], bd: [12, 12] },
+  CITY_2_SEP_ADJ:  { name: 'เมืองแยกมุม', f: [Ci([0,1,2], 'cap', 0, [50, 14]), Ci([3,4,5], 'cap', 1, [86, 50]), Fi([6,7,8,9,10,11], [36, 64], [0, 1])], bd: [12, 12] },
+  CITY_2_SEP_OPP:  { name: 'เมืองแยกบนล่าง', f: [Ci([0,1,2], 'cap', 0, [50, 14]), Ci([6,7,8], 'cap', 2, [50, 86]), Fi([3,4,5,9,10,11], [50, 50], [0, 1])], bd: [12, 12] },
+  CITY_1:          { name: 'เมืองด้านเดียว', f: [Ci([0,1,2], 'cap', 0, [50, 14]), Fi([3,4,5,6,7,8,9,10,11], [50, 62], [0])], bd: [12, 12] },
+  CITY_1_RS:       { name: 'เมืองกับถนนตรง', f: [Ci([0,1,2], 'cap', 0, [50, 14]), Ro([4, 10], [50, 50]), Fi([3, 11], [16, 34], [0]), Fi([5,6,7,8,9], [50, 80])], bd: [12, 12] },
+  CITY_1_RCL:      { name: 'เมืองกับถนนเลี้ยวซ้าย', f: [Ci([0,1,2], 'cap', 0, [50, 14]), Ro([7, 10], [36, 64]), Fi([8, 9], [13, 87]), Fi([3,4,5,6,11], [72, 60], [0])], bd: [12, 12] },
+  CITY_1_RCR:      { name: 'เมืองกับถนนเลี้ยวขวา', f: [Ci([0,1,2], 'cap', 0, [50, 14]), Ro([4, 7], [64, 64]), Fi([5, 6], [87, 87]), Fi([3,8,9,10,11], [28, 60], [0])], bd: [12, 12] },
+  CITY_1_RT:       { name: 'เมืองกับทางสามแพร่ง', f: [Ci([0,1,2], 'cap', 0, [50, 14]), Ro([4], [84, 50]), Ro([7], [50, 84]), Ro([10], [16, 50]), Fi([3, 11], [76, 34], [0]), Fi([5, 6], [86, 86]), Fi([8, 9], [14, 86])], junction: true, bd: [12, 12] },
+  ROAD_S:          { name: 'ถนนตรง', f: [Ro([1, 7], [50, 50]), Fi([2,3,4,5,6], [78, 50]), Fi([8,9,10,11,0], [22, 50])] },
+  ROAD_C:          { name: 'ถนนโค้ง', f: [Ro([7, 10], [36, 64]), Fi([8, 9], [13, 87]), Fi([0,1,2,3,4,5,6,11], [66, 34])] },
+  ROAD_T:          { name: 'ทางสามแพร่ง', f: [Ro([4], [84, 50]), Ro([7], [50, 84]), Ro([10], [16, 50]), Fi([11,0,1,2,3], [50, 22]), Fi([5, 6], [86, 86]), Fi([8, 9], [14, 86])], junction: true },
+  ROAD_X:          { name: 'สี่แยก', f: [Ro([1], [50, 16]), Ro([4], [84, 50]), Ro([7], [50, 84]), Ro([10], [16, 50]), Fi([11, 0], [18, 18]), Fi([2, 3], [82, 18]), Fi([5, 6], [82, 82]), Fi([8, 9], [18, 82])], junction: true }
+};
+for (const k in TD) {
+  const d = TD[k]; d.key = k; d.slot = Array(12).fill(-1);
+  d.f.forEach((f, i) => f.s.forEach(s => { d.slot[s] = i; }));
+  d.edges = [0, 1, 2, 3].map(e => ({ city: 'C', road: 'R', field: 'F' })[d.f[d.slot[e * 3 + 1]].t]);
+  d.hasCity = d.f.some(f => f.t === 'city'); d.hasTower = d.f.some(f => f.t === 'tower');
+  d.firstCity = d.f.findIndex(f => f.t === 'city');
+}
+const SHAPES = {
+  full: 'M0 0H100V100H0Z',
+  three: 'M0 0H100V100Q50 40 0 100Z',
+  corner: 'M0 0H100V100Q38 62 0 0Z',
+  band: 'M0 0H100Q60 50 100 100H0Q40 50 0 0Z',
+  cap: 'M0 0H100Q50 62 0 0Z'
+};
+const EDGE_MID = [[50, 0], [100, 50], [50, 100], [0, 50]];
+const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+const rp = (p, r) => { let [x, y] = p; for (let i = 0; i < r; i++) [x, y] = [100 - y, x]; return [x, y]; };
+
+/* ============================ เสียง ============================ */
+const SFX = {
+  on: true, ctx: null,
+  play(kind) {
+    if (!this.on) return;
+    try {
+      this.ctx = this.ctx || new (window.AudioContext || window.webkitAudioContext)();
+      const seq = { click: [[660, .05]], place: [[330, .07], [494, .1]], good: [[523, .1], [659, .1], [784, .2]], bad: [[247, .16], [196, .24]],
+        score: [[784, .08], [988, .08], [1319, .22]], tick: [[1046, .04]], draw: [[440, .05], [587, .07]], end: [[523, .12], [659, .12], [784, .12], [1046, .35]] }[kind] || [[600, .05]];
+      let t = this.ctx.currentTime;
+      for (const [f, d] of seq) {
+        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.18, t); g.gain.exponentialRampToValueAtTime(.001, t + d);
+        o.connect(g).connect(this.ctx.destination); o.start(t); o.stop(t + d + .02); t += d * .85;
+      }
+    } catch (e) { /* ไม่มีเสียงก็เล่นต่อได้ */ }
+  }
+};
+
+/* ============================ สถานะเกม ============================ */
+const S = {
+  players: [], cur: 0, deck: [], tiles: [], at: new Map(), phase: 'setup', current: null, rot: 0, preview: null,
+  canMeeple: true, lastIdx: -1, zoom: 104, log: [], asked: [], feed: [], qPools: {}, missionPools: {}, ended: false, nPlayers: 2, seq: 0
+};
+const key = (x, y) => x + ',' + y;
+const curP = () => S.players[S.cur];
+
+/* ---------- วาดแผ่นภาพ (SVG) ---------- */
+function houseSVG([x, y], roof) {
+  return `<g transform="translate(${x} ${y})"><rect x="-7" y="-2" width="14" height="10" fill="#fff6e6" stroke="#4e342e" stroke-width="1"/><rect x="-2" y="3" width="4" height="5" fill="#8d6e63"/>` +
+    `<rect x="-9" y="-5" width="18" height="3.5" fill="${roof}" stroke="#4e342e" stroke-width=".8"/><rect x="-6" y="-8.5" width="12" height="3.5" fill="${roof}" stroke="#4e342e" stroke-width=".8"/><rect x="-3" y="-12" width="6" height="3.5" fill="${roof}" stroke="#4e342e" stroke-width=".8"/></g>`;
+}
+function towerSVG(c) {
+  return `<g transform="translate(50 50)"><ellipse cx="0" cy="17" rx="17" ry="4" fill="rgba(0,0,0,.25)"/>` +
+    `<rect x="-12" y="-16" width="24" height="33" fill="${c.hex}" stroke="#263238" stroke-width="1.6"/>` +
+    `<rect x="-14" y="-23" width="6" height="7" fill="${c.hex}" stroke="#263238" stroke-width="1.4"/><rect x="-3" y="-23" width="6" height="7" fill="${c.hex}" stroke="#263238" stroke-width="1.4"/><rect x="8" y="-23" width="6" height="7" fill="${c.hex}" stroke="#263238" stroke-width="1.4"/>` +
+    `<rect x="-14" y="-16" width="28" height="3" fill="rgba(0,0,0,.2)"/><rect x="-4" y="7" width="8" height="10" fill="#4e342e"/>` +
+    `<circle cx="0" cy="-4" r="7.5" fill="#fff"/><text x="0" y="-3.6" font-size="10" text-anchor="middle" dominant-baseline="central" class="em">${c.icon}</text></g>`;
+}
+function badgeSVG([x, y], th) {
+  return `<g transform="translate(${x} ${y})"><circle r="9" fill="#fff" stroke="${th.roof}" stroke-width="2.5"/><text y=".5" font-size="10" text-anchor="middle" dominant-baseline="central" class="em">${th.icon}</text></g>`;
+}
+function shieldSVG([x, y]) {
+  return `<g transform="translate(${x} ${y})"><path d="M-6 -7H6V0Q6 6 0 9Q-6 6 -6 0Z" fill="#ffd54f" stroke="#8d6e00" stroke-width="1.3"/><path d="M0 -4V5M-3.5 0H3.5" stroke="#c62828" stroke-width="1.6"/></g>`;
+}
+function meepleSVG([x, y], hex, small) {
+  const k = small ? .8 : 1;
+  return `<g transform="translate(${x} ${y}) scale(${k})"><ellipse cx="0" cy="11" rx="10" ry="3" fill="rgba(0,0,0,.3)"/>` +
+    `<rect x="-8" y="-2" width="16" height="13" rx="2" fill="${hex}" stroke="#fff" stroke-width="2"/><rect x="-5" y="-13" width="10" height="10" rx="2" fill="${hex}" stroke="#fff" stroke-width="2"/>` +
+    `<rect x="-3" y="-10" width="2" height="2" fill="#fff"/><rect x="1" y="-10" width="2" height="2" fill="#fff"/></g>`;
+}
+function tileSVG(t, r = t.r) {
+  const d = t.def; let g = `<rect width="100" height="100" fill="url(#pGrass)"/>`;
+  d.f.forEach(f => {
+    if (f.t === 'city') g += `<path d="${SHAPES[f.shape]}" transform="rotate(${f.o * 90} 50 50)" fill="url(#pStone)" stroke="#4e342e" stroke-width="2.6" stroke-linejoin="round"/>`;
+  });
+  d.f.forEach(f => {
+    if (f.t !== 'road') return;
+    const a = EDGE_MID[f.s[0] / 3 | 0];
+    let p;
+    if (f.s.length === 2) { const b = EDGE_MID[f.s[1] / 3 | 0], c = f.c || [50, 50]; p = `M${a[0]} ${a[1]}Q${c[0]} ${c[1]} ${b[0]} ${b[1]}`; }
+    else { const e = f.end || [50, 50]; p = `M${a[0]} ${a[1]}L${e[0]} ${e[1]}`; }
+    g += `<path d="${p}" fill="none" stroke="#6d4c41" stroke-width="15"/><path d="${p}" fill="none" stroke="#e2c38c" stroke-width="10"/><path d="${p}" fill="none" stroke="#f3dfb1" stroke-width="3" stroke-dasharray="5 6"/>`;
+  });
+  let up = '';
+  const th = THEMES[t.theme];
+  if (d.hasCity) d.f.forEach(f => { if (f.t === 'city') f.houses.forEach(h => { up += houseSVG(rp(h, r), th.roof); }); });
+  if (d.junction) up += `<g transform="translate(50 50)"><rect x="-11" y="-11" width="22" height="22" fill="#90a4ae" stroke="#37474f" stroke-width="1.6"/><rect x="-6" y="-6" width="12" height="12" fill="#4fc3f7" stroke="#37474f" stroke-width="1.2"/></g>`;
+  if (t.shield && d.sh) up += shieldSVG(rp(d.sh, r));
+  if (d.hasTower) up += towerSVG(TOWERS[t.tcolor]);
+  if (d.hasCity && d.bd) up += badgeSVG(rp(d.bd, r), th);
+  if (t.meeple) up += meepleSVG(rp(d.f[t.meeple.fi].pos, r), S.players[t.meeple.p].hex);
+  return `<svg viewBox="0 0 100 100" class="tile" role="img" aria-label="${esc(d.name)}"><g transform="rotate(${r * 90} 50 50)">${g}</g>${up}` +
+    `<rect x=".8" y=".8" width="98.4" height="98.4" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1.6"/></svg>`;
+}
+
+/* ---------- กองแผ่นภาพ ---------- */
+function mkInst(type, theme, tcolor, shield) {
+  const def = TD[type];
+  if (!def) throw new Error('ไม่รู้จักประเภทแผ่น ' + type);
+  return { id: ++S.seq, def, theme: theme || 'build', tcolor: tcolor || 'green', shield: !!shield, r: 0, meeple: null };
+}
+function buildDeck() {
+  const list = []; let ti = 0, ci = 0;
+  const cityIdx = shuffle(THEME_KEYS.map((_, i) => i)); // เริ่มธีมแบบสุ่ม
+  D.tileSet.forEach(row => {
+    for (let i = 0; i < row.count; i++) {
+      const def = TD[row.type];
+      const theme = def.hasCity ? THEME_KEYS[cityIdx[ci++ % THEME_KEYS.length]] : 'build';
+      const tcolor = def.hasTower ? TOWER_KEYS[ti++ % TOWER_KEYS.length] : 'green';
+      list.push(mkInst(row.type, theme, tcolor, def.hasCity && i < (row.shields || 0)));
+    }
+  });
+  return shuffle(list);
+}
+
+/* ---------- การวางแผ่น ---------- */
+function nbIdx(x, y, dir) { const v = S.at.get(key(x + DIRS[dir][0], y + DIRS[dir][1])); return v === undefined ? -1 : v; }
+const edgeOf = (t, dir) => t.def.edges[(dir - t.r + 4) % 4];
+function canPlace(def, x, y, r) {
+  if (S.at.has(key(x, y))) return false;
+  let touch = false;
+  for (let dir = 0; dir < 4; dir++) {
+    const n = nbIdx(x, y, dir); if (n < 0) continue;
+    touch = true;
+    if (def.edges[(dir - r + 4) % 4] !== edgeOf(S.tiles[n], (dir + 2) % 4)) return false;
+  }
+  return touch;
+}
+function frontier() {
+  const set = new Map();
+  for (const t of S.tiles) for (const [dx, dy] of DIRS) { const x = t.x + dx, y = t.y + dy; if (!S.at.has(key(x, y))) set.set(key(x, y), [x, y]); }
+  return [...set.values()];
+}
+function validCells(def, r) { return frontier().filter(([x, y]) => canPlace(def, x, y, r)); }
+function anyValid(def) { for (let r = 0; r < 4; r++) if (validCells(def, r).length) return true; return false; }
+function putTile(inst, x, y, r) {
+  inst.x = x; inst.y = y; inst.r = r;
+  inst.slot = Array(12);
+  for (let s = 0; s < 12; s++) inst.slot[(s + 3 * r) % 12] = inst.def.slot[s];
+  S.tiles.push(inst); S.at.set(key(x, y), S.tiles.length - 1);
+  return S.tiles.length - 1;
+}
+
+/* ---------- กลุ่มพื้นที่ (ถนน เมือง ทุ่ง หอคอย) ---------- */
+function computeGroups() {
+  const parent = new Map();
+  const find = k => { while (parent.get(k) !== k) { parent.set(k, parent.get(parent.get(k))); k = parent.get(k); } return k; };
+  const uni = (a, b) => { a = find(a); b = find(b); if (a !== b) parent.set(a, b); };
+  S.tiles.forEach((t, i) => t.def.f.forEach((f, fi) => parent.set(i + ':' + fi, i + ':' + fi)));
+  S.tiles.forEach((t, i) => {
+    for (let s = 0; s < 12; s++) {
+      const e = s / 3 | 0, k = s % 3, n = nbIdx(t.x, t.y, e);
+      if (n < 0) continue;
+      uni(i + ':' + t.slot[s], n + ':' + S.tiles[n].slot[((e + 2) % 4) * 3 + (2 - k)]);
+    }
+  });
+  const G = new Map();
+  S.tiles.forEach((t, i) => t.def.f.forEach((f, fi) => {
+    const r = find(i + ':' + fi);
+    if (!G.has(r)) G.set(r, { root: r, type: f.t, members: [], tiles: new Set(), open: 0, shields: 0, meeples: [] });
+    const g = G.get(r); g.members.push([i, fi]); g.tiles.add(i);
+    if (t.meeple && t.meeple.fi === fi) g.meeples.push({ p: t.meeple.p, tile: i });
+    if (f.t === 'city' && t.shield && fi === t.def.firstCity) g.shields++;
+    if (f.t === 'tower') { g.around = around(t); g.open = 8 - g.around; }
+    else {
+      const edges = new Set(f.s.map(s => ((s + 3 * t.r) % 12) / 3 | 0));
+      edges.forEach(e => { if (nbIdx(t.x, t.y, e) < 0) g.open++; });
+    }
+  }));
+  for (const g of G.values()) g.complete = g.open === 0;
+  return { G, find };
+}
+function around(t) { let n = 0; for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if ((dx || dy) && S.at.has(key(t.x + dx, t.y + dy))) n++; return n; }
+function winners(g) {
+  const c = {}; g.meeples.forEach(m => { c[m.p] = (c[m.p] || 0) + 1; });
+  const max = Math.max(...Object.values(c));
+  return Object.keys(c).filter(p => c[p] === max).map(Number);
+}
+function returnMeeples(g) { g.meeples.forEach(m => { S.tiles[m.tile].meeple = null; S.players[m.p].left++; }); }
+function award(g, pts, cat, why) {
+  const w = winners(g);
+  w.forEach(p => { S.players[p].score += pts; S.players[p].bd[cat] += pts; });
+  const names = w.map(p => S.players[p].name).join(' และ ');
+  feed(`<span class="em">⭐</span> ${esc(names)} ได้ ${pts} คะแนน (${why})`);
+  return { names, pts };
+}
+
+/* ============================ การเล่นแต่ละตา ============================ */
+function feed(html) { S.feed.unshift(html); S.feed = S.feed.slice(0, 40); }
+function toast(msg, cls = '', ms = 2200) {
+  const el = document.createElement('div'); el.className = 'toast ' + cls; el.innerHTML = msg; document.body.appendChild(el);
+  setTimeout(() => el.remove(), ms);
+}
+
+function startGame(names) {
+  Object.assign(S, { players: [], cur: 0, tiles: [], at: new Map(), phase: 'draw', current: null, rot: 0, preview: null, canMeeple: true,
+    lastIdx: -1, log: [], asked: [], feed: [], qPools: {}, missionPools: {}, ended: false });
+  names.forEach((n, i) => S.players.push({ name: n, hex: D.playerColors[i].hex, color: D.playerColors[i].name, score: 0, left: D.meeplesPerPlayer,
+    helpers: D.helperCardsPerPlayer, bd: { road: 0, city: 0, tower: 0, field: 0 } }));
+  S.deck = buildDeck();
+  const st = mkInst(D.startTile.type, D.startTile.theme, 'green', false);
+  putTile(st, 0, 0, 0); S.lastIdx = 0;
+  feed('วางแผ่นเริ่มต้นกลางกระดานแล้ว เริ่มสร้างเมืองกันเลย!');
+  $('#setup').classList.add('hidden'); $('#topbar').classList.remove('hidden'); $('#game').classList.remove('hidden');
+  render(); centerBoard();
+}
+
+async function drawTile() {
+  if (S.phase !== 'draw') return;
+  SFX.play('draw');
+  let guard = 0;
+  while (S.deck.length) {
+    const inst = S.deck.shift();
+    if (anyValid(inst.def)) { S.current = inst; break; }
+    guard++;
+    if (guard > S.deck.length + 1) { feed(`แผ่น “${esc(inst.def.name)}” วางที่ไหนไม่ได้เลย จึงนำออกจากเกม`); continue; }
+    S.deck.push(inst);
+    toast('แผ่นนี้ไม่มีช่องให้วาง คืนใต้กองแล้วจั่วใหม่ <span class="em">🔁</span>');
+    feed(`${esc(curP().name)} จั่วได้แผ่นที่วางไม่ได้ คืนใต้กองแล้วจั่วใหม่`);
+  }
+  if (!S.current) return endGame();
+  S.rot = 0; S.preview = null; S.canMeeple = true;
+  const d = S.current.def;
+  if (d.hasTower || d.hasCity) {
+    S.phase = 'challenge'; render();
+    S.canMeeple = d.hasTower ? await towerChallenge(S.current) : await cityChallenge(S.current);
+  }
+  S.phase = 'place';
+  const v = validCells(d, S.rot);
+  if (!v.length) { for (let r = 1; r < 4; r++) if (validCells(d, r).length) { S.rot = r; break; } }
+  render();
+}
+function rotate() {
+  if (S.phase !== 'place') return;
+  SFX.play('click');
+  const d = S.current.def;
+  if (S.preview) {
+    for (let i = 1; i <= 4; i++) { const r = (S.rot + i) % 4; if (canPlace(d, S.preview[0], S.preview[1], r)) { S.rot = r; break; } }
+  } else S.rot = (S.rot + 1) % 4;
+  render();
+}
+function tapCell(x, y) {
+  if (S.phase !== 'place') return;
+  const d = S.current.def;
+  if (S.preview && S.preview[0] === x && S.preview[1] === y) { rotate(); return; }
+  if (!canPlace(d, x, y, S.rot)) {
+    let ok = -1; for (let r = 0; r < 4; r++) if (canPlace(d, x, y, r)) { ok = r; break; }
+    if (ok < 0) return; S.rot = ok;
+  }
+  S.preview = [x, y]; SFX.play('click'); render();
+}
+function confirmPlace() {
+  if (S.phase !== 'place' || !S.preview) return;
+  const [x, y] = S.preview;
+  if (!canPlace(S.current.def, x, y, S.rot)) return;
+  const idx = putTile(S.current, x, y, S.rot); S.lastIdx = idx; S.preview = null; S.current = null;
+  SFX.play('place');
+  feed(`${esc(curP().name)} วางแผ่น “${esc(S.tiles[idx].def.name)}”`);
+  const spots = meepleSpots(idx);
+  if (S.canMeeple && curP().left > 0 && spots.length) { S.phase = 'meeple'; S.mSel = null; render(); }
+  else {
+    if (!S.canMeeple) toast('แผ่นนี้วางได้ แต่วางตัวผู้เล่นไม่ได้');
+    finishTurn();
+  }
+}
+function meepleSpots(idx) {
+  const { G, find } = computeGroups();
+  const t = S.tiles[idx];
+  return t.def.f.map((f, fi) => ({ f, fi })).filter(({ fi }) => G.get(find(idx + ':' + fi)).meeples.length === 0);
+}
+function placeMeeple(fi) {
+  if (S.phase !== 'meeple') return;
+  if (fi !== null) {
+    const t = S.tiles[S.lastIdx]; t.meeple = { p: S.cur, fi }; curP().left--;
+    const k = KIND[t.def.f[fi].t]; SFX.play('place');
+    feed(`${esc(curP().name)} วาง${k.name}ใน${k.where}`);
+  }
+  finishTurn();
+}
+function finishTurn() {
+  scoreAfter(S.lastIdx);
+  if (!S.deck.length) { S.phase = 'wait'; render(); setTimeout(endGame, 600); return; }
+  S.cur = (S.cur + 1) % S.players.length; S.phase = 'draw'; render();
+}
+function scoreAfter(idx) {
+  const { G } = computeGroups(); const t = S.tiles[idx]; const sc = D.scoring; const msgs = [];
+  for (const g of G.values()) {
+    if (!g.complete || !g.tiles.has(idx)) continue;
+    if (g.type === 'road') {
+      if (g.meeples.length) { const a = award(g, g.tiles.size * sc.road, 'road', `ถนนเสร็จ ${g.tiles.size} แผ่น`); msgs.push(`${a.names} +${a.pts}`); returnMeeples(g); }
+      else feed('สร้างถนนเสร็จ 1 สาย (ไม่มีเจ้าของ)');
+    }
+    if (g.type === 'city') {
+      if (g.meeples.length) { const a = award(g, g.tiles.size * sc.city + g.shields * sc.shield, 'city', `เมืองเสร็จ ${g.tiles.size} แผ่น โล่ ${g.shields}`); msgs.push(`${a.names} +${a.pts}`); returnMeeples(g); }
+      else feed('สร้างเมืองเสร็จ 1 เมือง (ไม่มีเจ้าของ)');
+    }
+  }
+  for (const g of G.values()) {
+    if (g.type !== 'tower' || !g.complete || !g.meeples.length) continue;
+    const tt = S.tiles[g.members[0][0]];
+    if (Math.abs(tt.x - t.x) <= 1 && Math.abs(tt.y - t.y) <= 1) { const a = award(g, sc.tower, 'tower', 'หอคอยมีแผ่นล้อมครบ 8 แผ่น'); msgs.push(`${a.names} +${a.pts}`); returnMeeples(g); }
+  }
+  if (msgs.length) { SFX.play('score'); toast('<span class="em">🎉</span> ' + esc(msgs.join(' · ')), 'score', 2800); }
+}
+
+/* ---------- นับคะแนนตอนจบเกม ---------- */
+function endScoring() {
+  const { G, find } = computeGroups(); const sc = D.scoring;
+  for (const g of G.values()) {
+    if (!g.meeples.length) continue;
+    if (g.type === 'road' && !g.complete) award(g, g.tiles.size * sc.endTile, 'road', `ถนนยังไม่เสร็จ ${g.tiles.size} แผ่น`);
+    if (g.type === 'city' && !g.complete) award(g, g.tiles.size * sc.endTile + g.shields * sc.endShield, 'city', `เมืองยังไม่เสร็จ ${g.tiles.size} แผ่น โล่ ${g.shields}`);
+    if (g.type === 'tower' && !g.complete) award(g, 1 + g.around, 'tower', `หอคอยยังไม่ครบ ${1 + g.around} แผ่น`);
+    if (g.type === 'field') {
+      const cities = new Set();
+      g.members.forEach(([i, fi]) => S.tiles[i].def.f[fi].adj.forEach(ci => { const cg = G.get(find(i + ':' + ci)); if (cg.complete) cities.add(cg.root); }));
+      if (cities.size) award(g, cities.size * sc.farmCity, 'field', `ชาวนา ทุ่งติดเมืองที่เสร็จ ${cities.size} เมือง`);
+    }
+  }
+}
+function endGame() {
+  if (S.ended) return;
+  S.ended = true; S.phase = 'end'; endScoring(); render(); SFX.play('end'); showSummary();
+}
+
+/* ============================ ด่านสร้าง: คำถามเมือง ============================ */
+function nextFromPool(store, id, items) {
+  if (!store[id] || !store[id].length) store[id] = shuffle(items.map((_, i) => i));
+  return items[store[id].pop()];
+}
+function topicInd(theme, topic) { const t = (D.topics[theme] || []).find(x => x.name === topic); return t ? t.ind : ''; }
+function logRec(r) {
+  S.log.push(Object.assign({ no: S.log.length + 1, time: new Date().toLocaleTimeString('th-TH', { hour12: false }), player: curP().name }, r));
+}
+const LETTERS = ['ก', 'ข', 'ค', 'ง'];
+
+function openModal(html) { $('#modal').innerHTML = html; $('#scrim').classList.remove('hidden'); $('#scrim').scrollTop = 0; }
+function closeModal() { $('#scrim').classList.add('hidden'); $('#modal').innerHTML = ''; clearInterval(S.timerId); }
+
+function cityChallenge(inst) {
+  return new Promise(resolve => {
+    const th = THEMES[inst.theme]; const P = curP();
+    const q = nextFromPool(S.qPools, inst.theme, D.cityQuestions[inst.theme]);
+    const isOrder = q.type === 'order';
+    const st = { attempt: 1, t0: Date.now(), helper: '', hint: false, cut: -1, wrong: new Set(), done: false, passed: false, answers: [] };
+    const disp = isOrder ? null : shuffle(q.choices.map((_, i) => i));
+    let pool = isOrder ? shuffle(q.words.map((w, i) => ({ w, i }))) : null, ans = [];
+    if (isOrder) while (pool.length > 1 && pool.map(o => o.w).join('|') === q.answer.join('|')) pool = shuffle(pool);
+    const correctText = isOrder ? q.answer.join('') : q.choices[q.answer];
+    let fb = '';
+
+    function finish(passed) {
+      st.done = true; st.passed = passed;
+      S.asked.push({ player: P.name, kind: 'เมือง', group: th.name, topic: q.topic, q: q.q, correct: correctText, explain: q.explain, answers: st.answers.slice(), result: passed ? 'ถูก' : 'ผิด' });
+      feed(`${esc(P.name)} ${passed ? 'ตอบถูก ได้สร้าง' : 'ตอบไม่ถูก แต่ยังวางแผ่น'}${esc(th.name)}`);
+    }
+    function check(answerText, ok) {
+      st.answers.push(answerText);
+      logRec({ kind: 'เมือง', group: th.name, topic: q.topic, ind: topicInd(inst.theme, q.topic), q: q.q, answer: answerText, key: correctText,
+        result: ok ? 'ถูก' : 'ผิด', attempt: st.attempt, helper: st.helper, secs: Math.round((Date.now() - st.t0) / 1000), note: '' });
+      if (ok) { SFX.play('good'); fb = `<div class="fb good"><b><span class="em">🎉</span> ถูกต้อง เก่งมาก!</b><br>${esc(q.explain)}<br><b>วางแผ่นและวาง${KIND.city.name}ในเมืองได้</b></div>`; finish(true); }
+      else if (st.attempt === 1) { SFX.play('bad'); st.attempt = 2; st.hint = true; fb = `<div class="fb bad"><b>ยังไม่ถูก ลองอีกครั้งนะ</b></div>`; }
+      else { SFX.play('bad'); fb = `<div class="fb bad"><b>เฉลย: ${esc(correctText)}</b><br>${esc(q.explain)}<br>วางแผ่นได้ แต่วางตัวผู้เล่นบนแผ่นนี้ไม่ได้</div>`; finish(false); }
+      view();
+    }
+    function view() {
+      let body = '';
+      if (isOrder) {
+        const chips = (arr, zone) => arr.map((o, i) => `<span class="chip" data-zone="${zone}" data-idx="${i}">${esc(o.w)}</span>`).join('');
+        body = `<div class="info">แตะคำ หรือลากคำลงในแถวสีเหลือง เรียงให้เป็นประโยค</div>
+          <div class="zone ans" data-dropzone="ans">${ans.length ? chips(ans, 'ans') : '<span class="ph">วางคำตรงนี้ ▸</span>'}</div>
+          <div class="zone" data-dropzone="pool">${pool.length ? chips(pool, 'pool') : '<span class="ph">ใช้คำครบแล้ว</span>'}</div>
+          ${st.done ? '' : `<div class="row"><button class="btn" data-a="clear">↺ เริ่มเรียงใหม่</button><button class="btn go" data-a="checkOrder" ${pool.length ? 'disabled' : ''}>✔ ตรวจคำตอบ</button></div>`}`;
+      } else {
+        body = `<div class="choices">${disp.map((ci, k) => {
+          let cls = 'choice';
+          if (st.wrong.has(ci)) cls += ' wrong';
+          if (st.cut === ci) cls += ' cut';
+          if (st.done && ci === q.answer) cls += ' right';
+          const dis = st.done || st.wrong.has(ci) || st.cut === ci;
+          return `<button class="${cls}" data-a="choose" data-ci="${ci}" ${dis ? 'disabled' : ''}><span class="k">${LETTERS[k]}</span>${esc(q.choices[ci])}</button>`;
+        }).join('')}</div>`;
+      }
+      const helperBtn = (!st.done && P.helpers > 0) ? `<div class="row helper"><button class="btn sm warn" data-a="help1"><span class="em">🃏</span> ดูคำใบ้</button><button class="btn sm warn" data-a="help2"><span class="em">✂️</span> ${isOrder ? 'วางคำแรกให้' : 'ตัดตัวเลือกผิด 1 ตัว'}</button><span class="note">การ์ดตัวช่วยเหลือ ${P.helpers} ใบ</span></div>` :
+        (!st.done ? `<div class="note">การ์ดตัวช่วยหมดแล้ว</div>` : '');
+      openModal(`
+        <div class="mhead"><span class="tag" style="background:${th.roof}"><span class="em">${th.icon}</span> ด่านสร้าง${esc(th.name)}</span><span class="tag" style="background:${P.hex}">${esc(P.name)}</span></div>
+        <div class="info">หัวข้อ: ${esc(q.topic)} · ตอบได้ ${st.done ? 'ครบแล้ว' : (st.attempt === 1 ? '2 ครั้ง' : 'อีก 1 ครั้ง')}</div>
+        <div class="pic">${esc(q.pic)}<small>${esc(q.scene || '')}</small></div>
+        <div class="qtext">${esc(q.q)}</div>
+        ${body}
+        ${st.hint && !st.done ? `<div class="fb hint"><span class="em">💡</span> คำใบ้: ${esc(q.hint)}</div>` : ''}
+        ${fb}
+        ${helperBtn}
+        ${st.done ? `<button class="btn ${st.passed ? 'go' : 'blue'}" data-a="next">ไปวางแผ่น ▶</button>` : ''}`);
+      bind();
+    }
+    function bind() {
+      const m = $('#modal');
+      m.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
+        const a = b.dataset.a;
+        if (a === 'choose') { const ci = +b.dataset.ci; if (ci !== q.answer) st.wrong.add(ci); fb = ''; check(q.choices[ci], ci === q.answer); }
+        if (a === 'clear') { pool = pool.concat(ans); ans = []; SFX.play('click'); view(); }
+        if (a === 'checkOrder') { fb = ''; const txt = ans.map(o => o.w).join(' '); const ok = ans.map(o => o.w).join('|') === q.answer.join('|'); check(txt, ok); if (!ok && !st.done) { pool = pool.concat(ans); ans = []; view(); } }
+        if (a === 'help1' && P.helpers > 0) { P.helpers--; st.hint = true; st.helper += (st.helper ? '+' : '') + 'คำใบ้'; SFX.play('click'); view(); }
+        if (a === 'help2' && P.helpers > 0) {
+          P.helpers--; st.helper += (st.helper ? '+' : '') + (isOrder ? 'วางคำแรก' : 'ตัดตัวเลือก'); SFX.play('click');
+          if (isOrder) { const all = pool.concat(ans); const fi = all.findIndex(o => o.w === q.answer[0]); ans = [all[fi]]; pool = all.filter((_, i) => i !== fi); }
+          else { const wrongs = [0, 1, 2].filter(i => i !== q.answer && !st.wrong.has(i)); if (wrongs.length) st.cut = pick(wrongs); }
+          view();
+        }
+        if (a === 'next') { closeModal(); render(); resolve(st.passed); }
+      });
+      if (isOrder && !st.done) bindDrag(m, (fromZ, idx, toZ, before) => {
+        const src = fromZ === 'ans' ? ans : pool, dst = toZ === 'ans' ? ans : pool;
+        const [item] = src.splice(idx, 1);
+        if (before >= 0) { let b = before; if (src === dst && idx < before) b--; dst.splice(b, 0, item); } else dst.push(item);
+        SFX.play('click'); view();
+      });
+    }
+    view();
+  });
+}
+function bindDrag(root, onMove) {
+  root.querySelectorAll('.chip').forEach(ch => {
+    ch.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      const sx = e.clientX, sy = e.clientY; let ghost = null;
+      const move = ev => {
+        if (!ghost && Math.hypot(ev.clientX - sx, ev.clientY - sy) > 8) { ghost = ch.cloneNode(true); ghost.classList.add('ghost'); document.body.appendChild(ghost); }
+        if (ghost) { ghost.style.left = ev.clientX + 'px'; ghost.style.top = ev.clientY + 'px'; }
+      };
+      const up = ev => {
+        window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+        if (ghost) {
+          ghost.remove();
+          const el = document.elementFromPoint(ev.clientX, ev.clientY);
+          const zone = el && el.closest('[data-dropzone]'); if (!zone) return;
+          const over = el.closest('.chip');
+          const before = over && over !== ch && over.dataset.zone === zone.dataset.dropzone ? +over.dataset.idx : -1;
+          onMove(ch.dataset.zone, +ch.dataset.idx, zone.dataset.dropzone, before);
+        } else onMove(ch.dataset.zone, +ch.dataset.idx, ch.dataset.zone === 'pool' ? 'ans' : 'pool', -1);
+      };
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    });
+  });
+}
+
+/* ============================ ด่านสร้าง: ภารกิจหอคอย ============================ */
+function towerChallenge(inst) {
+  return new Promise(resolve => {
+    const c = TOWERS[inst.tcolor], M = D.towerMissions[inst.tcolor], P = curP(), color = inst.tcolor;
+    const st = { stage: 'intro', t0: 0, left: M.time, helper: '', example: false, votes: {}, checks: [], reason: -1, passed: false };
+    // เตรียมโจทย์
+    let task = {}, slots = [];
+    if (color === 'green') task = nextFromPool(S.missionPools, 'green', M.scenes);
+    if (color === 'blue') {
+      task.mode = Math.random() < .5 ? 'types' : 'listeners';
+      task.base = pick(task.mode === 'types' ? M.typesBases : M.listenerBases);
+      slots = task.mode === 'types' ? M.typesSlots : M.listenerSlots;
+    }
+    if (color === 'orange') { task.words = THEME_KEYS.map(k => ({ k, w: pick(M.words[k]) })); slots = ['ประโยคที่ 1', 'ประโยคที่ 2', 'ประโยคที่ 3']; }
+    if (color === 'purple') task = nextFromPool(S.missionPools, 'purple', M.items);
+    const reasonOrder = color === 'purple' ? shuffle(task.reasons.map((_, i) => i)) : [];
+    const vals = slots.map(() => ''); let text = '';
+    const others = S.players.map((p, i) => i).filter(i => i !== S.cur);
+
+    const lines = () => text.split('\n').map(s => s.trim()).filter(Boolean);
+    function taskHTML() {
+      if (color === 'green') return `<div class="pic">${esc(task.pic)}<small>${esc(task.scene)}</small></div>`;
+      if (color === 'blue') return `<div class="qtext">ประโยคตั้งต้น: <b>“${esc(task.base)}”</b></div><div class="info">${task.mode === 'types' ? 'แต่งใหม่ให้เป็นประโยค 4 แบบ' : 'แต่งให้เหมาะกับผู้ฟัง 3 คน'}</div>`;
+      if (color === 'orange') return `<div class="words3">${task.words.map(o => `<span class="wcard" style="background:${THEMES[o.k].roof}">${esc(o.w)}</span>`).join('')}</div>`;
+      if (color === 'purple') return `<div class="pic">${esc(task.pic)}</div><div class="qtext">ประโยคที่ต้องแก้: <b style="color:var(--bad)">“${esc(task.broken)}”</b></div>`;
+    }
+    function workHTML() {
+      if (color === 'green') return `<textarea id="tw" placeholder="พิมพ์บรรทัดละ 1 ประโยค แล้วกด Enter">${esc(text)}</textarea><div class="info">แต่งได้แล้ว <b id="cnt">${lines().length}</b> ประโยค</div>`;
+      if (color === 'purple') return `<div class="slot"><label>ประโยคที่แก้แล้ว (เติม ลักษณะ เวลา สถานที่)</label><textarea id="tw" style="min-height:110px">${esc(text)}</textarea></div>
+        <div class="slot"><label>เหตุผลที่ต้องแก้ไข</label><div class="choices">${reasonOrder.map((ri, k) => `<button class="choice ${st.reason === ri ? 'right' : ''}" data-a="reason" data-ri="${ri}"><span class="k">${LETTERS[k]}</span>${esc(task.reasons[ri])}</button>`).join('')}</div></div>`;
+      return slots.map((s, i) => `<div class="slot"><label>${esc(s)}</label><input class="inp" data-slot="${i}" value="${esc(vals[i])}" autocomplete="off"></div>`).join('');
+    }
+    function answerText() {
+      if (color === 'green') return lines().join(' / ');
+      if (color === 'purple') return text.trim() + (st.reason >= 0 ? ` [เหตุผล: ${task.reasons[st.reason]}]` : '');
+      return slots.map((s, i) => `${s}: ${vals[i].trim()}`).join(' / ');
+    }
+    function checkItems() {
+      if (color === 'green') return lines().map(l => `“${l}” มีภาคประธานและภาคแสดงครบ`);
+      if (color === 'blue') return slots.map((s, i) => `${s}: “${vals[i].trim() || '-'}” ${task.mode === 'types' ? 'เป็นชนิดประโยคที่ถูกต้อง' : 'ใช้ถ้อยคำเหมาะกับผู้ฟัง'}`);
+      if (color === 'orange') return ['ใช้คำครบทั้ง 3 คำ', 'มี 3 ประโยคที่เป็นเรื่องเดียวกัน'];
+      if (color === 'purple') return ['แก้ประโยคให้ถูกต้อง มีภาคประธานและภาคแสดง', 'เติมคำบอกลักษณะ', 'เติมคำบอกเวลา', 'เติมคำบอกสถานที่'];
+    }
+    function suggestion() {
+      const n = st.checks.filter(Boolean).length, tot = checkItems().length;
+      if (color === 'green') return { ok: n >= M.passMin, txt: `ประโยคที่ถูก ${n} ประโยค (ผ่านเมื่อได้อย่างน้อย ${M.passMin} ประโยค)` };
+      if (color === 'blue') return { ok: n >= tot - 1 && n > 0, txt: `ถูก ${n} จาก ${tot} แบบ (ผ่านเมื่อถูกอย่างน้อย ${tot - 1} แบบ)` };
+      if (color === 'orange') {
+        const yes = Object.values(st.votes).filter(v => v).length, need = Math.ceil(others.length / 2);
+        return { ok: yes >= need && n === tot, txt: `โหวต “แปลกใหม่” ${yes} จาก ${others.length} เสียง (ต้องได้อย่างน้อย ${need} เสียง) · เกณฑ์ ${n}/${tot} ข้อ` };
+      }
+      if (color === 'purple') return { ok: n >= 3 && st.reason === task.answer, txt: `ผ่านเกณฑ์ ${n} จาก 4 ข้อ · เหตุผล${st.reason === task.answer ? 'ถูกต้อง' : 'ยังไม่ถูก'} (ผ่านเมื่อได้ 3 ข้อขึ้นไปและเลือกเหตุผลถูก)` };
+    }
+    function view() {
+      const head = `<div class="mhead"><span class="tag" style="background:${c.hex}"><span class="em">${c.icon}</span> ${esc(c.name)} · ${esc(c.skill)}</span><span class="tag" style="background:${P.hex}">${esc(P.name)}</span>
+        ${st.stage === 'work' ? `<span class="timer ${st.left <= 20 ? 'low' : ''}" id="tmr">⏱ ${fmt(st.left)}</span>` : ''}</div>`;
+      let body = '';
+      if (st.stage === 'intro') body = `<h2>ภารกิจ${esc(c.skill)}</h2><div class="qtext" style="font-size:22px">${esc(M.task)}</div>${taskHTML()}
+        <div class="info">เวลา ${Math.round(M.time / 60)} นาที · เมื่อทำเสร็จ ให้เพื่อนหรือคุณครูเป็นผู้ตรวจ</div>
+        <button class="btn go" data-a="start"><span class="em">▶</span> เริ่มจับเวลา</button>`;
+      if (st.stage === 'work') body = `<div class="qtext" style="font-size:21px">${esc(M.task)}</div>${taskHTML()}${workHTML()}
+        ${st.example ? `<div class="fb hint"><span class="em">💡</span> ตัวอย่าง: ${esc(task.example || M.example)}</div>` : ''}
+        <div class="row">${P.helpers > 0 && !st.example ? `<button class="btn sm warn" data-a="help"><span class="em">🃏</span> การ์ดตัวช่วย: ดูตัวอย่าง (เหลือ ${P.helpers})</button>` : ''}<button class="btn go" data-a="submit">ส่งงาน ✔</button></div>`;
+      if (st.stage === 'vote') body = `<h2>ให้เพื่อนโหวต: เรื่องนี้แปลกใหม่ ไม่ซ้ำใครไหม?</h2>${taskHTML()}
+        <div class="fb hint" style="font-size:22px">${slots.map((s, i) => esc(vals[i].trim() || '…')).join('<br>')}</div>
+        ${others.map(i => `<div class="vote"><span class="nm" style="color:${S.players[i].hex}">${esc(S.players[i].name)}</span>
+          <button class="btn sm ${st.votes[i] === true ? 'on go' : ''}" data-a="vote" data-p="${i}" data-v="1"><span class="em">💡</span> แปลกใหม่</button>
+          <button class="btn sm ${st.votes[i] === false ? 'on' : ''}" data-a="vote" data-p="${i}" data-v="0"><span class="em">🙂</span> ยังไม่แปลกใหม่</button></div>`).join('')}
+        <button class="btn blue" data-a="toCheck" ${Object.keys(st.votes).length < others.length ? 'disabled' : ''}>ไปขั้นตรวจ ▶</button>`;
+      if (st.stage === 'check') {
+        const items = checkItems(); const sug = suggestion();
+        body = `<h2>ผู้ตรวจ (เพื่อนหรือคุณครู) ติ๊กข้อที่ทำได้</h2>
+          ${color === 'purple' ? `<div class="fb hint">คำตอบ: ${esc(text.trim() || '-')}<br>เหตุผลที่เลือก: ${esc(st.reason >= 0 ? task.reasons[st.reason] : 'ไม่ได้เลือก')}</div>` : ''}
+          ${color === 'orange' ? `<div class="fb hint">${slots.map((s, i) => esc(vals[i].trim() || '…')).join('<br>')}</div>` : ''}
+          <div class="checks">${items.length ? items.map((it, i) => `<label class="ck"><input type="checkbox" data-ck="${i}" ${st.checks[i] ? 'checked' : ''}><span>${esc(it)}</span></label>`).join('') : '<div class="note">ยังไม่มีประโยค</div>'}</div>
+          <div class="info"><span class="em">📏</span> ${esc(sug.txt)} → แนะนำ: <b style="color:${sug.ok ? 'var(--good)' : 'var(--bad)'}">${sug.ok ? 'ผ่าน' : 'ยังไม่ผ่าน'}</b></div>
+          <div class="row"><button class="btn go" data-a="pass">✅ ตรวจแล้วผ่าน</button><button class="btn red" data-a="fail">ยังไม่ผ่าน</button></div>`;
+      }
+      if (st.stage === 'done') body = st.passed ?
+        `<div class="fb good"><b><span class="em">🎉</span> ผ่านภารกิจ${esc(c.skill)}!</b><br>วางแผ่นและวาง${KIND.tower.name}ในหอคอยได้</div><button class="btn go" data-a="next">ไปวางแผ่น ▶</button>` :
+        `<div class="fb bad"><b>ยังไม่ผ่านภารกิจ</b><br>ตัวอย่างคำตอบ: ${esc(task.example || M.example)}<br>วางแผ่นได้ แต่วางตัวผู้เล่นบนแผ่นนี้ไม่ได้</div><button class="btn blue" data-a="next">ไปวางแผ่น ▶</button>`;
+      openModal(head + body); bind();
+    }
+    function fmt(s) { return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+    function syncInputs() {
+      const tw = $('#tw'); if (tw) text = tw.value;
+      $('#modal').querySelectorAll('[data-slot]').forEach(el => { vals[+el.dataset.slot] = el.value; });
+    }
+    function submit() {
+      syncInputs(); clearInterval(S.timerId);
+      st.secs = Math.round((Date.now() - st.t0) / 1000);
+      st.checks = checkItems().map(() => false);
+      st.stage = color === 'orange' ? 'vote' : 'check'; SFX.play('click'); view();
+    }
+    function decide(passed) {
+      st.passed = passed; st.stage = 'done'; SFX.play(passed ? 'good' : 'bad');
+      const n = st.checks.filter(Boolean).length;
+      let note = `ผู้ตรวจติ๊ก ${n}/${checkItems().length} ข้อ`;
+      if (color === 'green') note = `แต่งได้ ${lines().length} ประโยค · ถูกต้อง ${n} ประโยค`;
+      if (color === 'orange') note += ` · โหวตแปลกใหม่ ${Object.values(st.votes).filter(Boolean).length}/${others.length}`;
+      if (color === 'purple') note += ` · เหตุผล${st.reason === task.answer ? 'ถูก' : 'ผิด'}`;
+      const qtxt = color === 'green' ? `${M.task} (ภาพ: ${task.scene})` : color === 'blue' ? `${M.task}: “${task.base}” (${slots.join(', ')})` :
+        color === 'orange' ? `${M.task}: ${task.words.map(o => o.w).join(', ')}` : `${M.task}: “${task.broken}”`;
+      logRec({ kind: 'หอคอย', group: `${c.name} (${c.skill})`, topic: c.skill, ind: c.ind, q: qtxt, answer: answerText(), key: task.example || M.example,
+        result: passed ? 'ผ่าน' : 'ไม่ผ่าน', attempt: 1, helper: st.helper, secs: st.secs, note });
+      S.asked.push({ player: P.name, kind: 'หอคอย', group: `${c.name} (${c.skill})`, topic: c.skill, q: qtxt, correct: task.example || M.example,
+        explain: color === 'purple' ? `เหตุผลที่ถูก: ${task.reasons[task.answer]}` : 'ตัวอย่างคำตอบ คำตอบอื่นที่ถูกหลักก็ได้คะแนน', answers: [answerText()], result: passed ? 'ผ่าน' : 'ไม่ผ่าน' });
+      feed(`${esc(P.name)} ${passed ? 'ผ่าน' : 'ยังไม่ผ่าน'}ภารกิจ${esc(c.skill)}`);
+      view();
+    }
+    function bind() {
+      const m = $('#modal');
+      const tw = $('#tw'); if (tw) { tw.focus(); tw.oninput = () => { text = tw.value; const cn = $('#cnt'); if (cn) cn.textContent = lines().length; }; }
+      m.querySelectorAll('[data-slot]').forEach(el => el.oninput = () => { vals[+el.dataset.slot] = el.value; });
+      m.querySelectorAll('[data-ck]').forEach(el => el.onchange = () => { st.checks[+el.dataset.ck] = el.checked; view(); });
+      m.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
+        const a = b.dataset.a;
+        if (a === 'start') {
+          st.stage = 'work'; st.t0 = Date.now(); st.left = M.time; SFX.play('click'); view();
+          clearInterval(S.timerId);
+          S.timerId = setInterval(() => {
+            st.left--; const el = $('#tmr');
+            if (el) { el.textContent = '⏱ ' + fmt(Math.max(0, st.left)); el.classList.toggle('low', st.left <= 20); }
+            if (st.left <= 10 && st.left > 0) SFX.play('tick');
+            if (st.left <= 0) { toast('หมดเวลา! ส่งงานให้ผู้ตรวจ'); submit(); }
+          }, 1000);
+        }
+        if (a === 'help' && P.helpers > 0) { syncInputs(); P.helpers--; st.example = true; st.helper = 'ดูตัวอย่าง'; SFX.play('click'); view(); }
+        if (a === 'reason') { syncInputs(); st.reason = +b.dataset.ri; SFX.play('click'); view(); }
+        if (a === 'submit') submit();
+        if (a === 'vote') { st.votes[+b.dataset.p] = b.dataset.v === '1'; SFX.play('click'); view(); }
+        if (a === 'toCheck') { st.stage = 'check'; view(); }
+        if (a === 'pass') decide(true);
+        if (a === 'fail') decide(false);
+        if (a === 'next') { closeModal(); render(); resolve(st.passed); }
+      });
+    }
+    view();
+  });
+}
+
+/* ============================ แสดงผล ============================ */
+function render() { renderBoard(); renderPanel(); }
+let lastBounds = null;
+function renderBoard() {
+  const b = $('#board'), wrap = $('#boardWrap'), Z = S.zoom;
+  document.documentElement.style.setProperty('--cell', Z + 'px');
+  let minX = 0, maxX = 0, minY = 0, maxY = 0;
+  S.tiles.forEach(t => { minX = Math.min(minX, t.x); maxX = Math.max(maxX, t.x); minY = Math.min(minY, t.y); maxY = Math.max(maxY, t.y); });
+  minX -= 2; minY -= 2; maxX += 2; maxY += 2;
+  if (lastBounds && lastBounds.Z === Z) { wrap.scrollLeft += (lastBounds.minX - minX) * Z; wrap.scrollTop += (lastBounds.minY - minY) * Z; }
+  lastBounds = { minX, minY, Z };
+  const bw = (maxX - minX + 1) * Z, bh = (maxY - minY + 1) * Z;
+  b.style.width = bw + 'px'; b.style.height = bh + 'px';
+  S.offX = Math.max(60, (wrap.clientWidth - bw) / 2); S.offY = Math.max(60, (wrap.clientHeight - bh) / 2);
+  b.style.margin = `${S.offY}px ${S.offX}px`;
+  const pos = (x, y) => `left:${(x - minX) * Z}px;top:${(y - minY) * Z}px`;
+  let h = '';
+  S.tiles.forEach((t, i) => { h += `<div class="cell ${i === S.lastIdx && S.phase !== 'meeple' ? 'last' : ''}" style="${pos(t.x, t.y)}" data-i="${i}">${tileSVG(t)}</div>`; });
+  if (S.phase === 'place' && S.current) {
+    validCells(S.current.def, S.rot).forEach(([x, y]) => { if (!S.preview || S.preview[0] !== x || S.preview[1] !== y) h += `<div class="cell spot" style="${pos(x, y)}" data-x="${x}" data-y="${y}" title="วางได้"></div>`; });
+    // ช่องที่วางได้ถ้าหมุนแผ่น
+    if (S.preview) {
+      const [x, y] = S.preview; const ok = canPlace(S.current.def, x, y, S.rot);
+      h += `<div class="cell preview ${ok ? '' : 'badfit'}" style="${pos(x, y)}" data-x="${x}" data-y="${y}">${tileSVG(S.current, S.rot)}</div>`;
+    }
+  }
+  if (S.phase === 'meeple') {
+    const t = S.tiles[S.lastIdx];
+    h += `<div class="cell" style="${pos(t.x, t.y)};z-index:4">` + meepleSpots(S.lastIdx).map(({ f, fi }) => {
+      const [x, y] = rp(f.pos, t.r);
+      return `<button class="mspot em ${S.mSel === fi ? 'sel' : ''}" style="left:${x}%;top:${y}%" data-fi="${fi}" title="${KIND[f.t].name}">${KIND[f.t].icon}</button>`;
+    }).join('') + '</div>';
+  }
+  b.innerHTML = h;
+  b.querySelectorAll('[data-x]').forEach(el => el.onclick = () => tapCell(+el.dataset.x, +el.dataset.y));
+  b.querySelectorAll('[data-fi]').forEach(el => el.onclick = () => { S.mSel = +el.dataset.fi; SFX.play('click'); render(); });
+}
+function centerBoard() {
+  const wrap = $('#boardWrap'), b = $('#board');
+  const t = S.tiles[S.lastIdx >= 0 ? S.lastIdx : 0]; if (!t || !lastBounds) return;
+  const cx = S.offX + (t.x - lastBounds.minX + .5) * S.zoom, cy = S.offY + (t.y - lastBounds.minY + .5) * S.zoom;
+  wrap.scrollLeft = cx - wrap.clientWidth / 2; wrap.scrollTop = cy - wrap.clientHeight / 2;
+}
+function playersHTML() {
+  return `<div class="players">${S.players.map((p, i) => `<div class="pl ${i === S.cur && S.phase !== 'end' ? 'cur' : ''}">
+    <span class="dot" style="background:${p.hex}"></span><span class="nm">${esc(p.name)}</span><span class="sc">${p.score}</span>
+    <span class="meta"><span class="mee" title="ตัวผู้เล่นเหลือ ${p.left} ตัว">${Array.from({ length: D.meeplesPerPlayer }, (_, k) => `<i style="background:${p.hex}" class="${k < p.left ? '' : 'off'}"></i>`).join('')}</span>
+    <span>เหลือ ${p.left} ตัว</span><span><span class="em">🃏</span> ${p.helpers}</span></span></div>`).join('')}</div>`;
+}
+function renderPanel() {
+  const P = curP(); const pn = $('#panel'); if (!P) return;
+  let act = '';
+  if (S.phase === 'draw') act = `<div class="box"><h3>1) จั่วแผ่นภาพ</h3><button class="btn go" data-a="draw"><span class="em">🎴</span> จั่วแผ่น</button>
+    <div class="info">ถ้าได้แผ่นที่มี <b>เมือง</b> ต้องตอบคำถาม ถ้าได้ <b>หอคอย</b> ต้องทำภารกิจคิดสร้างสรรค์ก่อนวาง</div></div>`;
+  if (S.phase === 'challenge') act = `<div class="box"><h3>ด่านสร้าง</h3><div class="info">กำลังทำด่านสร้าง…</div></div>`;
+  if (S.phase === 'place' && S.current) {
+    const ok = S.preview && canPlace(S.current.def, S.preview[0], S.preview[1], S.rot);
+    act = `<div class="box"><h3>2) หมุนและวางแผ่น</h3>
+      <div class="cur-tile">${tileSVG(S.current, S.rot)}<div class="info">${esc(S.current.def.name)}${S.current.def.hasCity ? `<br><span class="tag" style="background:${THEMES[S.current.theme].roof}">${esc(THEMES[S.current.theme].name)}</span>` : ''}${S.current.def.hasTower ? `<br><span class="tag" style="background:${TOWERS[S.current.tcolor].hex}">${esc(TOWERS[S.current.tcolor].name)}</span>` : ''}
+      <br>${S.canMeeple ? '<span class="em">✅</span> วางตัวผู้เล่นได้' : '<span class="em">🚫</span> วางตัวผู้เล่นบนแผ่นนี้ไม่ได้'}</div></div>
+      <div class="info">แตะช่องสีเหลืองบนกระดาน ขอบต้องตรงกันทุกด้าน (เมืองต่อเมือง ถนนต่อถนน ทุ่งต่อทุ่ง)</div>
+      <div class="row"><button class="btn blue" data-a="rotate">↻ หมุน 90°</button><button class="btn go" data-a="place" ${ok ? '' : 'disabled'}>✔ วางตรงนี้</button></div>
+      ${!validCells(S.current.def, S.rot).length ? '<div class="info">ทิศนี้วางไม่ได้ ลองหมุนแผ่น</div>' : ''}</div>`;
+  }
+  if (S.phase === 'meeple') {
+    const t = S.tiles[S.lastIdx]; const sp = meepleSpots(S.lastIdx);
+    act = `<div class="box"><h3>3) วางตัวผู้เล่น 1 ตัว (ไม่วางก็ได้)</h3>
+      <div class="row">${sp.map(({ f, fi }) => `<button class="btn sm ${S.mSel === fi ? 'go' : ''}" data-a="msel" data-fi="${fi}"><span class="em">${KIND[f.t].icon}</span> ${KIND[f.t].name}ใน${KIND[f.t].where}</button>`).join('')}</div>
+      <div class="row"><button class="btn go" data-a="mok" ${S.mSel == null ? 'disabled' : ''}>✔ วางตัวผู้เล่น</button><button class="btn" data-a="mskip">ไม่วาง ▶</button></div>
+      <div class="info">หรือแตะจุดที่กระพริบบนแผ่น</div></div>`;
+  }
+  if (S.phase === 'end') act = `<div class="box"><h3>จบเกมแล้ว</h3><button class="btn go" data-a="summary">ดูสรุปคะแนน</button></div>`;
+  pn.innerHTML = `<div class="turn" style="background:${S.phase === 'end' ? '#22303c' : P.hex};${P.hex === '#f6c000' && S.phase !== 'end' ? 'color:#22303c' : ''}"><span class="em">👑</span><div>${S.phase === 'end' ? 'จบเกม' : 'ตาของ ' + esc(P.name)}<small>${S.phase === 'end' ? '' : 'สี' + esc(P.color)}</small></div></div>
+    ${act}
+    <div class="deck"><span class="em">🎴</span> แผ่นในกอง <b>${S.deck.length}</b> แผ่น</div>
+    ${playersHTML()}
+    <div class="box"><h3>ข่าวเมือง</h3><div class="feed">${S.feed.map(f => `<div>${f}</div>`).join('')}</div></div>`;
+  pn.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
+    const a = b.dataset.a;
+    if (a === 'draw') drawTile();
+    if (a === 'rotate') rotate();
+    if (a === 'place') confirmPlace();
+    if (a === 'msel') { S.mSel = +b.dataset.fi; SFX.play('click'); render(); }
+    if (a === 'mok' && S.mSel != null) placeMeeple(S.mSel);
+    if (a === 'mskip') placeMeeple(null);
+    if (a === 'summary') showSummary();
+  });
+}
+
+/* ============================ หน้าต่าง ๆ ============================ */
+function sample(type, r = 0, opt = {}) { return tileSVG(Object.assign(mkInst(type, opt.theme || 'build', opt.tcolor || 'green', opt.shield), { r }), r); }
+function howtoHTML() {
+  return `<div class="mhead"><h2><span class="em">📖</span> วิธีเล่น</h2><button class="btn sm" data-close>ปิด ✕</button></div>
+  <div class="info">ผู้เล่น 2–4 คน ผลัดกันเล่นบนเครื่องเดียว คนละ ${D.meeplesPerPlayer} ตัว กองแผ่นภาพมี ${D.tileSet.reduce((a, r) => a + r.count, 0)} แผ่น</div>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><div><b>จั่วแผ่น</b> กดปุ่ม “จั่วแผ่น”<div class="mini">${sample('CITY_1', 0, { theme: 'build' })}${sample('CITY_2_ADJ', 0, { theme: 'expand' })}${sample('CITY_3', 0, { theme: 'use', shield: true })}${sample('TOWER', 0, { tcolor: 'blue' })}${sample('ROAD_C')}</div></div></div>
+    <div class="step"><span class="n">2</span><div><b>ด่านสร้าง</b> แผ่นที่มี<b>เมือง</b> ต้องตอบคำถามให้ถูก แผ่นที่มี<b>หอคอย</b> ต้องทำภารกิจคิดสร้างสรรค์ให้ผ่าน ถ้าไม่ผ่าน วางแผ่นได้ แต่วางตัวผู้เล่นบนแผ่นนั้นไม่ได้</div></div>
+    <div class="step"><span class="n">3</span><div><b>หมุนและวางแผ่น</b> กด ↻ หมุนทีละ 90° แล้วแตะช่องสีเหลือง ขอบต้องตรงกันทุกด้าน: เมืองต่อเมือง ถนนต่อถนน ทุ่งต่อทุ่ง ถ้าวางไม่ได้เลย เกมจะคืนแผ่นใต้กองและจั่วใหม่ให้</div></div>
+    <div class="step"><span class="n">4</span><div><b>วางตัวผู้เล่น 1 ตัว</b> ในพื้นที่ที่ยังไม่มีเจ้าของ: <span class="em">🛡️</span> อัศวินในเมือง · <span class="em">🧭</span> นักเดินทางบนถนน · <span class="em">🌾</span> ชาวนาในทุ่ง · <span class="em">📜</span> นักปราชญ์ในหอคอย</div></div>
+    <div class="step"><span class="n">5</span><div><b>นับคะแนน</b> ถนน เมือง หรือหอคอยที่สร้างเสร็จ นับคะแนนทันที แล้วได้ตัวผู้เล่นคืน</div></div>
+  </div>
+  <table><tr><th>พื้นที่</th><th>สร้างเสร็จระหว่างเกม</th><th>ยังไม่เสร็จเมื่อจบเกม</th></tr>
+    <tr><td>ถนน</td><td>แผ่นละ ${D.scoring.road} คะแนน</td><td>แผ่นละ ${D.scoring.endTile} คะแนน</td></tr>
+    <tr><td>เมือง</td><td>แผ่นละ ${D.scoring.city} คะแนน + โล่ละ ${D.scoring.shield}</td><td>แผ่นละ ${D.scoring.endTile} + โล่ละ ${D.scoring.endShield}</td></tr>
+    <tr><td>หอคอย</td><td>ล้อมครบ 8 แผ่น ได้ ${D.scoring.tower} คะแนน</td><td>1 คะแนนต่อแผ่น (หอคอย + แผ่นรอบ ๆ)</td></tr>
+    <tr><td>ทุ่ง (ชาวนา)</td><td>-</td><td>${D.scoring.farmCity} คะแนน ต่อเมืองที่สร้างเสร็จซึ่งติดกับทุ่ง</td></tr></table>
+  <div class="info">ถ้าพื้นที่มีตัวผู้เล่นหลายคน คนที่มีตัวมากที่สุดได้คะแนน ถ้าเท่ากันได้คะแนนเต็มทุกคน · การ์ดตัวช่วยใช้ได้คนละ ${D.helperCardsPerPlayer} ครั้ง (ดูคำใบ้ หรือตัดตัวเลือกผิด 1 ตัว)</div>
+  <div class="grid3">${THEME_KEYS.map(k => `<div class="kcard" style="background:${THEMES[k].light}"><h3><span class="em">${THEMES[k].icon}</span>${esc(THEMES[k].name)}</h3><div class="mini">${sample('CITY_2_OPP', 0, { theme: k })}</div><div class="info">หลังคาสี${k === 'build' ? 'ส้ม' : k === 'expand' ? 'เขียว' : 'ชมพู'}</div></div>`).join('')}</div>
+  <div class="grid3">${TOWER_KEYS.map(k => `<div class="kcard"><h3><span class="em">${TOWERS[k].icon}</span>${esc(TOWERS[k].name)}</h3><div class="mini">${sample('TOWER', 0, { tcolor: k })}</div><div class="info">${esc(TOWERS[k].skill)}</div></div>`).join('')}</div>
+  <details><summary class="info">ประเภทแผ่นภาพทั้งหมด (สำหรับครู)</summary><table><tr><th>แผ่น</th><th>type</th><th>ชื่อ</th><th>จำนวน</th></tr>
+    ${D.tileSet.map(r => `<tr><td><div class="mini">${sample(r.type, 0, { theme: 'build', tcolor: 'purple' })}</div></td><td>${r.type}</td><td>${esc(TD[r.type].name)}</td><td>${r.count}${r.shields ? ` (มีโล่ ${r.shields})` : ''}</td></tr>`).join('')}</table></details>
+  <button class="btn go" data-close>เข้าใจแล้ว เล่นเลย!</button>`;
+}
+function libraryHTML() {
+  return `<div class="mhead"><h2><span class="em">📚</span> คลังความรู้</h2><button class="btn sm" data-close>ปิด ✕</button></div>
+  <div class="grid3">${THEME_KEYS.map(k => `<div class="kcard" style="background:${THEMES[k].light};border-color:${THEMES[k].roof}"><h3><span class="em">${THEMES[k].icon}</span>${esc(THEMES[k].name)}</h3>
+    <ul>${D.knowledge[k].map(it => `<li><b>${esc(it.h)}</b> ${esc(it.t)}<span class="ex">เช่น ${esc(it.ex)}</span></li>`).join('')}</ul></div>`).join('')}
+    <div class="kcard"><h3><span class="em">🏰</span>หอคอยการคิดสร้างสรรค์</h3><ul>${D.knowledge.towers.map(it => `<li><b>${esc(it.h)}</b> ${esc(it.t)}</li>`).join('')}</ul></div></div>
+  <button class="btn go" data-close>ปิด</button>`;
+}
+function showDoc(html) {
+  openModal(html); $('#modal').classList.add('doc');
+  $('#modal').querySelectorAll('[data-close]').forEach(b => b.onclick = () => { $('#modal').classList.remove('doc'); closeModal(); });
+}
+function showSummary() {
+  const rank = S.players.map((p, i) => ({ p, i })).sort((a, b) => b.p.score - a.p.score);
+  const top = rank[0].p.score; const champs = rank.filter(r => r.p.score === top).map(r => r.p.name);
+  const stat = name => { const rs = S.log.filter(l => l.player === name); const cityQ = S.asked.filter(a => a.player === name && a.kind === 'เมือง'); const tw = S.asked.filter(a => a.player === name && a.kind === 'หอคอย');
+    return `${cityQ.filter(a => a.result === 'ถูก').length}/${cityQ.length} คำถาม · ผ่าน ${tw.filter(a => a.result === 'ผ่าน').length}/${tw.length} ภารกิจ`; };
+  openModal(`<div class="crown em">🏆</div><h2 style="text-align:center">${esc(D.winnerTitle)}<br><span style="color:#e0700a">${esc(champs.join(' และ '))}</span></h2>
+    <table><tr><th>อันดับ</th><th>ผู้เล่น</th><th>ถนน</th><th>เมือง</th><th>หอคอย</th><th>ทุ่ง</th><th>รวม</th><th>ด่านสร้าง</th></tr>
+    ${rank.map((r, k) => `<tr class="${r.p.score === top ? 'rank1' : ''}"><td>${k + 1}</td><td><span class="dot" style="display:inline-block;vertical-align:middle;background:${r.p.hex}"></span> ${esc(r.p.name)}</td><td>${r.p.bd.road}</td><td>${r.p.bd.city}</td><td>${r.p.bd.tower}</td><td>${r.p.bd.field}</td><td><b>${r.p.score}</b></td><td>${stat(r.p.name)}</td></tr>`).join('')}</table>
+    <h2><span class="em">📝</span> เฉลยด่านสร้างในเกมนี้</h2>
+    ${S.asked.length ? `<table><tr><th>ผู้เล่น</th><th>ด่าน</th><th>คำถาม / ภารกิจ</th><th>คำตอบของผู้เล่น</th><th>เฉลย</th><th>ผล</th></tr>
+      ${S.asked.map(a => `<tr><td>${esc(a.player)}</td><td>${esc(a.group)}<br><span class="note">${esc(a.topic)}</span></td><td>${esc(a.q)}</td><td>${a.answers.map(esc).join('<br>')}</td><td><b>${esc(a.correct)}</b><br><span class="note">${esc(a.explain)}</span></td><td>${esc(a.result)}</td></tr>`).join('')}</table>` : '<div class="info">ยังไม่มีด่านสร้างในเกมนี้</div>'}
+    <div class="row"><button class="btn blue" data-a="csv"><span class="em">💾</span> ดาวน์โหลดผล (CSV)</button><button class="btn" data-a="board">ดูกระดาน</button><button class="btn go" data-a="again">เล่นใหม่</button></div>`);
+  $('#modal').classList.add('doc');
+  $('#modal').querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
+    if (b.dataset.a === 'csv') downloadCSV();
+    if (b.dataset.a === 'board') { $('#modal').classList.remove('doc'); closeModal(); }
+    if (b.dataset.a === 'again') { $('#modal').classList.remove('doc'); closeModal(); showSetup(); }
+  });
+}
+function downloadCSV() {
+  const cols = [['no', 'ลำดับ'], ['time', 'เวลา'], ['player', 'ชื่อผู้เล่น'], ['kind', 'ด่าน'], ['group', 'ธีมหรือสี'], ['topic', 'หัวข้อ/ด้านการคิด'], ['ind', 'ตัวบ่งชี้'],
+    ['indText', 'คำอธิบายตัวบ่งชี้'], ['q', 'คำถามหรือภารกิจ'], ['answer', 'คำตอบของผู้เล่น'], ['key', 'เฉลยหรือตัวอย่าง'], ['result', 'ผล'], ['attempt', 'ครั้งที่ตอบ'],
+    ['helper', 'การ์ดตัวช่วย'], ['secs', 'เวลาที่ใช้ (วินาที)'], ['note', 'หมายเหตุ']];
+  const cell = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const rows = [cols.map(c => cell(c[1])).join(',')].concat(S.log.map(r => cols.map(([k]) => cell(k === 'indText' ? (D.indicators[r.ind] || '') : r[k])).join(',')));
+  const blob = new Blob(['﻿' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); const d = new Date();
+  a.href = URL.createObjectURL(blob);
+  a.download = `ผลการเล่น-ตำนานสร้างเมืองประโยค-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  if (!S.log.length) toast('ยังไม่มีคำตอบที่บันทึก ไฟล์จะมีแต่หัวตาราง');
+}
+
+function showSetup() {
+  const el = $('#setup'); el.classList.remove('hidden'); $('#topbar').classList.add('hidden'); $('#game').classList.add('hidden');
+  const names = Array.from({ length: 4 }, (_, i) => S.players[i] ? S.players[i].name : `ผู้เล่น ${i + 1}`);
+  function view() {
+    el.innerHTML = `<div class="setup">
+      <div class="hero">${sample('CITY_2_ADJ', 0, { theme: 'build', shield: true })}${sample('TOWER_ROAD', 0, { tcolor: 'orange' })}${sample('CITY_1_RCR', 0, { theme: 'use' })}${sample('CITY_2_OPP', 1, { theme: 'expand' })}</div>
+      <h1>ตำนานสร้างเมืองประโยค</h1>
+      <div class="sub">เกมวางแผ่นภาพสร้างเมือง ฝึกแต่งประโยค ชั้น ป.3</div>
+      <div><h3 style="text-align:center;margin-bottom:8px">จำนวนผู้เล่น</h3><div class="count-row">${[2, 3, 4].map(n => `<button class="btn ${S.nPlayers === n ? 'on' : ''}" data-n="${n}">${n} คน</button>`).join('')}</div></div>
+      <div class="names">${Array.from({ length: S.nPlayers }, (_, i) => `<label><span class="dot" style="background:${D.playerColors[i].hex}"></span><span style="min-width:96px">สี${D.playerColors[i].name}</span><input data-i="${i}" maxlength="16" value="${esc(names[i])}" aria-label="ชื่อผู้เล่น ${i + 1}"></label>`).join('')}</div>
+      <div class="note" style="text-align:center">ใช้ชื่อเล่นหรือชื่อทีมก็ได้ เกมไม่เก็บข้อมูลส่วนตัว และไม่ส่งข้อมูลออกจากเครื่อง</div>
+      <div class="actions"><button class="btn" data-a="howto"><span class="em">📖</span> วิธีเล่น</button><button class="btn" data-a="library"><span class="em">📚</span> คลังความรู้</button><button class="btn go" data-a="start" style="min-width:220px;font-size:24px"><span class="em">🏗️</span> เริ่มเกม</button></div>
+    </div>`;
+    el.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { save(); S.nPlayers = +b.dataset.n; SFX.play('click'); view(); });
+    el.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
+      save();
+      if (b.dataset.a === 'howto') showDoc(howtoHTML());
+      if (b.dataset.a === 'library') showDoc(libraryHTML());
+      if (b.dataset.a === 'start') { SFX.play('good'); startGame(names.slice(0, S.nPlayers).map((n, i) => n.trim() || `ผู้เล่น ${i + 1}`)); }
+    });
+  }
+  function save() { el.querySelectorAll('input[data-i]').forEach(i => { names[+i.dataset.i] = i.value; }); }
+  view();
+}
+
+/* ---------- ปุ่มบนแถบหัว ---------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act;
+  if (a === 'howto') showDoc(howtoHTML());
+  if (a === 'library') showDoc(libraryHTML());
+  if (a === 'sound') { SFX.on = !SFX.on; b.innerHTML = SFX.on ? '<span class="em">🔊</span> เสียง' : '<span class="em">🔇</span> ปิดเสียง'; SFX.play('click'); }
+  if (a === 'csv') downloadCSV();
+  if (a === 'end') { if (S.phase === 'end') showSummary(); else if (S.phase !== 'challenge' && confirm('จบเกมตอนนี้และนับคะแนนเลยไหม?')) endGame(); }
+  if (a === 'zin') { S.zoom = Math.min(180, S.zoom + 16); lastBounds = null; renderBoard(); centerBoard(); }
+  if (a === 'zout') { S.zoom = Math.max(56, S.zoom - 16); lastBounds = null; renderBoard(); centerBoard(); }
+  if (a === 'center') centerBoard();
+});
+document.addEventListener('keydown', e => { if ((e.key === 'r' || e.key === 'R') && S.phase === 'place' && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) rotate(); });
+
+window.__game = { S, TD, computeGroups, canPlace, validCells, startGame, endGame, putTile, confirmPlace, tapCell, placeMeeple, drawTile };
+showSetup();
+</script>
+</body>
+</html>
