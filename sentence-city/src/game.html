@@ -1,0 +1,909 @@
+<title>ผจญภัยเมืองประโยค</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Sarabun:wght@400;600;700&display=swap">
+<style>
+/* Layout: a toy map board (3 cities around a central tower) with a side console of players, dice and hand; every event opens as a card on the table. */
+:root{
+  --ink:#1F2E4A; --ink-soft:#4A5B7A; --paper:#FFFDF7; --line:#D5DCE6;
+  --sky:#CDE8F5; --meadow:#E3F1D2; --star:#FFC233; --star-deep:#D8930B;
+  --gate-green:#2F9E57; --gate-blue:#2C84D2; --gate-orange:#EE8424; --gate-purple:#8656C6;
+  --w-subj:#E0533A; --w-verb:#2D6CCF; --w-obj:#E9B419; --w-mod:#E874A9;
+  --c1:#FCE6B6; --c1-edge:#E7B95C; --c2:#C9E7BD; --c2-edge:#7DBB6A; --c3:#E2D8F6; --c3-edge:#A58ED8;
+  --danger:#C8432E; --ok:#2F9E57;
+  --f-display:"Mitr","Sarabun","Leelawadee UI","Thonburi",sans-serif;
+  --f-body:"Sarabun","Leelawadee UI","Thonburi",system-ui,sans-serif;
+  --r:14px; color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--sky);color:var(--ink);font:16px/1.55 var(--f-body);
+  background-image:radial-gradient(circle at 15% 10%,#E6F4FB 0 120px,transparent 121px),radial-gradient(circle at 85% 4%,#E6F4FB 0 90px,transparent 91px);}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--gate-blue);outline-offset:2px}
+h1,h2,h3,h4{font-family:var(--f-display);font-weight:500;line-height:1.25;margin:0;text-wrap:balance}
+.app{min-height:100%;display:flex;flex-direction:column;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 20px;gap:12px;max-width:1500px;margin:0 auto}
+
+/* top bar */
+.topbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;background:var(--paper);border:2px solid var(--ink);border-radius:var(--r);padding:8px 14px;box-shadow:0 4px 0 var(--ink)}
+.brand{display:flex;flex-direction:column;min-width:0}
+.brand b{font-family:var(--f-display);font-weight:600;font-size:1.25rem;letter-spacing:.01em}
+.brand small{color:var(--ink-soft);font-size:.82rem}
+.stage-pill{font-family:var(--f-display);font-size:.9rem;padding:4px 12px;border-radius:999px;background:var(--c1);border:2px solid var(--c1-edge)}
+.keys{display:flex;gap:4px;align-items:center;font-size:1.4rem}
+.keys span{filter:grayscale(1) opacity(.35);transition:filter .5s}
+.keys span.got{filter:none;animation:pop .6s}
+.goal{display:flex;flex-direction:column;gap:2px;min-width:160px;font-size:.85rem}
+.goal-bar{height:10px;border-radius:6px;background:#EEF1F5;border:1.5px solid var(--ink);overflow:hidden}
+.goal-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--star),#FFDA6E);width:0;transition:width .6s}
+.tools{margin-left:auto;display:flex;flex-wrap:wrap;gap:6px}
+.tbtn{border:2px solid var(--ink);background:#fff;border-radius:10px;padding:5px 10px;font-size:.9rem;display:inline-flex;gap:6px;align-items:center;box-shadow:0 2px 0 var(--ink);transition:transform .1s}
+.tbtn:hover{transform:translateY(-1px)}
+.tbtn:active{transform:translateY(2px);box-shadow:none}
+.tbtn .n{font-family:var(--f-display);background:var(--ink);color:#fff;border-radius:999px;padding:0 7px;font-size:.78rem}
+
+/* main */
+.main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px;align-items:start}
+@media (max-width:980px){.main{grid-template-columns:minmax(0,1fr)}}
+.board-wrap{background:var(--paper);border:2px solid var(--ink);border-radius:18px;box-shadow:0 5px 0 var(--ink);padding:8px;min-width:0}
+#board{display:block;width:100%;height:auto}
+.side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel{background:var(--paper);border:2px solid var(--ink);border-radius:var(--r);box-shadow:0 4px 0 var(--ink);padding:12px 14px;min-width:0}
+.panel h3{font-size:1rem;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.panel h3 small{font-family:var(--f-body);font-weight:400;color:var(--ink-soft);font-size:.8rem}
+
+/* players */
+.plist{display:flex;flex-direction:column;gap:6px}
+.prow{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 8px;border-radius:10px;border:2px solid transparent;transition:background .3s,border-color .3s}
+.prow.active{background:#FFF4D6;border-color:var(--star-deep)}
+.ptoken{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:1.1rem;border:2px solid var(--ink)}
+.pname{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pname small{display:block;font-weight:400;color:var(--ink-soft);font-size:.78rem}
+.pstars{font-family:var(--f-display);font-size:1.05rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pstars.bump{animation:pop .5s}
+
+/* dice */
+.turnbox{display:flex;gap:14px;align-items:center}
+.die{width:74px;height:74px;flex:none;border-radius:16px;background:#fff;border:3px solid var(--ink);box-shadow:0 4px 0 var(--ink);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:9px}
+.die i{width:13px;height:13px;border-radius:50%;background:var(--ink);place-self:center;opacity:0}
+.die[data-v="1"] i:nth-child(5),.die[data-v="2"] i:nth-child(3),.die[data-v="2"] i:nth-child(7),.die[data-v="3"] i:nth-child(3),.die[data-v="3"] i:nth-child(5),.die[data-v="3"] i:nth-child(7){opacity:1}
+.die.rolling{animation:roll .55s ease-out}
+.turninfo{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+.turninfo .who{font-family:var(--f-display);font-size:1.05rem}
+.big{border:2.5px solid var(--ink);border-radius:12px;padding:9px 16px;font-family:var(--f-display);font-size:1.05rem;background:var(--star);box-shadow:0 4px 0 var(--ink);transition:transform .1s}
+.big:hover{transform:translateY(-1px)}
+.big:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.big:disabled{background:#E7EAF0;color:#8A95A8;cursor:not-allowed;transform:none}
+.big.alt{background:#fff}
+.big.green{background:#9EE0B0}
+.big.danger{background:#FFB4A6}
+
+/* word cards */
+.hand{display:flex;flex-wrap:wrap;gap:6px;min-height:40px}
+.wcard{border:2px solid var(--ink);border-radius:9px;padding:4px 10px;font-weight:700;font-size:.95rem;color:#fff;box-shadow:0 2px 0 var(--ink);white-space:nowrap}
+.wcard.subj{background:var(--w-subj)}
+.wcard.verb{background:var(--w-verb)}
+.wcard.obj{background:var(--w-obj);color:var(--ink)}
+.wcard.mod{background:var(--w-mod);color:var(--ink)}
+.wcard.new{animation:dealIn .5s}
+button.wcard:disabled{opacity:.35;cursor:not-allowed}
+.empty{color:var(--ink-soft);font-size:.88rem}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.78rem;color:var(--ink-soft);margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px;background:var(--c)}
+.log{max-height:170px;overflow:auto;font-size:.88rem;display:flex;flex-direction:column;gap:3px;padding-right:4px}
+.log div{border-bottom:1px dashed var(--line);padding-bottom:3px}
+.log div:first-child{animation:fadeIn .4s}
+
+/* board svg */
+.space{transition:transform .3s}
+.space text{font-family:var(--f-body);pointer-events:none}
+.gate-ring{animation:ring 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.pawn{transition:transform .26s cubic-bezier(.3,.7,.4,1.4)}
+.pawn .bob{animation:bob 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center bottom}
+.pawn.hop .bob{animation:hop .26s ease-out}
+.pawn.active .halo{animation:halo 1.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.locked-veil{transition:opacity .9s}
+.decor{font-size:30px;opacity:.85}
+.float{animation:floaty 3s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.dragon-ico{animation:dragonIdle 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+
+/* modal */
+.modal-layer{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;padding-top:max(16px,env(safe-area-inset-top,0px));padding-bottom:max(16px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:rgba(20,32,56,.55);animation:fadeIn .25s}
+.modal{width:min(780px,100%);max-height:100%;overflow:auto;background:var(--paper);border:3px solid var(--ink);border-radius:20px;box-shadow:0 8px 0 var(--ink);padding:20px 22px;animation:cardIn .45s cubic-bezier(.2,.8,.3,1.2);position:relative}
+.modal.wide{width:min(980px,100%)}
+.modal h2{font-size:1.45rem;margin-bottom:6px}
+.modal .eyebrow{font-family:var(--f-display);font-size:.85rem;letter-spacing:.04em;color:var(--ink-soft)}
+.modal p{margin:.4em 0}
+.mrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;justify-content:flex-end}
+.xbtn{position:absolute;top:10px;right:12px;border:2px solid var(--ink);background:#fff;border-radius:50%;width:36px;height:36px;font-size:1.1rem;line-height:1}
+.band{border-radius:14px;padding:12px 14px;border:2px solid var(--ink);margin-top:10px}
+.story{font-size:1.06rem;line-height:1.75}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.tag{display:inline-block;font-family:var(--f-display);font-size:.78rem;border-radius:999px;padding:1px 9px;border:1.5px solid var(--ink);background:#fff}
+
+/* flip card */
+.flip{perspective:1200px;margin-top:10px}
+.flip-inner{position:relative;transition:transform .8s cubic-bezier(.3,.7,.3,1);transform-style:preserve-3d;min-height:230px;display:grid}
+.flip.flipped .flip-inner{transform:rotateY(180deg)}
+.face{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:3px solid var(--ink);border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.face.back{transform:rotateY(180deg)}
+.scene{font-size:clamp(44px,9vw,76px);display:flex;justify-content:center;gap:14px;line-height:1.1}
+.scene span{display:inline-block;animation:bob 2.2s ease-in-out infinite}
+.scene span:nth-child(2){animation-delay:.3s}.scene span:nth-child(3){animation-delay:.6s}
+.face .hint{text-align:center;color:var(--ink-soft);font-size:.9rem}
+
+/* timer */
+.timer{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:12px;padding:10px 14px;border:2px dashed var(--ink-soft);border-radius:14px}
+.timer svg{width:54px;height:76px;flex:none}
+.timer .t{font-family:var(--f-display);font-size:2rem;font-variant-numeric:tabular-nums;min-width:4.2ch}
+.timer .t.low{color:var(--danger);animation:pulse 1s infinite}
+.timer .tb{display:flex;gap:6px;flex-wrap:wrap}
+
+/* scorer */
+.scorer{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.srow{display:grid;grid-template-columns:30px minmax(90px,1fr) auto auto;gap:8px;align-items:center;padding:6px 8px;border:2px solid var(--line);border-radius:12px;background:#fff}
+@media (max-width:560px){.srow{grid-template-columns:30px minmax(0,1fr) auto}.srow .quick{grid-column:1/-1}}
+.srow .ptoken{width:30px;height:30px;font-size:.95rem}
+.quick{display:flex;flex-wrap:wrap;gap:5px}
+.qb{border:1.5px solid var(--ink);background:#FFF4D6;border-radius:8px;padding:2px 8px;font-size:.85rem}
+.step{display:flex;align-items:center;gap:4px}
+.step button{width:30px;height:30px;border-radius:8px;border:2px solid var(--ink);background:#fff;font-weight:700}
+.step output{min-width:3.4ch;text-align:center;font-family:var(--f-display);font-size:1.15rem;font-variant-numeric:tabular-nums}
+.bonus{font-size:.78rem;color:var(--star-deep);font-weight:700}
+
+/* train */
+.train{display:flex;gap:6px;align-items:flex-end;overflow-x:auto;padding:14px 4px 8px}
+.train.go{animation:trainGo 1.6s cubic-bezier(.5,0,.6,1) forwards}
+.car{min-width:118px;flex:none;border:3px solid var(--ink);border-radius:12px 12px 6px 6px;padding:8px;position:relative;display:flex;flex-direction:column;gap:5px;min-height:96px;background:#fff}
+.car::after{content:"";position:absolute;bottom:-14px;left:16px;width:16px;height:16px;border-radius:50%;background:var(--ink);box-shadow:66px 0 0 var(--ink)}
+.car b{font-family:var(--f-display);font-weight:500;font-size:.85rem}
+.car.subj{background:#FFE1DB}.car.verb{background:#DCE7FB}.car.obj{background:#FFF3C9}.car.mod{background:#FDE1EE}
+.engine{font-size:56px;line-height:1;flex:none}
+.car .wcard{cursor:pointer}
+.checks{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;font-weight:700}
+.checks span{padding:3px 10px;border-radius:999px;border:2px solid var(--line);color:var(--ink-soft)}
+.checks span.on{border-color:var(--ok);color:var(--ok);background:#E5F6EA}
+.sentence{font-family:var(--f-display);font-size:1.4rem;min-height:2em;margin-top:8px}
+
+/* tower */
+.dragon-stage{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
+@media (max-width:620px){.dragon-stage{grid-template-columns:1fr;justify-items:center}}
+.dragon{font-size:96px;line-height:1;display:inline-block;animation:dragonIdle 2.6s ease-in-out infinite}
+.dragon.hit{animation:hit .4s}
+.dragon.dead{animation:defeat 1.4s forwards}
+.hearts{display:grid;grid-template-columns:repeat(20,1fr);gap:2px;max-width:420px}
+.hearts i{font-style:normal;font-size:13px;line-height:1;text-align:center;transition:transform .3s,opacity .3s}
+.hearts i.gone{opacity:.15;transform:scale(.5);filter:grayscale(1)}
+.hp{font-family:var(--f-display);font-size:1.3rem}
+.floors{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.floor-chip{border:2px solid var(--ink);border-radius:10px;padding:3px 10px;font-size:.85rem;background:#fff;opacity:.55}
+.floor-chip.done{opacity:1;color:#fff}
+.floor-chip.cur{opacity:1;outline:3px solid var(--star);outline-offset:1px}
+
+/* library */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.tab{border:2px solid var(--ink);border-radius:999px;padding:4px 12px;background:#fff;font-family:var(--f-display);font-size:.9rem}
+.tab[aria-selected="true"]{background:var(--ink);color:#fff}
+.topic{border:2px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}
+.topic h4{font-size:1rem;margin-bottom:4px}
+.ex{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;align-items:center}
+
+/* setup */
+.setup-players{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:10px}
+.pslot{border:2px solid var(--ink);border-radius:12px;padding:8px;display:flex;gap:8px;align-items:center;background:#fff}
+.pslot input{border:none;border-bottom:2px dashed var(--line);font:inherit;width:100%;min-width:0;background:transparent;color:var(--ink)}
+.pslot.off{opacity:.4}
+.field{display:flex;flex-direction:column;gap:4px;font-size:.9rem}
+.field select,.field input,textarea{font:inherit;border:2px solid var(--ink);border-radius:10px;padding:6px 10px;background:#fff;color:var(--ink)}
+textarea{width:100%;min-height:70px}
+.title-hero{text-align:center;padding:6px 0 4px}
+.title-hero h1{font-size:clamp(2rem,6vw,3.2rem);font-weight:600;letter-spacing:.01em}
+.title-hero h1 span{display:inline-block;animation:titleWave 2.8s ease-in-out infinite}
+.title-hero p{color:var(--ink-soft)}
+.sum{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.95rem}
+.sum th,.sum td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap}
+.sum th:first-child,.sum td:first-child{text-align:left}
+.tablewrap{overflow-x:auto}
+
+.fly{position:fixed;z-index:80;pointer-events:none;font-size:30px;line-height:1}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:90}
+.toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:85;background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-family:var(--f-display);animation:toast 2.4s forwards;max-width:calc(100% - 32px);text-align:center}
+
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
+@keyframes roll{0%{transform:rotate(0) scale(1)}30%{transform:rotate(200deg) scale(1.15)}70%{transform:rotate(330deg) scale(.95)}100%{transform:rotate(360deg) scale(1)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes hop{0%{transform:translateY(0)}45%{transform:translateY(-16px) scale(1.08)}100%{transform:translateY(0)}}
+@keyframes halo{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.35);opacity:.25}}
+@keyframes ring{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.18);opacity:.35}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes dragonIdle{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+@keyframes hit{0%,100%{transform:translateX(0)}20%{transform:translateX(-12px) rotate(-8deg);filter:brightness(2)}60%{transform:translateX(10px) rotate(6deg)}}
+@keyframes defeat{to{transform:translateY(40px) rotate(160deg) scale(.3);opacity:0}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes cardIn{from{opacity:0;transform:translateY(40px) rotate(-2deg) scale(.94)}to{opacity:1;transform:none}}
+@keyframes dealIn{from{opacity:0;transform:translateY(-30px) rotate(-12deg)}to{opacity:1;transform:none}}
+@keyframes pulse{50%{opacity:.45}}
+@keyframes trainGo{0%{transform:translateX(0)}15%{transform:translateX(-14px)}100%{transform:translateX(110%)}}
+@keyframes titleWave{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,20px)}10%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,10px)}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand"><b>ผจญภัยเมืองประโยค</b><small id="groupLabel">การแต่งประโยค ท 4.1 ป.3/4</small></div>
+    <span class="stage-pill" id="stagePill">เตรียมออกเดินทาง</span>
+    <div class="keys" aria-label="กุญแจเมือง" id="keys"><span>🗝️</span><span>🗝️</span><span>🗝️</span></div>
+    <div class="goal"><span id="goalText">ดาวของกลุ่มในเมืองนี้ 0 / 20</span><div class="goal-bar"><i id="goalBar"></i></div></div>
+    <nav class="tools" aria-label="เครื่องมือ">
+      <button class="tbtn" id="btnLib" type="button">📚 คลังความรู้</button>
+      <button class="tbtn" id="btnTrain" type="button">🚂 รถไฟประโยค</button>
+      <button class="tbtn" id="btnHelp" type="button">🧩 การ์ดตัวช่วย <span class="n" id="helpLeft">2</span></button>
+      <button class="tbtn" id="btnFlag" type="button">🚩 ขอคำแนะนำ</button>
+      <button class="tbtn" id="btnSound" type="button" aria-pressed="true">🔊</button>
+      <button class="tbtn" id="btnRestart" type="button">↺ เริ่มใหม่</button>
+    </nav>
+  </header>
+
+  <main class="main">
+    <section class="board-wrap" aria-label="กระดานเกม"><svg id="board" viewBox="0 0 1000 680" role="img" aria-label="กระดานผจญภัยเมืองประโยค"></svg></section>
+    <aside class="side">
+      <div class="panel">
+        <div class="turnbox">
+          <div class="die" id="die" data-v="1" aria-label="ลูกเต๋า"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="turninfo">
+            <div class="who" id="who">—</div>
+            <button class="big" id="btnRoll" type="button" disabled>🎲 ทอยลูกเต๋า</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel"><h3>นักผจญภัย <small>ดาวรวม</small></h3><div class="plist" id="plist"></div></div>
+      <div class="panel"><h3><span id="handTitle">การ์ดคำในมือ</span> <small>ต่อเป็นประโยคในรถไฟ</small></h3><div class="hand" id="hand"></div>
+        <div class="legend"><span style="--c:var(--w-subj)">ประธาน</span><span style="--c:var(--w-verb)">กริยา</span><span style="--c:var(--w-obj)">กรรม</span><span style="--c:var(--w-mod)">ส่วนขยาย</span></div></div>
+      <div class="panel"><h3>บันทึกการเดินทาง</h3><div class="log" id="log"></div></div>
+    </aside>
+  </main>
+</div>
+<canvas id="confetti" hidden></canvas>
+
+<script>
+(()=>{
+"use strict";
+/* ======================= DATA (from the design document) ======================= */
+const GATES=[
+ {key:'green', name:'ประตูสีเขียว', skill:'คิดคล่อง (Fluency)', color:'var(--gate-green)', hex:'#2F9E57', short:'คล่อง', mech:'แข่งกับนาฬิกาทราย', mechText:'เขียนประโยคตามการ์ดภารกิจให้ได้มากที่สุดภายในเวลา ใช้การ์ดคำวางต่อเป็นประโยคก่อนเขียนได้',
+  rule:'1 ดาว ต่อ 1 ประโยคที่ครบภาคประธานและภาคแสดง ถูกต้อง และสอดคล้องกับสถานการณ์', ind:'1.1, 1.2, 1.3', quick:[['+1 ประโยค',1]], towerQuick:[['+3 ประโยค',3]]},
+ {key:'blue', name:'ประตูสีฟ้า', skill:'คิดยืดหยุ่น (Flexibility)', color:'var(--gate-blue)', hex:'#2C84D2', short:'ยืดหยุ่น', mech:'เปลี่ยนร่างประโยค', mechText:'ทำตามช่องรูปแบบในสมุด (ประโยค 2 ส่วน 3 ส่วน และประโยค 4 ชนิด) ในเมืองที่ 3 จับการ์ดผู้ฟังเพื่อปรับถ้อยคำให้เหมาะกับผู้ฟัง',
+  rule:'1 ดาว ต่อ 1 รูปแบบหรือชนิดประโยคที่ทำได้ถูกต้อง', ind:'2.1, 2.2, 2.3', quick:[['+1 รูปแบบ',1]], towerQuick:[['+3 รูปแบบ/ผู้ฟัง',3]]},
+ {key:'orange', name:'ประตูสีส้ม', skill:'คิดริเริ่ม (Originality)', color:'var(--gate-orange)', hex:'#EE8424', short:'ริเริ่ม', mech:'เปิดไอเดียพร้อมกัน', mechText:'ใช้คำ 3 คำของเมืองวาดภาพและแต่งประโยค แล้วนับ 1–2–3 เปิดสมุดพร้อมกันในกลุ่ม',
+  rule:'ประโยคที่ไม่ซ้ำกับใครในกลุ่ม 2 ดาว ซ้ำกับเพื่อน 1 ดาว และอธิบายเหตุผลได้เพิ่ม 1 ดาว', ind:'3.1, 3.2, 3.3', quick:[['ไม่ซ้ำ +2',2],['ซ้ำ +1',1],['เหตุผล +1',1]], towerQuick:[['ไม่ซ้ำ +5',5],['ซ้ำ +3',3],['เหตุผล +2',2]]},
+ {key:'purple', name:'ประตูสีม่วง', skill:'คิดละเอียดลออ (Elaboration)', color:'var(--gate-purple)', hex:'#8656C6', short:'ละเอียด', mech:'หมอประโยค', mechText:'จับการ์ดประโยคผิด แก้ไขให้ถูกต้องและเติมรายละเอียดภายในเวลา',
+  rule:'1 ดาว ต่อ 1 ประโยคที่แก้ถูก และเพิ่ม 1 ดาวเมื่อเติมรายละเอียดหรือบอกเหตุผลของการแก้ไขได้', ind:'4.1, 4.2, 4.3', quick:[['แก้ถูก +1',1],['เติม/เหตุผล +1',1]], towerQuick:[['แก้ถูก +3',3],['เติม/เหตุผล +2',2]]}
+];
+
+const CITIES=[
+ {name:'เมืองสร้างประโยค', stage:'ด่านที่ 1 การสร้างประโยค', fill:'var(--c1)', edge:'var(--c1-edge)', icon:'🏘️', scene:['🐟','🐱','🍽️'], title:'แมวกินปลา',
+  story:'ตอนเย็นวันหนึ่ง แม่ทอดปลาวางไว้บนโต๊ะอาหารแล้วออกไปซื้อของที่ตลาด ระหว่างนั้นแมวกระโดดขึ้นโต๊ะและกินปลาจนเกือบหมด น้องเห็นเหตุการณ์ทั้งหมดแต่ไม่รู้ว่าจะเล่าให้แม่ฟังอย่างไรให้แม่เข้าใจ นักเรียนจะช่วยน้องสร้างประโยคเล่าเหตุการณ์นี้ได้อย่างไร',
+  missions:[
+   {text:'ดูภาพแมวกินปลาบนโต๊ะอาหาร แล้วแต่งประโยคบอกเล่าเรื่องนี้ให้ได้มากที่สุดภายใน 5 นาที ทุกประโยคต้องมีครบ 2 ส่วน คือ ภาคประธาน (ใครหรืออะไร) และภาคแสดง (ทำอะไร) มีคำนามและคำกริยาอย่างน้อยอย่างละ 1 คำ และอ่านแล้วเข้าใจ', ind:'1.1'},
+   {text:'จากเรื่องแมวกินปลา ให้ทำ 2 ขั้น ขั้นที่ 1 แต่งประโยค 2 ส่วน (ใคร + ทำอะไร) และประโยค 3 ส่วน (ใคร + ทำอะไร + กับอะไร) ขั้นที่ 2 แต่งประโยคอย่างละ 1 ประโยค ได้แก่ ประโยคบอกเล่า ประโยคปฏิเสธ (มีคำว่า “ไม่”) ประโยคคำถาม และประโยคขอร้องหรือคำสั่ง ให้เหมาะกับเรื่อง', ind:'2.1'},
+   {text:'ใช้คำ “แมว ปลา โต๊ะอาหาร” คิดเรื่องต่อจากเหตุการณ์ตามจินตนาการ แล้วแต่งประโยคที่แปลกใหม่ ไม่ซ้ำเพื่อน', ind:'3.1, 3.3', three:['แมว','ปลา','โต๊ะอาหาร']},
+   {text:'จากภาพและสถานการณ์ “แมวกินปลา” ให้นักเรียนตรวจสอบและแก้ไขประโยคที่ลำดับคำผิดหรือไม่ได้ใจความ เช่น “ปลากินแมว” ภายในเวลา 5 นาที โดยประโยคที่แก้ไขต้องประกอบด้วยภาคประธาน และภาคแสดงครบถ้วน และสามารถสื่อความหมายได้ถูกต้องสมบูรณ์', ind:'4.2'}],
+  wrong:['ปลากินแมว','กินปลา แมวบนโต๊ะ','โต๊ะกระโดดขึ้นแมว','แม่ทอด','ปลาของแม่ แมว','น้องเห็นแมว แม่ปลาทอด'],
+  words:{subj:['แมว','แม่','น้อง','ฉัน','พ่อ'],verb:['กิน','ทอด','กระโดด','เห็น','เล่า','วาง'],obj:['ปลา','โต๊ะ','ข้าว','ของ'],mod:['สีดำ','ตอนเย็น','บนโต๊ะอาหาร','จนเกือบหมด','ที่ตลาด','ตัวอ้วน']},
+  help:'ให้กลุ่มช่วยกันเรียงการ์ดคำ “แมว กิน ปลา” ให้เป็นประโยค แล้วเติมคำอีก 1 คำให้ประโยคยาวขึ้น',
+  hints:['ชี้ภาพ: ดูภาพนะ ในภาพมีใครบ้าง แล้วแต่ละคนกำลังทำอะไร','ถามนำ: ถ้าเริ่มด้วย “แมว…” แมวทำอะไรกับปลา ทำที่ไหน','ยกตัวอย่าง: “แม่ทอดปลา” มีใคร (แม่) และทำอะไร (ทอดปลา) ลองแต่งแบบนี้ด้วยคำอื่นดู'],
+  topics:[
+   ['ลักษณะของประโยคที่สมบูรณ์','ประโยคที่สมบูรณ์มี 2 ภาค คือ ภาคประธาน (ใครหรืออะไร) และภาคแสดง (ทำอะไร) อ่านแล้วเข้าใจ',[['แมว','subj'],['กินปลา','verb']]],
+   ['ประโยค 2 ส่วน','ประธาน + กริยา บอกว่าใครทำอะไร',[['แมว','subj'],['กระโดด','verb']]],
+   ['ประโยค 3 ส่วน','ประธาน + กริยา + กรรม บอกว่าใครทำอะไรกับอะไร',[['แม่','subj'],['ทอด','verb'],['ปลา','obj']]],
+   ['การเรียงลำดับคำ','เรียงจาก ใคร → ทำอะไร → กับอะไร “ปลากินแมว” ผิด เพราะสลับผู้ทำกับสิ่งที่ถูกกระทำ',[['แมว','subj'],['กิน','verb'],['ปลา','obj']]],
+   ['แต่งประโยคให้ตรงกับภาพ','ดูภาพแล้วถามตัวเองว่า ใคร ทำอะไร ที่ไหน แล้วใช้คำตอบมาแต่งประโยค',[['แมว','subj'],['กระโดดขึ้น','verb'],['โต๊ะ','obj']]]]},
+ {name:'ป่าขยายประโยค', stage:'ด่านที่ 2 การขยายประโยค', fill:'var(--c2)', edge:'var(--c2-edge)', icon:'🌳', scene:['🐶','⚽','📜'], title:'สุนัขหาย',
+  story:'เช้าวันเสาร์ น้องพาสุนัขไปเล่นลูกบอลที่สนามหญ้าหน้าหมู่บ้าน สุนัขวิ่งตามลูกบอลออกไปไกลจนหายไป น้องจึงเขียนประกาศตามหาสุนัขว่า “สุนัขหายไป” แต่ไม่มีใครช่วยตามหาได้ เพราะประกาศไม่บอกว่าสุนัขมีลักษณะอย่างไร หายไปเมื่อใด และหายไปที่ไหน นักเรียนจะช่วยน้องขยายประโยคในประกาศให้ชัดเจนได้อย่างไร',
+  missions:[
+   {text:'ประกาศ “สุนัขหายไป” ยังไม่บอกว่าสุนัขหน้าตาอย่างไร ให้ 1) แบ่งประโยคเป็นภาคประธาน (สุนัข) กับภาคแสดง (หายไป) 2) เติมคำบอกลักษณะหลังคำว่า “สุนัข” เช่น สี ขนาด ขน ให้ได้มากที่สุดภายใน 5 นาที เช่น “สุนัขสีน้ำตาลหายไป” ทุกประโยคต้องมีคำขยายอย่างน้อย 1 คำ และอ่านแล้วเข้าใจ', ind:'1.3'},
+   {text:'ให้ทำ 2 ขั้น ขั้นที่ 1 ขยายประโยค “สุนัขวิ่ง” (ขยายคำว่า สุนัข และ วิ่ง) และขยายประโยค “น้องตามหาสุนัข” (ขยายคำว่า น้อง ตามหา และ สุนัข) ขั้นที่ 2 นำประโยคที่ขยายแล้วไปแต่งเป็นประโยคบอกเล่า ประโยคปฏิเสธ ประโยคคำถาม และประโยคขอร้องหรือคำสั่ง อย่างละ 1 ประโยค ทุกประโยคต้องบอกเวลา (เมื่อไร) หรือสถานที่ (ที่ไหน)', ind:'2.3'},
+   {text:'ใช้คำ “สุนัข ลูกบอล สนามหญ้า” คิดเรื่องตามจินตนาการ แล้วแต่งประโยคที่แปลกใหม่ โดยขยายให้ครบว่า ใคร หน้าตาอย่างไร ทำอะไร อย่างไร เมื่อไร และที่ไหน', ind:'3.1, 3.3', three:['สุนัข','ลูกบอล','สนามหญ้า']},
+   {text:'จากประโยค “สุนัขหายไป” ในประกาศตามหาสุนัข ให้นักเรียนขยายประโยคให้มีรายละเอียดมากที่สุดภายในเวลา 5 นาที โดยใช้คำขยายบอกลักษณะ การกระทำ เวลา และสถานที่ แล้วตรวจด้วยเกณฑ์ตรวจประโยค และสามารถสื่อความหมายได้ถูกต้องสมบูรณ์', ind:'4.1, 4.2'}],
+  wrong:['สุนัขหายไป','หายไปสุนัขสีน้ำตาล','น้องตามหา','สุนัขวิ่งเมื่อวานพรุ่งนี้','สีขาวสุนัขเล่นลูกบอล','สุนัขหายไปที่'],
+  words:{subj:['สุนัข','น้อง','เพื่อน','ลุง'],verb:['วิ่ง','ตามหา','เล่น','หายไป','เห่า'],obj:['ลูกบอล','สุนัข','ประกาศ'],mod:['สีน้ำตาล','ตัวเล็ก','ขนฟู','เช้าวันเสาร์','ที่สนามหญ้า','หน้าหมู่บ้าน','อย่างรวดเร็ว']},
+  help:'ให้กลุ่มช่วยกันขยายประโยค “สุนัขหายไป” ทีละขั้น เติมลักษณะ 1 คำ เวลา 1 คำ และสถานที่ 1 คำ',
+  hints:['ชี้ภาพ: ดูสุนัขในภาพสิ สุนัขสีอะไร ตัวเล็กหรือตัวใหญ่','ถามนำ: สุนัขหายไปเมื่อไร หายไปที่ไหน คำเหล่านี้ใส่ไว้ตรงไหนของประโยค','ยกตัวอย่าง: “สุนัขขนฟูหายไปที่สนามหญ้า” ลองเปลี่ยนคำขยายเป็นของตัวเอง'],
+  topics:[
+   ['โครงสร้างของประโยคหลัก','ก่อนขยาย ให้หาประโยคหลักให้เจอก่อน คือ ภาคประธาน + ภาคแสดง',[['สุนัข','subj'],['หายไป','verb']]],
+   ['การขยายภาคประธาน','เติมคำบอกลักษณะไว้หลังคำนามที่เป็นประธาน เช่น สี ขนาด ขน',[['สุนัข','subj'],['สีน้ำตาล','mod'],['หายไป','verb']]],
+   ['การขยายภาคแสดง','เติมคำขยายหลังกริยาหรือหลังกรรม บอกว่าทำอย่างไร',[['สุนัข','subj'],['วิ่ง','verb'],['อย่างรวดเร็ว','mod']]],
+   ['ส่วนขยายบอกเวลาและสถานที่','บอกว่า เมื่อไร และ ที่ไหน ทำให้คนอ่านเข้าใจเหตุการณ์มากขึ้น',[['เช้าวันเสาร์','mod'],['น้อง','subj'],['เล่น','verb'],['ลูกบอล','obj'],['ที่สนามหญ้า','mod']]],
+   ['ตรวจประโยคที่มีส่วนขยาย','ตรวจว่า มีประธานและภาคแสดงครบ คำขยายอยู่หลังคำที่ขยาย และเวลาไม่ขัดกัน',[['สุนัข','subj'],['ตัวเล็ก','mod'],['หายไป','verb'],['เมื่อเช้านี้','mod']]]]},
+ {name:'ปราสาทภาษาสุภาพ', stage:'ด่านที่ 3 การใช้ภาษา', fill:'var(--c3)', edge:'var(--c3-edge)', icon:'🏰', scene:['🏺','💐','📓'], title:'แจกันแตก',
+  story:'ระหว่างพักกลางวัน นักเรียนวิ่งเล่นในห้องเรียนแล้วชนแจกันดอกไม้บนโต๊ะคุณครูตกแตก น้ำหกเลอะสมุดการบ้านของเพื่อน และมีน้องชั้น ป.1 ยืนมองอยู่หน้าห้อง นักเรียนจะใช้ถ้อยคำสื่อสารกับคุณครู เพื่อน และน้องอย่างไรเพื่อแก้ปัญหานี้ได้อย่างเหมาะสม',
+  missions:[
+   {text:'แต่งประโยคขอโทษและขอให้คุณครูช่วย ให้ได้มากที่สุดภายใน 5 นาที ทุกประโยคต้องใช้คำสุภาพและคำลงท้าย เช่น “ครับ” “ค่ะ” มีภาคประธานและภาคแสดงครบ และอ่านแล้วเข้าใจ', ind:'1.2'},
+   {text:'ให้ทำ 2 ขั้น ขั้นที่ 1 แต่งประโยคพูดกับคุณครู เพื่อน และน้อง คนละ 1 ประโยค โดยเลือกคำให้เหมาะกับแต่ละคน ขั้นที่ 2 แต่งประโยคบอกเล่า ประโยคปฏิเสธ ประโยคคำถาม และประโยคขอร้องหรือคำสั่ง อย่างละ 1 ประโยค โดยใช้คำสุภาพและคำลงท้ายให้เหมาะกับผู้ฟัง', ind:'2.2', listener:true},
+   {text:'ใช้คำ “แจกัน ขอโทษ ขอบคุณ” คิดวิธีแก้ปัญหาตามจินตนาการ แล้วแต่งประโยคที่แปลกใหม่ด้วยคำสุภาพที่เหมาะกับผู้ฟัง', ind:'3.2, 3.3', three:['แจกัน','ขอโทษ','ขอบคุณ']},
+   {text:'จากเหตุการณ์แจกันของคุณครูแตก ให้นักเรียนเล่าเรื่องที่เกิดขึ้นให้คุณครูฟังภายในเวลา 5 นาที โดยใช้ถ้อยคำสุภาพ บอกได้ชัดเจนว่านักเรียนทำอะไร พร้อมอธิบายเหตุผลของการเพิ่มรายละเอียด และสามารถสื่อความหมายได้ถูกต้องสมบูรณ์', ind:'4.1, 4.3'}],
+  wrong:['ครู ช่วยหน่อยดิ','แจกันแตกเอง ไม่ใช่ผม','เพื่อน สมุดเปียก','น้อง ไปไกล ๆ','ขอโทษ แจกัน','หนูทำแตก'],
+  words:{subj:['ผม','หนู','คุณครู','เพื่อน','น้อง'],verb:['ขอโทษ','ช่วย','เช็ด','ขอบคุณ','เก็บ','ทำ'],obj:['แจกัน','สมุด','ดอกไม้','เศษแจกัน'],mod:['ครับ','ค่ะ','กรุณา','ในห้องเรียน','ตอนพักกลางวัน','อย่างระมัดระวัง','นะจ๊ะ']},
+  help:'ให้กลุ่มช่วยกันแต่งประโยคขอโทษคุณครู 1 ประโยค ที่มีคำสุภาพและคำลงท้าย “ครับ” หรือ “ค่ะ”',
+  hints:['ชี้ภาพ: ดูภาพนะ ใครต้องได้ยินเราพูดบ้าง คุณครู เพื่อน หรือน้อง','ถามนำ: ถ้าพูดกับคุณครู เราควรลงท้ายด้วยคำว่าอะไร','ยกตัวอย่าง: “คุณครูครับ ผมขอโทษที่ทำแจกันแตกครับ” ลองแต่งแบบนี้กับเพื่อนหรือน้อง'],
+  topics:[
+   ['เลือกถ้อยคำให้เหมาะกับบุคคล','พูดกับคุณครูใช้คำสุภาพที่สุด พูดกับเพื่อนใช้คำสุภาพเป็นกันเอง พูดกับน้องใช้คำอ่อนโยน',[['คุณครูครับ','mod'],['ผม','subj'],['ขอโทษ','verb'],['ครับ','mod']]],
+   ['คำสุภาพและคำลงท้าย','ลงท้ายด้วย ครับ ค่ะ คะ ทั้งในประโยคบอกเล่าและประโยคปฏิเสธ',[['หนู','subj'],['ไม่ได้ตั้งใจ','verb'],['ค่ะ','mod']]],
+   ['ประโยคขอร้อง','ใช้คำว่า กรุณา ช่วย … หน่อย หรือ … ได้ไหม เมื่อขอความช่วยเหลือ',[['คุณครู','subj'],['ช่วย','verb'],['เก็บเศษแจกัน','obj'],['หน่อยได้ไหมคะ','mod']]],
+   ['ขอบคุณและขอโทษ','บอกว่าขอบคุณหรือขอโทษเรื่องอะไร ทำให้ผู้ฟังรู้ว่าเราเข้าใจ',[['ขอบคุณ','verb'],['ที่ช่วยเช็ดสมุด','obj'],['นะ','mod']]],
+   ['ประโยคคำถามและคำสั่ง','ถามให้ชัดว่าอยากรู้อะไร สั่งหรือเตือนด้วยคำสุภาพ',[['สมุดของเธอ','subj'],['เปียก','verb'],['ไหม','mod']]]]}
+];
+
+const TOWER={
+ story:'ก่อนงานวันเมืองประโยคหนึ่งวัน มังกรกินคำบินมาเกาะยอดหอคอยและกินคำในเมืองไปเกือบหมด ป้ายประกาศงานเหลือเพียงคำว่า “งาน… จัด…” ชาวเมืองจึงไม่รู้ว่างานจัดเมื่อไร ที่ไหน มีกิจกรรมอะไร บางคนพูดกับนายกเมืองด้วยถ้อยคำไม่สุภาพเพราะคำสุภาพถูกกินไป มังกรท้าว่า หากนักผจญภัยฝ่าพลังของมันได้ครบ 4 ชั้น มันจะคืนคำทั้งหมดให้เมือง นักเรียนจะใช้ความรู้จากทั้ง 3 เมืองเอาชนะมังกรกินคำได้อย่างไร',
+ floors:[
+  {power:'ลมกลืนคำ', text:'มังกรทำให้ป้ายทั่วเมืองเหลือแต่คำเดี่ยว ๆ ให้นักเรียนดูการ์ดภาพเมืองหลังมังกรกินคำ แล้วแต่งประโยคบอกเล่าเหตุการณ์ในเมืองที่มีส่วนขยายบอกลักษณะ เวลา หรือสถานที่ ให้ได้มากที่สุดภายใน 5 นาที เพื่อคืนคำให้ชาวเมือง', rule:'3 ดาว ต่อ 1 ประโยคที่ครบภาคประธานและภาคแสดง มีส่วนขยาย และถูกต้อง', ind:'1.1, 1.3'},
+  {power:'คาถาสลับร่าง', text:'ชาวเมืองพูดได้เพียงประโยคเดียวว่า “มังกรกินคำ” ให้นักเรียนขยายประโยคนี้ให้ชัดเจน แล้วเปลี่ยนเป็นประโยค 4 ชนิด (บอกเล่า ปฏิเสธ คำถาม ขอร้องหรือคำสั่ง) และแต่งประโยคแจ้งเรื่องนี้กับผู้ฟัง 3 กลุ่ม ได้แก่ นายกเมือง เพื่อน และน้อง ด้วยถ้อยคำที่เหมาะสม', rule:'3 ดาว ต่อ 1 รูปแบบ ชนิดประโยค หรือผู้ฟังที่ทำได้ถูกต้อง', ind:'2.1, 2.2, 2.3'},
+  {power:'กำแพงความคิดซ้ำ', text:'มังกรจำวิธีปราบแบบเดิมได้ทั้งหมด ให้นักเรียนสุ่มการ์ดคำเมืองละ 1 ใบ (รวม 3 คำ) แล้วคิดวิธีเอาชนะหรือผูกมิตรกับมังกรแบบใหม่ที่ไม่ซ้ำใคร เล่าเป็นเรื่องสั้น 3–5 ประโยคพร้อมวาดภาพ โดยมีประโยคที่มีส่วนขยายและประโยคที่ใช้คำสุภาพอย่างน้อยอย่างละ 1 ประโยค', rule:'เรื่องที่ไม่ซ้ำกับใครในกลุ่ม 5 ดาว ซ้ำกับเพื่อน 3 ดาว และอธิบายเหตุผลได้เพิ่ม 2 ดาว', ind:'3.1, 3.2, 3.3', draw3:true},
+  {power:'ประกาศต้องคำสาป', text:'มังกรเขียนประกาศงานใหม่ว่า “งานวันเมืองประโยค จัดเมื่อวานนี้พรุ่งนี้ ลานกว้างสวยงามที่เมือง มาให้ได้นะเว้ย” ให้นักเรียนตรวจและแก้ไขประกาศให้ถูกต้อง เติมรายละเอียดเวลา สถานที่ และกิจกรรมให้สมบูรณ์ภายใน 5 นาที พร้อมบอกเหตุผลของการแก้ไข', rule:'3 ดาว ต่อ 1 จุดที่แก้ถูก และเพิ่ม 2 ดาวเมื่อเติมรายละเอียดหรือบอกเหตุผลของการแก้ไขได้', ind:'4.1, 4.2, 4.3', notice:true}
+ ]
+};
+const HELP_CARDS=[
+ {k:'ความคิดรวบยอด',ico:'💡',text:'ทบทวนหลัก: ประโยคต้องมี “ใคร” และ “ทำอะไร” ถ้ามีกรรมให้วางไว้หลังกริยา ส่วนขยายวางไว้หลังคำที่ขยาย'},
+ {k:'การคิด',ico:'🤔',text:'ถามตัวเอง: ภารกิจนี้ให้ทำอะไร ฉันทำครบหรือยัง ประโยคของฉันมีใครและทำอะไรครบไหม'},
+ {k:'กระบวนการ',ico:'🪜',text:'ทำทีละขั้น: 1) ดูภาพหรืออ่านสถานการณ์ 2) หาใครกับทำอะไร 3) ต่อการ์ดคำในรถไฟประโยค 4) อ่านออกเสียง 5) เขียนลงสมุดแล้วตรวจด้วยแถบตรวจประโยค'},
+ {k:'กลยุทธ์',ico:'🧭',text:'เริ่มจากประโยคหลักสั้น ๆ ก่อน เช่น “แมวกินปลา” แล้วเติมทีละส่วน: หน้าตาอย่างไร → ทำอย่างไร → เมื่อไร → ที่ไหน'}
+];
+const LISTENERS=[['👩‍🏫','คุณครู','ใช้คำสุภาพที่สุด ลงท้ายด้วย ครับ/ค่ะ'],['🧒','เพื่อน','สุภาพแบบเป็นกันเอง เช่น ขอโทษนะ'],['👶','น้อง ป.1','พูดอ่อนโยน ให้กำลังใจ เช่น ไม่ต้องกลัวนะจ๊ะ']];
+const PAWNS=[['🦊','#FF9F68'],['🐼','#A9D9F5'],['🐸','#A7E3A0'],['🐰','#F6B6D2']];
+const WTYPE={subj:'ประธาน',verb:'กริยา',obj:'กรรม',mod:'ส่วนขยาย'};
+// 12 spaces per city; gates at 2,5,8,11
+const SPACES=['start','word','gate','friend','special','gate','word','special','gate','friend','word','gate'];
+const GATE_POS=[2,5,8,11];
+const SPACE_INFO={start:['🏁','ประตูเมือง'],word:['🃏','ช่องเก็บคำ: หยิบการ์ดคำ 1 ใบ'],friend:['🤝','ช่องช่วยเพื่อน: ให้การ์ดคำแก่เพื่อน 1 ใบ รับ 1 ดาว'],special:['⭐','ช่องดาวพิเศษ: พูดประโยคจากการ์ดคำในมือให้ถูก รับ 1 ดาว']};
+const CITY_GOAL=20, HAND_MAX=6;
+
+/* ======================= BOARD GEOMETRY ======================= */
+const PATHS=[
+ [[70,112],[270,102],[290,212],[90,252],[70,372],[280,402],[270,532],[90,582]],
+ [[366,486],[636,486],[636,566],[366,566],[366,640],[636,640]],
+ [[732,604],[920,572],[910,442],[722,412],[732,282],[920,252],[910,122],[722,112]]
+];
+function sample(pts,n){
+  const seg=[];let tot=0;
+  for(let i=1;i<pts.length;i++){const d=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);seg.push(d);tot+=d}
+  const out=[];
+  for(let k=0;k<n;k++){let d=tot*k/(n-1),i=0;while(i<seg.length-1&&d>seg[i]){d-=seg[i];i++}
+    const t=Math.min(1,d/seg[i]);out.push([pts[i][0]+(pts[i+1][0]-pts[i][0])*t,pts[i][1]+(pts[i+1][1]-pts[i][1])*t])}
+  return out;
+}
+const POS=PATHS.map(p=>sample(p,12));
+const TOWER_XY=[500,250];
+const OFF=[[-10,-12],[10,-12],[-10,8],[10,8]];
+
+/* ======================= STATE ======================= */
+let S=null;
+function fresh(players,group,secs){
+  return {phase:'play',group,secs,city:0,gateIdx:0,turn:0,keys:0,cityStars:0,helpUsed:[0,0,0],
+    players:players.map((p,i)=>({name:p,pawn:i,pos:0,stars:0,by:[0,0,0,0],hand:[]})),
+    tower:{floor:0,hp:100,cleared:[false,false,false,false],started:false},
+    showcase:['','',''],log:[]};
+}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,matchMedia('(prefers-reduced-motion: reduce)').matches?Math.min(ms,30):ms));
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+function save(){try{localStorage.setItem('sentence-city',JSON.stringify(S))}catch(e){}}
+function load(){try{const v=localStorage.getItem('sentence-city');return v?JSON.parse(v):null}catch(e){return null}}
+
+/* ======================= SOUND ======================= */
+let soundOn=true,actx=null;
+function tone(f=520,d=.09,type='triangle',vol=.07,delay=0){
+  if(!soundOn)return;try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime+delay;o.type=type;o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(actx.destination);o.start(t);o.stop(t+d+.02)}catch(e){}
+}
+const sfx={step:()=>tone(660,.06),star:()=>{tone(880,.08,'sine');tone(1320,.12,'sine',.06,.07)},
+  key:()=>[523,659,784,1046].forEach((f,i)=>tone(f,.18,'sine',.07,i*.11)),dice:()=>{for(let i=0;i<5;i++)tone(200+Math.random()*300,.04,'square',.03,i*.08)},
+  hit:()=>tone(140,.2,'sawtooth',.06),win:()=>[523,659,784,1046,784,1046].forEach((f,i)=>tone(f,.22,'triangle',.08,i*.14)),card:()=>tone(440,.07,'sine',.05)};
+
+/* ======================= BOARD RENDER ======================= */
+function renderBoard(){
+  const svg=$('#board');let h='';
+  h+=`<defs><pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.6" fill="#C9DDB5"/></pattern>
+  <filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="0" flood-color="#1F2E4A" flood-opacity="1"/></filter></defs>`;
+  h+=`<rect x="0" y="0" width="1000" height="680" rx="14" fill="#E3F1D2"/><rect x="0" y="0" width="1000" height="680" rx="14" fill="url(#dots)"/>`;
+  const regions=[[18,28,300,632],[332,420,336,252],[682,28,300,632]];
+  // connecting roads
+  h+=`<path d="M90 582 C 140 650, 300 470, 366 486" fill="none" stroke="#B8A27A" stroke-width="10" stroke-dasharray="2 14" stroke-linecap="round"/>`;
+  h+=`<path d="M636 640 C 700 660, 690 610, 732 604" fill="none" stroke="#B8A27A" stroke-width="10" stroke-dasharray="2 14" stroke-linecap="round"/>`;
+  h+=`<path d="M722 112 C 640 90, 600 130, 560 150" fill="none" stroke="#B8A27A" stroke-width="10" stroke-dasharray="2 14" stroke-linecap="round"/>`;
+  CITIES.forEach((c,ci)=>{
+    const [x,y,w,hh]=regions[ci];
+    h+=`<rect x="${x}" y="${y}" width="${w}" height="${hh}" rx="22" fill="${c.fill}" stroke="${c.edge}" stroke-width="3"/>`;
+    const ly=ci===1?y+24:y+30;
+    h+=`<g transform="translate(${x+w/2} ${ly})"><rect x="-108" y="-17" width="216" height="32" rx="16" fill="#fff" stroke="#1F2E4A" stroke-width="2"/>
+      <text text-anchor="middle" y="6" font-family="Mitr, Sarabun, sans-serif" font-size="17" fill="#1F2E4A">${c.icon} ${esc(c.name)}</text></g>`;
+  });
+  // decor
+  const deco=[[200,318,'🏠'],[168,476,'🏡'],[230,160,'🐈'],[420,526,'🌲'],[590,604,'🌳'],[500,604,'🐕'],[820,345,'🏰'],[820,505,'💐'],[820,186,'👑']];
+  deco.forEach(([x,y,e],i)=>h+=`<text class="decor float" x="${x}" y="${y}" text-anchor="middle" style="animation-delay:${i*.35}s">${e}</text>`);
+  // tower
+  h+=renderTower();
+  // paths + spaces
+  POS.forEach((pts,ci)=>{
+    h+=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#fff" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>`;
+    h+=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#1F2E4A" stroke-width="2" stroke-dasharray="5 7" stroke-linecap="round" opacity=".35"/>`;
+    pts.forEach(([x,y],si)=>{
+      const t=SPACES[si];
+      if(t==='gate'){
+        const gi=GATE_POS.indexOf(si),g=GATES[gi];
+        const cleared=S&&(ci<S.city||(ci===S.city&&gi<S.gateIdx)||S.phase==='tower'||S.phase==='end');
+        const next=S&&S.phase==='play'&&ci===S.city&&gi===S.gateIdx;
+        h+=`<g class="space" transform="translate(${x} ${y})">${next?`<circle class="gate-ring" r="36" fill="none" stroke="${g.hex}" stroke-width="4"/>`:''}
+          <rect x="-29" y="-29" width="58" height="58" rx="14" fill="${g.hex}" stroke="#1F2E4A" stroke-width="3" filter="url(#sh)"/>
+          <text y="-3" text-anchor="middle" font-size="20">${cleared?'✅':'🚪'}</text>
+          <text y="19" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">${g.short}</text></g>`;
+      }else{
+        const [ico]=SPACE_INFO[t];
+        const fill={start:'#fff',word:'#FFE7A8',friend:'#D8ECFF',special:'#FFF2C2'}[t];
+        h+=`<g class="space" transform="translate(${x} ${y})"><circle r="21" fill="${fill}" stroke="#1F2E4A" stroke-width="2.5"/>
+          <text y="7" text-anchor="middle" font-size="19">${ico}</text></g>`;
+      }
+    });
+  });
+  // locks
+  CITIES.forEach((c,ci)=>{
+    if(S&&ci>S.city&&S.phase!=='tower'&&S.phase!=='end'){const [x,y,w,hh]=regions[ci];
+      h+=`<g class="locked-veil"><rect x="${x}" y="${y}" width="${w}" height="${hh}" rx="22" fill="#F2F4F7" opacity=".78"/>
+      <text x="${x+w/2}" y="${y+hh/2+16}" text-anchor="middle" font-size="46">🔒</text>
+      <text x="${x+w/2}" y="${y+hh/2+50}" text-anchor="middle" font-family="Mitr, sans-serif" font-size="15" fill="#4A5B7A">ใช้กุญแจเมืองที่ ${ci} เปิด</text></g>`}
+  });
+  // pawns
+  if(S){S.players.forEach((p,i)=>{
+    const [x,y]=pawnXY(p,i);const [e,col]=PAWNS[p.pawn];
+    h+=`<g class="pawn${i===S.turn&&S.phase==='play'?' active':''}" id="pawn${i}" style="transform:translate(${x}px,${y}px)">
+      <g class="bob" style="animation-delay:${i*.4}s">${i===S.turn&&S.phase==='play'?`<circle class="halo" r="17" fill="none" stroke="#FFC233" stroke-width="4"/>`:''}
+      <ellipse cy="14" rx="12" ry="4" fill="#1F2E4A" opacity=".25"/><circle r="14" fill="${col}" stroke="#1F2E4A" stroke-width="2.5"/>
+      <text y="6" text-anchor="middle" font-size="16">${e}</text></g></g>`;
+  })}
+  svg.innerHTML=h;
+}
+function renderTower(){
+  const [cx]=TOWER_XY;const open=S&&(S.keys>=3||S.phase==='tower'||S.phase==='end');
+  let h=`<g transform="translate(${cx} 0)">`;
+  h+=`<ellipse cx="0" cy="378" rx="120" ry="16" fill="#C8DDB0"/>`;
+  const fl=[...GATES].map((g,i)=>({g,i}));
+  fl.forEach(({g,i})=>{const y=320-i*58,w=150-i*16;
+    const done=S&&S.tower.cleared[i];
+    h+=`<rect x="${-w/2}" y="${y}" width="${w}" height="56" rx="8" fill="${g.hex}" stroke="#1F2E4A" stroke-width="3" opacity="${open?1:.55}"/>
+      <rect x="-12" y="${y+16}" width="24" height="28" rx="12" fill="#1F2E4A" opacity=".75"/>
+      <text x="${-w/2+16}" y="${y+35}" font-size="16">${done?'⭐':''}</text>
+      <text x="${w/2-12}" y="${y+34}" text-anchor="end" font-size="12" fill="#fff" font-weight="700">ชั้น ${i+1}</text>`});
+  h+=`<polygon points="-62,148 0,92 62,148" fill="#E4573D" stroke="#1F2E4A" stroke-width="3"/>`;
+  const dead=S&&S.phase==='end';
+  h+=`<text class="dragon-ico" x="0" y="${dead?110:96}" text-anchor="middle" font-size="58">${dead?'🕊️':'🐉'}</text>`;
+  h+=`<g transform="translate(0 392)"><rect x="-118" y="-16" width="236" height="30" rx="15" fill="#fff" stroke="#1F2E4A" stroke-width="2"/>
+     <text text-anchor="middle" y="5" font-family="Mitr, sans-serif" font-size="15" fill="#1F2E4A">🗼 หอคอยการคิดสร้างสรรค์</text></g>`;
+  if(!open)h+=`<text x="0" y="250" text-anchor="middle" font-size="44">⛓️</text><text x="0" y="292" text-anchor="middle" font-size="40">🔒</text>`;
+  return h+'</g>';
+}
+function pawnXY(p,i){
+  const o=OFF[i];
+  if(S.phase==='tower'||S.phase==='end')return [TOWER_XY[0]+[-104,-80,80,104][i],352+(i%2)*6];
+  const [x,y]=POS[S.city][p.pos];return [x+o[0],y+o[1]];
+}
+async function movePawn(i,toPos){
+  const p=S.players[i];const el=$('#pawn'+i);
+  while(p.pos<toPos){p.pos++;const [x,y]=pawnXY(p,i);
+    if(el){el.style.transform=`translate(${x}px,${y}px)`;el.classList.remove('hop');void el.getBoundingClientRect();el.classList.add('hop')}
+    sfx.step();await sleep(300)}
+}
+
+/* ======================= SIDE PANEL ======================= */
+function renderSide(){
+  const pl=$('#plist');
+  pl.innerHTML=S.players.map((p,i)=>{const [e,c]=PAWNS[p.pawn];
+    return `<div class="prow${i===S.turn&&S.phase==='play'?' active':''}" id="prow${i}"><span class="ptoken" style="background:${c}">${e}</span>
+    <span class="pname">${esc(p.name)}<small>การ์ดคำ ${p.hand.length} ใบ</small></span><span class="pstars" id="pstar${i}">⭐ ${p.stars}</span></div>`}).join('');
+  const cur=S.players[S.turn];
+  $('#who').textContent=S.phase==='play'?`ตาของ ${cur.name}`:S.phase==='tower'?'หอคอยการคิดสร้างสรรค์':S.phase==='end'?'จบการผจญภัย':'—';
+  $('#btnRoll').disabled=!(S.phase==='play'&&!busy);
+  $('#btnRoll').textContent=S.phase==='tower'?'🐉 เข้าหอคอย':'🎲 ทอยลูกเต๋า';
+  if(S.phase==='tower'){$('#btnRoll').disabled=busy}
+  $('#handTitle').textContent=`การ์ดคำของ ${cur.name}`;
+  $('#hand').innerHTML=cur.hand.length?cur.hand.map(w=>`<span class="wcard ${w.t}">${esc(w.w)}</span>`).join(''):'<span class="empty">ยังไม่มีการ์ดคำ หยุดที่ช่อง 🃏 เพื่อเก็บคำ</span>';
+  $('#log').innerHTML=S.log.slice(0,40).map(l=>`<div>${l}</div>`).join('');
+  const st=S.phase==='tower'||S.phase==='end'?'หอคอยการคิดสร้างสรรค์':CITIES[S.city].stage+' · '+CITIES[S.city].name;
+  const pill=$('#stagePill');pill.textContent=st;
+  const ci=Math.min(S.city,2);pill.style.background=S.phase==='tower'||S.phase==='end'?'#FFE1DB':CITIES[ci].fill;pill.style.borderColor=S.phase==='tower'||S.phase==='end'?'#E4573D':CITIES[ci].edge;
+  document.querySelectorAll('#keys span').forEach((k,i)=>k.classList.toggle('got',i<S.keys));
+  if(S.phase==='tower'||S.phase==='end'){$('#goalText').textContent=`พลังมังกร ${S.tower.hp} / 100 หัวใจ`;$('#goalBar').style.width=S.tower.hp+'%';$('#goalBar').style.background='linear-gradient(90deg,#E4573D,#FF8C7A)'}
+  else{$('#goalText').textContent=`ดาวของกลุ่มในเมืองนี้ ${S.cityStars} / ${CITY_GOAL}`;$('#goalBar').style.width=Math.min(100,S.cityStars/CITY_GOAL*100)+'%';$('#goalBar').style.background=''}
+  $('#helpLeft').textContent=S.phase==='tower'||S.phase==='end'?'2':String(2-S.helpUsed[S.city]);
+  $('#groupLabel').textContent=S.group?`กลุ่ม ${S.group}`:'การแต่งประโยค ท 4.1 ป.3/4';
+  save();
+}
+function log(msg){S.log.unshift(msg);if(S.log.length>80)S.log.pop()}
+function render(){renderBoard();renderSide()}
+let busy=false;
+
+/* ======================= FX ======================= */
+function centerOf(el){const r=el.getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2]}
+function fly(emoji,from,to,dur=800,size=30){
+  return new Promise(res=>{const d=document.createElement('div');d.className='fly';d.textContent=emoji;d.style.fontSize=size+'px';document.body.appendChild(d);
+    const [x1,y1]=from,[x2,y2]=to;d.style.left=x1-size/2+'px';d.style.top=y1-size/2+'px';
+    const a=d.animate([{transform:'translate(0,0) scale(.6)',opacity:0},{transform:`translate(${(x2-x1)/2}px,${(y2-y1)/2-80}px) scale(1.4)`,opacity:1,offset:.45},{transform:`translate(${x2-x1}px,${y2-y1}px) scale(.7)`,opacity:.9}],{duration:matchMedia('(prefers-reduced-motion: reduce)').matches?10:dur,easing:'cubic-bezier(.4,.1,.3,1)'});
+    a.onfinish=()=>{d.remove();res()}});
+}
+async function giveStars(i,n,stage,from){
+  if(n<=0)return;const p=S.players[i];p.stars+=n;p.by[stage]+=n;if(stage<3)S.cityStars+=n;
+  const tgt=$('#pstar'+i);const src=from||[innerWidth/2,innerHeight/2];
+  if(tgt){const k=Math.min(n,5);const ps=[];for(let j=0;j<k;j++){ps.push(sleep(j*90).then(()=>fly('⭐',src,centerOf(tgt),700)))}sfx.star();await Promise.all(ps)}
+  renderSide();const t=$('#pstar'+i);if(t){t.classList.add('bump')}
+}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2500)}
+function confetti(dur=3500){
+  const c=$('#confetti');c.hidden=false;const ctx=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;
+  const cols=['#2F9E57','#2C84D2','#EE8424','#8656C6','#FFC233','#E0533A'];
+  const P=Array.from({length:160},()=>({x:Math.random()*c.width,y:-20-Math.random()*c.height*.5,vx:(Math.random()-.5)*3,vy:2+Math.random()*3,r:Math.random()*6.28,s:6+Math.random()*7,c:rnd(cols)}));
+  const t0=performance.now();
+  (function f(t){ctx.clearRect(0,0,c.width,c.height);P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.r+=.1;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);ctx.restore()});
+    if(t-t0<dur)requestAnimationFrame(f);else{ctx.clearRect(0,0,c.width,c.height);c.hidden=true}})(t0);
+}
+
+/* ======================= MODALS ======================= */
+const stack=[];
+function modal(html,{wide=false,closable=true,onClose}={}){
+  const layer=document.createElement('div');layer.className='modal-layer';
+  layer.innerHTML=`<div class="modal${wide?' wide':''}" role="dialog" aria-modal="true">${closable?'<button class="xbtn" type="button" aria-label="ปิด">✕</button>':''}${html}</div>`;
+  document.body.appendChild(layer);const m=layer.firstElementChild;m._timers=[];
+  const close=()=>{m._timers.forEach(t=>t.stop());layer.remove();const k=stack.indexOf(close);if(k>=0)stack.splice(k,1);onClose&&onClose()};
+  m.close=close;stack.push(close);
+  if(closable){m.querySelector('.xbtn').onclick=close;layer.addEventListener('click',e=>{if(e.target===layer)close()})}
+  const f=m.querySelector('button:not(.xbtn),input,select');f&&setTimeout(()=>f.focus({preventScroll:true}),60);
+  return m;
+}
+addEventListener('keydown',e=>{if(e.key==='Escape'&&stack.length){const top=document.querySelectorAll('.modal-layer');const m=top[top.length-1]?.firstElementChild;if(m&&m.querySelector('.xbtn'))m.close()}});
+function confirmBox(text,yes,onYes){
+  const m=modal(`<h2>${text}</h2><div class="mrow"><button class="big alt" data-no type="button">ยกเลิก</button><button class="big danger" data-yes type="button">${yes}</button></div>`);
+  m.querySelector('[data-no]').onclick=m.close;m.querySelector('[data-yes]').onclick=()=>{m.close();onYes()};
+}
+
+/* timer */
+let tid=0;
+function timer(host,secs){
+  const u='tc'+(++tid);
+  host.innerHTML=`<svg viewBox="0 0 54 76" aria-hidden="true"><path d="M6 3h42M6 73h42M10 3c0 18 14 24 14 35S10 55 10 73M44 3c0 18-14 24-14 35s14 17 14 35" fill="#fff" stroke="#1F2E4A" stroke-width="3"/>
+   <clipPath id="${u}a"><path d="M11 6c1 14 12 22 15 32h2c3-10 14-18 15-32z"/></clipPath><clipPath id="${u}b"><path d="M26 40c-3 9-14 15-15 30h32c-1-15-12-21-15-30z"/></clipPath>
+   <rect class="top" clip-path="url(#${u}a)" x="0" y="6" width="54" height="32" fill="#FFC233"/><rect class="bot" clip-path="url(#${u}b)" x="0" y="70" width="54" height="0" fill="#FFC233"/>
+   <line class="stream" x1="27" y1="37" x2="27" y2="70" stroke="#FFC233" stroke-width="2" stroke-dasharray="3 3"/></svg>
+   <span class="t" aria-live="off">0:00</span><div class="tb"><button class="tbtn" data-a="go" type="button">▶ เริ่มจับเวลา</button><button class="tbtn" data-a="reset" type="button">↺</button><button class="tbtn" data-a="plus" type="button">+1 นาที</button></div>`;
+  let left=secs,total=secs,run=false,iv=null;const t=host.querySelector('.t'),top=host.querySelector('.top'),bot=host.querySelector('.bot'),stream=host.querySelector('.stream'),go=host.querySelector('[data-a=go]');
+  const draw=()=>{const m=Math.floor(left/60),s=left%60;t.textContent=`${m}:${String(s).padStart(2,'0')}`;t.classList.toggle('low',left<=10&&left>0);
+    const f=left/total;top.setAttribute('y',6+32*(1-f));top.setAttribute('height',32*f);bot.setAttribute('y',70-30*(1-f));bot.setAttribute('height',30*(1-f));stream.style.opacity=run&&left>0?1:0;
+    if(run)stream.style.strokeDashoffset=String((Date.now()/60)%6)};
+  const tick=()=>{left=Math.max(0,left-1);if(left<=10&&left>0)tone(990,.05,'sine',.04);if(left===0){stop();t.textContent='หมดเวลา!';[784,523,392].forEach((f,i)=>tone(f,.25,'square',.05,i*.2))}else draw()};
+  const stop=()=>{run=false;clearInterval(iv);go.textContent='▶ เริ่มจับเวลา';stream.style.opacity=0};
+  go.onclick=()=>{if(left===0)left=total;if(run){stop()}else{run=true;go.textContent='⏸ หยุดชั่วคราว';iv=setInterval(tick,1000);draw()}};
+  host.querySelector('[data-a=reset]').onclick=()=>{stop();left=total;draw()};
+  host.querySelector('[data-a=plus]').onclick=()=>{left+=60;total=Math.max(total,left);draw()};
+  draw();return {stop};
+}
+
+/* scorer */
+function scorer(host,quick,ruleText,first){
+  const vals=S.players.map(()=>0);
+  host.innerHTML=`<p class="tag" style="background:#FFF4D6">เกณฑ์ให้ดาว: ${esc(ruleText)}</p>`+S.players.map((p,i)=>{const [e,c]=PAWNS[p.pawn];
+    return `<div class="srow"><span class="ptoken" style="background:${c}">${e}</span><span class="pname">${esc(p.name)}${first===i?'<small class="bonus">+1 ดาวนำทาง (ถึงประตูก่อน)</small>':''}</span>
+    <span class="quick">${quick.map(([l,v])=>`<button class="qb" type="button" data-i="${i}" data-v="${v}">${l}</button>`).join('')}</span>
+    <span class="step"><button type="button" data-i="${i}" data-d="-1" aria-label="ลด">−</button><output id="sv${i}">0</output><button type="button" data-i="${i}" data-d="1" aria-label="เพิ่ม">+</button></span></div>`}).join('');
+  host.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const i=+b.dataset.i;
+    const d=b.dataset.v?+b.dataset.v:+b.dataset.d;if(Number.isNaN(i)||Number.isNaN(d))return;
+    vals[i]=Math.max(0,Math.min(99,vals[i]+d));const o=host.querySelector('#sv'+i);o.textContent=vals[i];o.animate([{transform:'scale(1.5)'},{transform:'scale(1)'}],{duration:250});tone(600+vals[i]*20,.05)});
+  host.classList.add('scorer');return ()=>vals.slice();
+}
+
+/* ======================= GAME FLOW ======================= */
+function cityIntro(){
+  const c=CITIES[S.city];busy=true;render();
+  const m=modal(`<div class="eyebrow">${esc(c.stage)} · การ์ดสถานการณ์ปัญหา</div><h2>${c.icon} ${esc(c.name)}: ${esc(c.title)}</h2>
+   <div class="flip" id="flip"><div class="flip-inner">
+     <div class="face" style="background:${c.fill}"><div class="scene">${c.scene.map(s=>`<span>${s}</span>`).join('')}</div><div class="hint">แตะ “พลิกการ์ด” เพื่ออ่านเรื่อง</div></div>
+     <div class="face back" style="background:#fff"><p class="story">${esc(c.story)}</p></div></div></div>
+   <div class="band" style="background:#F1F7FF"><b>อุ่นเครื่อง 3 นาที:</b> ช่วยกันบอกว่าในภาพมี <b>“ใคร ทำอะไร ที่ไหน”</b> แล้วผู้เล่นทุกคนรับการ์ดคำเริ่มต้น 2 ใบ (ประธาน 1 กริยา 1)</div>
+   <div class="timer" id="wt"></div>
+   <div class="mrow"><button class="big alt" id="bFlip" type="button">🔄 พลิกการ์ด</button><button class="big" id="bGo" type="button">ออกเดินทาง ➜</button></div>`,{closable:false});
+  m._timers.push(timer(m.querySelector('#wt'),180));
+  m.querySelector('#bFlip').onclick=()=>{m.querySelector('#flip').classList.toggle('flipped');sfx.card()};
+  setTimeout(()=>{m.querySelector('#flip')?.classList.add('flipped');sfx.card()},1400);
+  m.querySelector('#bGo').onclick=async()=>{m.close();
+    S.players.forEach(p=>{if(p.hand.length<HAND_MAX)p.hand.push({w:rnd(c.words.subj),t:'subj'});if(p.hand.length<HAND_MAX)p.hand.push({w:rnd(c.words.verb),t:'verb'})});
+    log(`🗺️ เข้าสู่<b>${esc(c.name)}</b> สถานการณ์ “${esc(c.title)}”`);busy=false;render();
+    const b=$('#hand');b.querySelectorAll('.wcard').forEach((w,i)=>{w.classList.add('new');w.style.animationDelay=i*.08+'s'});};
+}
+
+async function roll(){
+  if(busy)return;
+  if(S.phase==='tower'){towerScreen();return}
+  busy=true;renderSide();
+  const die=$('#die');sfx.dice();die.classList.remove('rolling');void die.offsetWidth;die.classList.add('rolling');
+  for(let k=0;k<7;k++){die.dataset.v=1+Math.floor(Math.random()*3);await sleep(70)}
+  const n=1+Math.floor(Math.random()*3);die.dataset.v=n;await sleep(150);
+  const i=S.turn,p=S.players[i];const gate=GATE_POS[S.gateIdx];const to=Math.min(p.pos+n,gate);
+  log(`🎲 ${esc(p.name)} ทอยได้ ${n} แต้ม`);renderSide();
+  await movePawn(i,to);
+  if(to===gate){await gateEvent(i);return}
+  const t=SPACES[to];
+  if(t==='word')await drawWord(i);
+  else if(t==='friend'){busy=false;friendEvent(i);return}
+  else if(t==='special'){busy=false;trainModal(i,'special');return}
+  endTurn();
+}
+function endTurn(){busy=false;S.turn=(S.turn+1)%S.players.length;render()}
+async function drawWord(i,silent){
+  const p=S.players[i],c=CITIES[Math.min(S.city,2)];
+  const t=rnd(['subj','verb','obj','mod','subj','verb','mod']);const w={w:rnd(c.words[t]),t};
+  if(p.hand.length>=HAND_MAX){log(`🃏 มือของ ${esc(p.name)} เต็ม (${HAND_MAX} ใบ) จึงไม่หยิบเพิ่ม`);return}
+  p.hand.push(w);sfx.card();
+  const src=$('#pawn'+i);const from=src?centerOf(src):[innerWidth/2,innerHeight/2];
+  await fly('🃏',from,centerOf($('#hand')),650,34);
+  if(!silent)log(`🃏 ${esc(p.name)} เก็บคำ <span class="wcard ${t}" style="padding:0 6px;font-size:.8rem">${esc(w.w)}</span> (${WTYPE[t]})`);
+  S.turn=i;renderSide();const last=$('#hand').lastElementChild;last&&last.classList.add('new');
+}
+function friendEvent(i){
+  const p=S.players[i];
+  const others=S.players.map((q,j)=>({q,j})).filter(x=>x.j!==i);
+  const draw=async()=>{if(!p.hand.length){await drawWord(i,true)}};
+  draw().then(()=>{
+    const m=modal(`<div class="eyebrow">ช่องช่วยเพื่อน 🤝</div><h2>${esc(p.name)} แบ่งการ์ดคำให้เพื่อน 1 ใบ</h2><p>เลือกการ์ดคำ แล้วเลือกเพื่อนที่จะได้รับ ผู้ให้รับ 1 ดาว</p>
+     <h4 style="margin-top:10px">การ์ดคำของ ${esc(p.name)}</h4><div class="hand" id="fh">${p.hand.map((w,k)=>`<button type="button" class="wcard ${w.t}" data-k="${k}">${esc(w.w)}</button>`).join('')}</div>
+     <h4 style="margin-top:12px">ให้กับ</h4><div class="hand" id="ff">${others.map(({q,j})=>`<button type="button" class="tbtn" data-j="${j}" disabled>${PAWNS[q.pawn][0]} ${esc(q.name)}</button>`).join('')}</div>`,{closable:false});
+    let pick=-1;
+    m.querySelector('#fh').onclick=e=>{const b=e.target.closest('[data-k]');if(!b)return;pick=+b.dataset.k;m.querySelectorAll('#fh .wcard').forEach(x=>x.style.outline=x===b?'3px solid #FFC233':'');m.querySelectorAll('#ff button').forEach(x=>x.disabled=false)};
+    m.querySelector('#ff').onclick=async e=>{const b=e.target.closest('[data-j]');if(!b||pick<0)return;const j=+b.dataset.j;const w=p.hand.splice(pick,1)[0];
+      const fr=centerOf(m.querySelector(`[data-k="${pick}"]`));m.close();
+      if(S.players[j].hand.length<HAND_MAX)S.players[j].hand.push(w);
+      await fly('🃏',fr,centerOf($('#prow'+j)),700,34);
+      log(`🤝 ${esc(p.name)} ให้คำ “${esc(w.w)}” แก่ ${esc(S.players[j].name)}`);
+      busy=true;await giveStars(i,1,S.city,centerOf($('#prow'+j)));endTurn()};
+  });
+}
+
+/* gate */
+async function gateEvent(first){
+  const gi=S.gateIdx,g=GATES[gi],c=CITIES[S.city],ms=c.missions[gi];
+  await sleep(250);
+  const m=modal(`<div class="eyebrow">${esc(c.name)} · ประตูภารกิจ ${gi+1} / 4 · ตัวบ่งชี้ ${esc(ms.ind)}</div>
+   <h2 style="color:${g.color}">🚪 ${g.name} — ${esc(g.skill)}</h2>
+   <p>${esc(S.players[first].name)} มาถึงก่อน ทุกคนหยุดและทำภารกิจพร้อมกันลงใน <b>สมุดนักผจญภัย</b> ของตนเอง</p>
+   <div class="flip" id="gflip"><div class="flip-inner" style="min-height:180px">
+     <div class="face" style="background:${g.hex};color:#fff;align-items:center;text-align:center"><div style="font-size:64px">🚪</div><h3>การ์ดภารกิจคิด${esc(g.short)}</h3></div>
+     <div class="face back" style="background:#fff;border-color:${g.hex}"><span class="tag" style="background:${g.hex};color:#fff;border-color:${g.hex}">กลไก “${esc(g.mech)}”</span><p class="story">${esc(ms.text)}</p><p style="color:var(--ink-soft);font-size:.9rem">${esc(g.mechText)}</p></div></div></div>
+   <div id="extra"></div>
+   <div class="timer" id="gt"></div>
+   <h3 style="margin-top:14px">ตรวจกับเพื่อน แล้วนับดาว</h3><p style="font-size:.9rem;color:var(--ink-soft)">สลับสมุดกับเพื่อนข้าง ๆ ตรวจด้วยแถบ “มีใคร ✓ ทำอะไร ✓ ครบความ ✓” ครูตรวจสมุดซ้ำภายหลังเพื่อให้คะแนนตามตัวบ่งชี้</p>
+   <div id="sc"></div>
+   <div class="mrow"><button class="big alt" id="gTrain" type="button">🚂 เปิดรถไฟประโยค</button><button class="big green" id="gDone" type="button">✔ บันทึกดาวและผ่านประตู</button></div>`,{closable:false,wide:true});
+  setTimeout(()=>{m.querySelector('#gflip').classList.add('flipped');sfx.card()},700);
+  m._timers.push(timer(m.querySelector('#gt'),S.secs));
+  const ex=m.querySelector('#extra');
+  if(ms.three)ex.innerHTML=`<div class="band" style="background:#FFF1E2"><b>คำ 3 คำของเมือง:</b> ${ms.three.map(w=>`<span class="wcard mod">${esc(w)}</span>`).join(' ')} <br><span style="font-size:.9rem">วาดภาพ + แต่งประโยค แล้วนับ 1–2–3 เปิดสมุดพร้อมกัน!</span></div>`;
+  if(g.key==='purple'){ex.innerHTML=`<div class="band" style="background:#F2EAFE"><b>การ์ดประโยคผิด</b> <button class="tbtn" id="drawWrong" type="button">🃏 จับการ์ด</button><div class="sentence" id="wrongTxt">—</div></div>`;
+    const dw=()=>{const t=ex.querySelector('#wrongTxt');t.textContent='“'+rnd(c.wrong)+'”';t.animate([{transform:'rotateX(90deg)'},{transform:'none'}],{duration:350});sfx.card()};ex.querySelector('#drawWrong').onclick=dw;dw()}
+  if(ms.listener){ex.innerHTML=`<div class="band" style="background:#E7F2FF"><b>การ์ดผู้ฟัง</b> <button class="tbtn" id="drawL" type="button">🃏 จับการ์ด</button><div class="sentence" id="lTxt">—</div></div>`;
+    const dl=()=>{const [e,n,tip]=rnd(LISTENERS);const t=ex.querySelector('#lTxt');t.innerHTML=`${e} ${n} <span style="font-family:var(--f-body);font-size:.95rem;color:var(--ink-soft)">— ${tip}</span>`;t.animate([{transform:'rotateX(90deg)'},{transform:'none'}],{duration:350});sfx.card()};ex.querySelector('#drawL').onclick=dl;dl()}
+  const get=scorer(m.querySelector('#sc'),g.quick,g.rule,first);
+  m.querySelector('#gTrain').onclick=()=>trainModal(S.turn,'free');
+  m.querySelector('#gDone').onclick=async()=>{
+    const vals=get();m.close();
+    log(`🚪 ผ่าน<b style="color:${g.color}">${g.name}</b> (${esc(g.skill)})`);
+    vals[first]+=1;
+    for(let i=0;i<vals.length;i++){if(vals[i]>0)await giveStars(i,vals[i],S.city)}
+    // everyone moves to the gate
+    await Promise.all(S.players.map((p,i)=>movePawn(i,GATE_POS[gi])));
+    S.gateIdx++;S.turn=(first+1)%S.players.length;
+    if(S.gateIdx>=4){await cityEnd()}else{busy=false;render()}
+  };
+}
+
+async function cityEnd(){
+  const c=CITIES[S.city];render();busy=true;
+  const ok=S.cityStars>=CITY_GOAL;
+  const m=modal(`<div class="eyebrow">จบ${esc(c.name)}</div><h2>${ok?'🎉 ดาวครบเป้าหมาย!':'💪 อีกนิดเดียว!'}</h2>
+   <p>กลุ่มได้ดาวในเมืองนี้ <b style="font-size:1.3rem">${S.cityStars}</b> ดวง จากเป้าหมาย ${CITY_GOAL} ดวง</p>
+   ${ok?'':`<div class="band" style="background:#FFF4D6"><b>ภารกิจช่วยเหลือ (ทำร่วมกันทั้งกลุ่ม):</b><p>${esc(c.help)}</p></div>`}
+   <div class="band" style="background:#F1F7FF"><b>ประโยคเด่นของกลุ่ม</b> <span style="font-size:.9rem;color:var(--ink-soft)">เลือก 1 ประโยคมานำเสนอให้ทั้งห้องฟัง</span>
+   <textarea id="show" placeholder="พิมพ์ประโยคเด่นของกลุ่ม (ไม่บังคับ)">${esc(S.showcase[S.city]||'')}</textarea></div>
+   <div class="mrow"><button class="big" id="bKey" type="button">${ok?'🗝️ รับกุญแจเมือง':'✔ ทำภารกิจช่วยเหลือสำเร็จ รับกุญแจ'}</button></div>`,{closable:false});
+  if(ok){confetti(2000);sfx.win()}
+  m.querySelector('#bKey').onclick=async()=>{
+    S.showcase[S.city]=m.querySelector('#show').value.trim();const from=centerOf(m.querySelector('#bKey'));m.close();
+    S.keys++;sfx.key();await fly('🗝️',from,centerOf(document.querySelectorAll('#keys span')[S.keys-1]),1000,60);
+    log(`🗝️ ได้รับกุญแจ${esc(c.name)} (${S.keys}/3)`);
+    if(S.city<2){S.city++;S.gateIdx=0;S.cityStars=0;S.players.forEach(p=>{p.pos=0;p.hand=[]});render();toast(`ปลดล็อก ${CITIES[S.city].name}!`);await sleep(600);busy=false;cityIntro()}
+    else{S.phase='tower';busy=false;render();toast('กุญแจครบ 3 ดอก! หอคอยการคิดสร้างสรรค์เปิดแล้ว');confetti(2500);sfx.win();await sleep(900);towerIntro()}
+  };
+}
+
+/* ======================= TOWER ======================= */
+function heartsHTML(){let h='';for(let i=0;i<100;i++)h+=`<i class="${i>=S.tower.hp?'gone':''}">❤️</i>`;return h}
+function towerIntro(){
+  const m=modal(`<div class="eyebrow">ศูนย์ส่งเสริมการคิดสร้างสรรค์ · การ์ดสถานการณ์บอส</div><h2>🐉 มังกรกินคำ บุกเมืองประโยค!</h2>
+   <div class="dragon-stage"><span class="dragon">🐉</span><p class="story">${esc(TOWER.story)}</p></div>
+   <div class="band" style="background:#FFE9E4"><b>กติกาบอส:</b> มังกรมีพลัง 100 หัวใจ ทุกดาวที่กลุ่มได้ในหอคอยลดพลังมังกร 1 หัวใจ ฝ่าให้ครบ 4 ชั้นและทำให้หัวใจหมดเพื่อคืนคำให้เมือง</div>
+   <div class="mrow"><button class="big danger" id="bT" type="button">⚔️ บุกหอคอยชั้นที่ 1</button></div>`,{closable:false,wide:true});
+  m.querySelector('#bT').onclick=()=>{m.close();S.tower.started=true;towerScreen()};
+}
+function towerScreen(){
+  const T=S.tower;
+  let fi=T.cleared.indexOf(false);const extra=fi<0;if(extra)fi=-1;
+  const chips=GATES.map((g,i)=>`<span class="floor-chip${T.cleared[i]?' done':''}${i===fi?' cur':''}" style="${T.cleared[i]?`background:${g.hex}`:''}">ชั้น ${i+1} ${esc(g.short)}</span>`).join('');
+  if(extra){
+    const m=modal(`<h2>🐉 มังกรยังเหลือ ${T.hp} หัวใจ</h2><p>ผ่านครบ 4 ชั้นแล้ว แต่มังกรยังไม่ยอมแพ้ เลือกพลังของมังกรที่จะท้าอีกครั้ง</p>
+     <div class="hearts">${heartsHTML()}</div>
+     <div class="grid2" style="margin-top:12px">${TOWER.floors.map((f,i)=>`<button class="big alt" type="button" data-f="${i}" style="border-color:${GATES[i].hex}">ชั้น ${i+1} · ${esc(f.power)}</button>`).join('')}</div>`,{closable:true});
+    m.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{m.close();floorModal(+b.dataset.f)});return;
+  }
+  floorModal(fi,chips);
+}
+function floorModal(fi){
+  const T=S.tower,f=TOWER.floors[fi],g=GATES[fi];
+  const chips=GATES.map((gg,i)=>`<span class="floor-chip${T.cleared[i]?' done':''}${i===fi?' cur':''}" style="${T.cleared[i]?`background:${gg.hex}`:''}">ชั้น ${i+1} ${esc(gg.short)}</span>`).join('');
+  const m=modal(`<div class="eyebrow">หอคอยการคิดสร้างสรรค์ · ชั้นที่ ${fi+1} · ตัวบ่งชี้ ${esc(f.ind)}</div>
+   <h2 style="color:${g.color}">พลังที่ ${fi+1} “${esc(f.power)}” — ${esc(g.skill)}</h2>
+   <div class="dragon-stage"><div style="text-align:center"><span class="dragon" id="drg">🐉</span><div class="hp" id="hp">❤️ ${T.hp}</div></div>
+    <div><div class="hearts" id="hearts">${heartsHTML()}</div><div class="floors">${chips}</div></div></div>
+   <div class="band" style="background:#fff;border-color:${g.hex}"><p class="story">${esc(f.text)}</p></div>
+   <div id="fx"></div><div class="timer" id="ft"></div>
+   <h3 style="margin-top:14px">นับดาวของแต่ละคน (ดาวมากกว่าในเมืองประมาณ 3 เท่า)</h3><div id="fs"></div>
+   <div class="mrow"><button class="big alt" id="fTrain" type="button">🚂 รถไฟประโยค</button><button class="big danger" id="fGo" type="button">⚔️ โจมตีมังกรด้วยดาว</button></div>`,{closable:true,wide:true});
+  m._timers.push(timer(m.querySelector('#ft'),S.secs));
+  const fx=m.querySelector('#fx');
+  if(f.draw3){fx.innerHTML=`<div class="band" style="background:#FFF1E2"><b>สุ่มการ์ดคำเมืองละ 1 ใบ:</b> <button class="tbtn" id="d3" type="button">🎲 สุ่ม</button><div class="sentence" id="d3t"></div></div>`;
+    const d=()=>{const ws=CITIES.map(c=>{const t=rnd(['subj','verb','obj','mod']);return [rnd(c.words[t]),t]});fx.querySelector('#d3t').innerHTML=ws.map(([w,t])=>`<span class="wcard ${t} new">${esc(w)}</span>`).join(' ');sfx.card()};fx.querySelector('#d3').onclick=d;d()}
+  if(f.notice)fx.innerHTML=`<div class="band" style="background:#F2EAFE;text-align:center"><div style="font-size:.85rem;color:var(--ink-soft)">📜 ประกาศต้องคำสาป</div><div class="sentence">“งานวันเมืองประโยค จัดเมื่อวานนี้พรุ่งนี้ ลานกว้างสวยงามที่เมือง มาให้ได้นะเว้ย”</div></div>`;
+  if(fi===0)fx.innerHTML=`<div class="band" style="background:#E8F6EC;text-align:center"><div style="font-size:.85rem;color:var(--ink-soft)">การ์ดภาพเมืองหลังมังกรกินคำ</div><div class="scene"><span>🏘️</span><span>🪧</span><span>❓</span><span>🐉</span></div><div>ป้ายเหลือแต่คำเดี่ยว ๆ: “ตลาด” “เด็ก” “วิ่ง” “ร้าน” …</div></div>`;
+  if(fi===1)fx.innerHTML=`<div class="band" style="background:#E7F2FF;text-align:center"><div class="sentence">“มังกรกินคำ”</div><div>ผู้ฟัง: 🧑‍💼 นายกเมือง · 🧒 เพื่อน · 👶 น้อง</div></div>`;
+  const get=scorer(m.querySelector('#fs'),g.towerQuick,f.rule,-1);
+  m.querySelector('#fTrain').onclick=()=>trainModal(0,'free');
+  m.querySelector('#fGo').onclick=async()=>{
+    const vals=get();const tot=vals.reduce((a,b)=>a+b,0);const btn=m.querySelector('#fGo');btn.disabled=true;
+    const drg=m.querySelector('#drg'),hp=m.querySelector('#hp'),hearts=m.querySelectorAll('#hearts i');
+    for(let i=0;i<vals.length;i++){if(!vals[i])continue;const p=S.players[i];p.stars+=vals[i];p.by[3]+=vals[i]}
+    let dmg=Math.min(tot,T.hp);
+    const steps=Math.min(dmg,40);const per=dmg/steps||0;let done=0;
+    for(let k=0;k<steps;k++){
+      const target=Math.round(per*(k+1));
+      while(done<target){T.hp--;hearts[T.hp]&&hearts[T.hp].classList.add('gone');done++}
+      hp.textContent='❤️ '+T.hp;
+      if(k%3===0){fly('⭐',centerOf(btn),centerOf(drg),380,26);drg.classList.remove('hit');void drg.offsetWidth;drg.classList.add('hit');sfx.hit()}
+      await sleep(70);
+    }
+    T.cleared[fi]=true;log(`🗼 ผ่านหอคอยชั้น ${fi+1} “${esc(f.power)}” ลดพลังมังกร ${dmg} หัวใจ`);
+    render();await sleep(500);
+    if(T.cleared.every(Boolean)&&T.hp<=0){drg.classList.add('dead');await sleep(1200);m.close();victory();return}
+    m.close();
+    if(T.cleared.every(Boolean)){towerScreen()}
+    else{toast(`ผ่านชั้นที่ ${fi+1}! ต่อไปชั้นที่ ${T.cleared.indexOf(false)+1}`);await sleep(400);towerScreen()}
+  };
+}
+function victory(){
+  S.phase='end';render();confetti(6000);sfx.win();
+  const best=Math.max(...S.players.map(p=>p.stars));const stars=S.players.filter(p=>p.stars===best).map(p=>p.name);
+  const rows=S.players.map(p=>`<tr><td>${PAWNS[p.pawn][0]} ${esc(p.name)}</td>${p.by.map(v=>`<td>${v}</td>`).join('')}<td><b>${p.stars}</b></td></tr>`).join('');
+  const show=S.showcase.map((s,i)=>s?`<li><b>${esc(CITIES[i].name)}:</b> ${esc(s)}</li>`:'').join('');
+  const m=modal(`<div class="title-hero"><div style="font-size:72px">🏆</div><h1>ผู้พิชิตเมืองประโยค!</h1><p>มังกรกินคำยอมแพ้และคืนคำทั้งหมดให้เมือง ${S.group?`กลุ่ม <b>${esc(S.group)}</b>`:''}</p></div>
+   <div class="band" style="background:#FFF4D6;text-align:center">🌟 นักแต่งประโยคดาวเด่น: <b>${stars.map(esc).join(', ')}</b> (${best} ดาว)</div>
+   <h3 style="margin-top:14px">สรุปดาวของแต่ละคน</h3>
+   <div class="tablewrap"><table class="sum"><thead><tr><th>ผู้เล่น</th><th>เมือง 1</th><th>เมือง 2</th><th>เมือง 3</th><th>หอคอย</th><th>รวม</th></tr></thead><tbody>${rows}</tbody></table></div>
+   ${show?`<h3 style="margin-top:14px">ประโยคเด่นของกลุ่ม</h3><ul>${show}</ul>`:''}
+   <p style="font-size:.88rem;color:var(--ink-soft)">ดาวในเกมเป็นแรงจูงใจระหว่างเล่น คะแนนวัดผลการคิดสร้างสรรค์มาจากการที่ครูตรวจสมุดนักผจญภัยตามตัวบ่งชี้ในตารางที่ 3</p>
+   <div class="mrow"><button class="big" id="again" type="button">↺ เล่นอีกครั้ง</button></div>`,{wide:true});
+  m.querySelector('#again').onclick=()=>{m.close();setup()};
+}
+
+/* ======================= TOOLS ======================= */
+function trainModal(i,mode){
+  const p=S.players[i];const c=CITIES[Math.min(S.city,2)];
+  let useAll=mode==='free'&&!p.hand.length;
+  const cars={subj:[],verb:[],obj:[],mod:[]};
+  const m=modal(`<div class="eyebrow">${mode==='special'?'ช่องดาวพิเศษ ⭐':'เครื่องมือทางปัญญา: บูรณาการ'}</div>
+   <h2>🚂 รถไฟประโยค ${mode==='special'?`ของ ${esc(p.name)}`:''}</h2>
+   <p>${mode==='special'?'แตะการ์ดคำในมือเพื่อวางลงตู้ แล้วพูดประโยคให้ถูกต้อง 1 ประโยค':'แตะการ์ดคำเพื่อวางลงตู้ตามสี แตะการ์ดในตู้เพื่อเอาออก'}</p>
+   ${mode==='free'?`<label style="display:flex;gap:6px;align-items:center;font-size:.9rem"><input type="checkbox" id="all" ${useAll?'checked':''}> ใช้คำทั้งหมดของเมือง</label>`:''}
+   <div class="hand" id="tpool" style="margin-top:8px"></div>
+   <div style="overflow:hidden"><div class="train" id="train"><span class="engine">🚂</span>
+    ${['subj','verb','obj','mod'].map(k=>`<div class="car ${k}" data-car="${k}"><b>ตู้${WTYPE[k]}</b><div class="slot hand" style="min-height:30px"></div></div>`).join('')}</div></div>
+   <div class="sentence" id="sent"></div>
+   <div class="checks"><span id="c1">มีใคร</span><span id="c2">ทำอะไร</span><span id="c3">ครบความ</span></div>
+   <div class="mrow">${mode==='special'?`<button class="big alt" id="tNo" type="button">ยังไม่ถูก ข้ามไปก่อน</button><button class="big green" id="tYes" type="button" disabled>✔ พูดถูกต้อง รับ 1 ดาว</button>`:`<button class="big" id="tGo" type="button" disabled>🚂 รถไฟออก!</button>`}</div>`,{closable:mode!=='special',wide:true});
+  const pool=()=>useAll?Object.entries(c.words).flatMap(([t,ws])=>ws.map(w=>({w,t}))):p.hand;
+  const used=new Set();
+  const draw=()=>{
+    const pl=pool();m.querySelector('#tpool').innerHTML=pl.length?pl.map((w,k)=>`<button type="button" class="wcard ${w.t}" data-k="${k}" ${used.has(k)?'disabled':''}>${esc(w.w)}</button>`).join(''):'<span class="empty">ไม่มีการ์ดคำในมือ</span>';
+    m.querySelectorAll('.car').forEach(car=>{const k=car.dataset.car;car.querySelector('.slot').innerHTML=cars[k].map(x=>`<button type="button" class="wcard ${k}" data-rm="${x.k}">${esc(x.w)}</button>`).join('')});
+    const order=[...cars.subj,...cars.verb,...cars.obj,...cars.mod];
+    m.querySelector('#sent').textContent=order.length?order.map(x=>x.w).join(' '):'';
+    const a=cars.subj.length>0,b=cars.verb.length>0;
+    m.querySelector('#c1').classList.toggle('on',a);m.querySelector('#c2').classList.toggle('on',b);m.querySelector('#c3').classList.toggle('on',a&&b);
+    const y=m.querySelector('#tYes')||m.querySelector('#tGo');y.disabled=!(a&&b);
+  };
+  m.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.k!==undefined&&b.closest('#tpool')){const k=+b.dataset.k,w=pool()[k];const lim=w.t==='mod'?3:2;if(cars[w.t].length>=lim){toast(`ตู้${WTYPE[w.t]}เต็มแล้ว`);return}
+      cars[w.t].push({w:w.w,k});used.add(k);sfx.card();draw();const last=m.querySelector(`[data-car="${w.t}"] .slot`).lastElementChild;last&&last.classList.add('new')}
+    else if(b.dataset.rm!==undefined){const k=+b.dataset.rm;Object.values(cars).forEach(a=>{const ix=a.findIndex(x=>x.k===k);if(ix>=0)a.splice(ix,1)});used.delete(k);draw()}});
+  const all=m.querySelector('#all');if(all)all.onchange=()=>{useAll=all.checked;Object.values(cars).forEach(a=>a.length=0);used.clear();draw()};
+  draw();
+  const go=async()=>{const t=m.querySelector('#train');t.classList.add('go');[392,523,659].forEach((f,i)=>tone(f,.15,'square',.04,i*.12));await sleep(1300)};
+  if(mode==='special'){
+    m.querySelector('#tYes').onclick=async()=>{await go();const s=m.querySelector('#sent').textContent;const fr=centerOf(m.querySelector('#tYes'));m.close();log(`⭐ ${esc(p.name)} พูดประโยค “${esc(s)}” ได้ถูกต้อง`);busy=true;await giveStars(i,1,S.city,fr);endTurn()};
+    m.querySelector('#tNo').onclick=()=>{m.close();log(`⭐ ${esc(p.name)} ยังไม่ได้ดาวพิเศษ`);endTurn()};
+  }else m.querySelector('#tGo').onclick=async()=>{await go();const t=m.querySelector('#train');t.classList.remove('go');toast('ประโยค: '+m.querySelector('#sent').textContent)};
+}
+function library(){
+  let ci=Math.min(S?S.city:0,2);
+  const m=modal(`<div class="eyebrow">แหล่งเรียนรู้ · ส่วนหน้าของสมุดนักผจญภัย</div><h2>📚 คลังความรู้เมืองประโยค</h2>
+   <div class="tabs" role="tablist">${CITIES.map((c,i)=>`<button class="tab" role="tab" type="button" data-c="${i}">${c.icon} ${esc(c.name)}</button>`).join('')}</div><div class="grid2" id="tp"></div>`,{wide:true});
+  const draw=()=>{m.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(+t.dataset.c===ci)));
+    m.querySelector('#tp').innerHTML=CITIES[ci].topics.map(([h,t,ex],k)=>`<div class="topic" style="animation:cardIn .4s ${k*.06}s both"><h4>${k+1}. ${esc(h)}</h4><div>${esc(t)}</div><div class="ex">${ex.map(([w,ty])=>`<span class="wcard ${ty}">${esc(w)}</span>`).join('')}</div></div>`).join('')};
+  m.querySelector('.tabs').onclick=e=>{const b=e.target.closest('[data-c]');if(b){ci=+b.dataset.c;draw()}};draw();
+}
+function helpCards(){
+  if(S.phase==='tower'||S.phase==='end'){showHelp(-1);return}
+  const left=2-S.helpUsed[S.city];
+  const m=modal(`<div class="eyebrow">ฐานการช่วยเหลือ · ใช้ได้เมืองละ 2 ครั้งโดยไม่เสียดาว</div><h2>🧩 การ์ดตัวช่วย <span class="tag">เหลือ ${left} ครั้ง</span></h2>
+   <div class="grid2" style="margin-top:10px">${HELP_CARDS.map((h,i)=>`<button class="big alt" type="button" data-h="${i}" ${left<=0?'disabled':''} style="text-align:left">${h.ico} ${esc(h.k)}</button>`).join('')}</div>
+   ${left<=0?'<p style="color:var(--danger)">ใช้การ์ดตัวช่วยในเมืองนี้ครบ 2 ครั้งแล้ว ลองยกธงขอคำแนะนำจากครูได้</p>':''}`);
+  m.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{S.helpUsed[S.city]++;m.close();renderSide();showHelp(+b.dataset.h)});
+}
+function showHelp(i){
+  const list=i<0?HELP_CARDS:[HELP_CARDS[i]];
+  const m=modal(`<div class="eyebrow">การ์ดตัวช่วย</div>${list.map(h=>`<div class="flip flipped"><div class="flip-inner" style="min-height:0"><div class="face back" style="background:#FFF9E6"><h3>${h.ico} ${esc(h.k)}</h3><p class="story">${esc(h.text)}</p></div></div></div>`).join('')}<div class="mrow"><button class="big" type="button" data-ok>เข้าใจแล้ว</button></div>`);
+  m.querySelector('[data-ok]').onclick=m.close;sfx.card();
+}
+function coachFlag(){
+  const c=CITIES[Math.min(S?S.city:0,2)];let lv=0;
+  const m=modal(`<div class="eyebrow">การโค้ช · ครูผู้พิทักษ์เมือง</div><h2>🚩 ธงขอคำแนะนำ</h2><p>ครูบอกใบ้จากน้อยไปมาก โดยไม่บอกคำตอบ</p>
+   <div id="hl" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
+   <div class="mrow"><button class="big" id="more" type="button">ขอใบ้ขั้นต่อไป</button></div>`);
+  const steps=['👉 ชี้ภาพ','❓ ถามนำ','📝 ยกตัวอย่าง'];
+  const add=()=>{const d=document.createElement('div');d.className='band';d.style.background=['#E8F6EC','#E7F2FF','#FFF1E2'][lv];d.style.animation='cardIn .4s';
+    d.innerHTML=`<b>ขั้นที่ ${lv+1} ${steps[lv]}</b><p>${esc(c.hints[lv].replace(/^[^:]+:\s*/,''))}</p>`;m.querySelector('#hl').appendChild(d);lv++;sfx.card();
+    if(lv>=3){const b=m.querySelector('#more');b.disabled=true;b.textContent='ครบ 3 ขั้นแล้ว'}};
+  m.querySelector('#more').onclick=add;add();
+}
+
+/* ======================= SETUP ======================= */
+function setup(){
+  S=null;busy=false;
+  $('#board').innerHTML='';renderPreviewBoard();
+  const defaults=['ต้นกล้า','ใบเตย','ภูผา','น้ำฝน'];
+  const m=modal(`<div class="title-hero"><h1>${[...'ผจญภัยเมืองประโยค'].reduce((a,ch)=>{if(/[ัิ-ฺ็-๎]/.test(ch)&&a.length){a[a.length-1]+=ch}else a.push(ch);return a},[]).map((ch,i)=>`<span style="animation-delay:${i*.08}s">${ch}</span>`).join('')}</h1>
+   <p>บอร์ดเกมการแต่งประโยค ชั้นประถมศึกษาปีที่ 3 · เดินทางผ่าน 3 เมือง เก็บกุญแจ 3 ดอก แล้วปราบมังกรกินคำ</p></div>
+   <div class="grid2"><label class="field">ชื่อกลุ่ม<input id="gname" value="นักผจญภัยห้อง ป.3"></label>
+   <label class="field">เวลาภารกิจที่ประตู<select id="secs"><option value="300">5 นาที (ตามแผน)</option><option value="180">3 นาที</option><option value="60">1 นาที</option><option value="20">20 วินาที (ทดลองเล่น)</option></select></label></div>
+   <h3 style="margin-top:14px">นักผจญภัย (กลุ่มละ 4 คน แตะหมากเพื่อเปิด/ปิด)</h3>
+   <div class="setup-players">${PAWNS.map(([e,c],i)=>`<div class="pslot" id="ps${i}"><button class="ptoken" type="button" style="background:${c}" data-t="${i}" aria-label="เปิดหรือปิดผู้เล่น ${i+1}">${e}</button><input id="pn${i}" value="${defaults[i]}" aria-label="ชื่อผู้เล่น ${i+1}"></div>`).join('')}</div>
+   <div class="band" style="background:#F1F7FF;font-size:.92rem"><b>วิธีเล่นย่อ:</b> ทอยเต๋า 1–3 แต้ม เดินตามเส้นทาง ช่อง 🃏 เก็บคำ · 🤝 ช่วยเพื่อน · ⭐ ดาวพิเศษ · 🚪 ประตูภารกิจ 4 สีเป็นช่องบังคับหยุด ทุกคนทำภารกิจพร้อมกันลงสมุด แล้วนับดาว ครบ ${CITY_GOAL} ดาวรับกุญแจเมือง</div>
+   ${load()&&load().phase!=='end'?`<div class="mrow" style="justify-content:flex-start"><button class="big alt" id="resume" type="button">▶ เล่นต่อจากครั้งก่อน</button></div>`:''}
+   <div class="mrow"><button class="big" id="start" type="button">🚀 เริ่มผจญภัย</button></div>`,{closable:false,wide:true});
+  const on=[true,true,true,true];
+  m.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const i=+b.dataset.t;const cnt=on.filter(Boolean).length;if(on[i]&&cnt<=2){toast('ต้องมีผู้เล่นอย่างน้อย 2 คน');return}on[i]=!on[i];m.querySelector('#ps'+i).classList.toggle('off',!on[i])});
+  const r=m.querySelector('#resume');if(r)r.onclick=()=>{S=load();m.close();render();if(S.phase==='tower')towerScreen()};
+  m.querySelector('#start').onclick=()=>{
+    const names=[],pawns=[];on.forEach((o,i)=>{if(o){names.push(m.querySelector('#pn'+i).value.trim()||defaults[i]);pawns.push(i)}});
+    S=fresh(names,m.querySelector('#gname').value.trim(),+m.querySelector('#secs').value);S.players.forEach((p,k)=>p.pawn=pawns[k]);
+    m.close();log('🚀 เริ่มการผจญภัย!');render();sfx.key();cityIntro();
+  };
+}
+function renderPreviewBoard(){S={phase:'preview',city:0,gateIdx:0,keys:0,players:[],tower:{cleared:[false,false,false,false]}};renderBoard();S=null}
+
+/* ======================= WIRING ======================= */
+$('#btnRoll').onclick=roll;
+$('#btnLib').onclick=library;
+$('#btnTrain').onclick=()=>{if(!S||S.phase==='preview')return;trainModal(S.turn,'free')};
+$('#btnHelp').onclick=()=>{if(S)helpCards()};
+$('#btnFlag').onclick=()=>{if(S)coachFlag()};
+$('#btnSound').onclick=e=>{soundOn=!soundOn;e.currentTarget.textContent=soundOn?'🔊':'🔇';e.currentTarget.setAttribute('aria-pressed',String(soundOn))};
+$('#btnRestart').onclick=()=>confirmBox('เริ่มเกมใหม่? ดาวและกุญแจทั้งหมดจะหายไป','เริ่มใหม่',()=>{try{localStorage.removeItem('sentence-city')}catch(e){};stack.slice().forEach(c=>c());setup()});
+setup();
+})();
+</script>
