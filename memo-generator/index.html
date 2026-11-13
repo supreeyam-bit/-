@@ -98,6 +98,13 @@
   .memo .approve .ck { display: inline-block; width: 1em; height: 1em; border: 1px solid #000; vertical-align: -.12em; margin-right: .5em; }
   .memo .ph { color: #9ca3af; }
   #batchRender { position: fixed; left: -10000px; top: 0; }
+  .profile { margin: 0 0 6px; background: var(--bg); }
+  .profile input, .profile textarea, .profile select { background: var(--panel); }
+  .inline { display: flex; gap: 6px; align-items: center; }
+  .inline select { flex: 1; min-width: 0; }
+  .small-btn { display: inline-block; font-weight: 400; font-size: 12px; margin: 0; padding: 3px 8px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+  .tokens { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .tokens button { padding: 1px 8px; font-size: 12px; border-radius: 999px; }
 </style>
 </head>
 <body>
@@ -110,6 +117,50 @@
   <!-- ================= FORM ================= -->
   <section class="panel" aria-label="ฟอร์มกรอกข้อมูล">
     <h2>1. กรอกข้อมูล</h2>
+
+    <!-- ---- ข้อมูลโรงเรียน (กรอกครั้งเดียว ระบบจำไว้) ---- -->
+    <div class="box profile">
+      <label for="profileSel">โรงเรียน / หน่วยงาน</label>
+      <div class="inline">
+        <select id="profileSel"></select>
+        <button type="button" class="small" id="editProfile">แก้ไข</button>
+        <button type="button" class="small" id="addProfile">+ เพิ่ม</button>
+      </div>
+      <div class="hint" id="profileHint"></div>
+      <div id="profileEditor" hidden>
+        <label for="pName">ชื่อโรงเรียน <span class="req">*</span></label>
+        <input id="pName" placeholder="โรงเรียนตัวอย่างวิทยา">
+        <label for="pArea">สังกัด / เขต</label>
+        <input id="pArea" placeholder="สำนักงานเขตพื้นที่การศึกษาประถมศึกษา... เขต ...">
+        <label for="pRef">เลขที่หนังสือ (ส่วนที่ซ้ำทุกฉบับ)</label>
+        <input id="pRef" placeholder="เช่น ศธ ๐๔๐๐๐/ หรือ ........../๒๕๖๙">
+        <div class="row">
+          <div><label for="pBank">ธนาคาร</label><input id="pBank" placeholder="ธนาคารออมสิน"></div>
+          <div><label for="pAccNo">เลขที่บัญชี</label><input id="pAccNo" inputmode="numeric"></div>
+        </div>
+        <label for="pAccName">ชื่อบัญชี</label>
+        <input id="pAccName" placeholder="เงินอุดหนุนโรงเรียนตัวอย่างวิทยา">
+        <label for="pDirName">ชื่อผู้อำนวยการ (ผู้อนุมัติ)</label>
+        <input id="pDirName" placeholder="นางตัวอย่าง ใจดี">
+        <label for="pDirPos">ตำแหน่งผู้อำนวยการ</label>
+        <textarea id="pDirPos" class="short" placeholder="ผู้อำนวยการโรงเรียนตัวอย่างวิทยา"></textarea>
+        <div class="hint">ถ้ารักษาการ พิมพ์ 2 บรรทัด เช่น “ผู้อำนวยการโรงเรียน ก รักษาการในตำแหน่ง” ขึ้นบรรทัดใหม่ “ผู้อำนวยการโรงเรียน ข”</div>
+        <div class="row">
+          <div><label for="pFinName">ชื่อเจ้าหน้าที่การเงิน</label><input id="pFinName" placeholder="นางสาวตัวอย่าง ใจดี"></div>
+          <div><label for="pFinPos">ตำแหน่ง</label><input id="pFinPos" value="เจ้าหน้าที่การเงิน"></div>
+        </div>
+        <div class="actions" style="margin-top:10px">
+          <button type="button" class="primary" id="saveProfile">บันทึกข้อมูลโรงเรียน</button>
+          <button type="button" id="cancelProfile">ยกเลิก</button>
+          <button type="button" id="delProfile">ลบโรงเรียนนี้</button>
+        </div>
+        <div class="actions">
+          <button type="button" class="small" id="exportProfiles">สำรองข้อมูลโรงเรียน (.json)</button>
+          <label class="small-btn"><input type="file" id="importProfiles" accept=".json,application/json" hidden>นำเข้าไฟล์สำรอง</label>
+        </div>
+        <div class="hint">ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น ใช้ “สำรองข้อมูล” เพื่อย้ายไปเครื่องอื่น</div>
+      </div>
+    </div>
 
     <label for="template">รูปแบบบันทึกข้อความ</label>
     <select id="template"></select>
@@ -138,7 +189,8 @@
 
       <label for="body">เนื้อความ <span class="req">*</span></label>
       <textarea id="body" name="body"></textarea>
-      <div class="hint">ขึ้นบรรทัดใหม่ = ย่อหน้าใหม่ ระบบย่อหน้า ๒.๕ ซม. ให้เอง</div>
+      <div class="hint">ขึ้นบรรทัดใหม่ = ย่อหน้าใหม่ ระบบย่อหน้า ๒.๕ ซม. ให้เอง · กดเพื่อแทรกข้อมูลโรงเรียน (ระบบแทนค่าให้ตอนสร้างเอกสาร):</div>
+      <div class="tokens" id="tokens"></div>
 
       <!-- ---- รายการเงิน ---- -->
       <label class="check"><input type="checkbox" id="useItems"> มีรายการจำนวนเงิน (รวมยอดและเขียนเป็นตัวอักษรให้อัตโนมัติ)</label>
@@ -237,9 +289,9 @@ const TEMPLATES = [
     body: "ด้วยงาน มีความประสงค์จะจัดซื้อ เพื่อใช้ใน รายละเอียดดังนี้\nจึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ",
     useItems: true, items: [{ desc: "", type: "", amount: "" }], useApproval: true },
   { name: "ขอเบิกถอนเงิน", subject: "ขอเบิกถอนเงิน",
-    body: "ด้วยเจ้าหน้าที่การเงินโรงเรียน มีความประสงค์ขอเบิกเงินอุดหนุนจากบัญชีธนาคาร ชื่อบัญชี เลขที่บัญชี เพื่อจ่ายเงินตามรายละเอียด ดังนี้\nจึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ",
+    body: "ด้วยเจ้าหน้าที่การเงิน{โรงเรียน} มีความประสงค์ขอเบิกเงินอุดหนุนจากบัญชี{ธนาคาร} ชื่อบัญชี{ชื่อบัญชี} เลขที่บัญชี {เลขบัญชี} เพื่อจ่ายเงินตามรายละเอียด ดังนี้\nจึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ",
     useItems: true, items: [{ desc: "", type: "ประเภทเงินอุดหนุนรายหัว", amount: "" }],
-    signDate: true, position: "เจ้าหน้าที่การเงิน", useApproval: true },
+    signDate: true, useApproval: true },
   { name: "รายงานผลการดำเนินงาน", subject: "รายงานผลการดำเนินงาน",
     body: "ตามที่ ได้มอบหมายให้ข้าพเจ้าดำเนินการ เมื่อวันที่ นั้น\nบัดนี้ การดำเนินการดังกล่าวได้เสร็จสิ้นแล้ว ผลการดำเนินงานปรากฏดังนี้\nจึงเรียนมาเพื่อโปรดทราบ" },
   { name: "ขอความอนุเคราะห์", subject: "ขอความอนุเคราะห์",
@@ -250,9 +302,19 @@ const FIELDS = ["agency", "ref", "date", "subject", "to", "body", "signer", "pos
 const EXTRA = ["approverName", "approverPos"];
 const FLAGS = ["useItems", "signDate", "useApproval", "thaiNum"];
 const LABELS = { agency: "ส่วนราชการ", ref: "ที่", date: "วันที่", subject: "เรื่อง", to: "เรียน", body: "เนื้อความ",
-  signer: "ผู้ลงนาม", position: "ตำแหน่ง", approverName: "ชื่อผู้อนุมัติ", approverPos: "ตำแหน่งผู้อนุมัติ", items: "รายการเงิน" };
+  signer: "ผู้ลงนาม", position: "ตำแหน่ง", approverName: "ชื่อผู้อนุมัติ", approverPos: "ตำแหน่งผู้อนุมัติ", items: "รายการเงิน",
+  tokens: "ข้อมูลโรงเรียนในเนื้อความ (เลือกโรงเรียน หรือกรอกข้อมูลโรงเรียนให้ครบ)" };
 const $ = (id) => document.getElementById(id);
-const state = { logo: null, sig: null, items: [], batch: [] };
+const state = { logo: null, sig: null, items: [], batch: [], profiles: { active: null, list: [] } };
+
+/* ข้อมูลโรงเรียน: ช่องในโปรไฟล์ ↔ คำแทนที่ใช้ในเนื้อความ */
+const PROFILE_FIELDS = { name: "pName", area: "pArea", ref: "pRef", bank: "pBank", accNo: "pAccNo", accName: "pAccName",
+  dirName: "pDirName", dirPos: "pDirPos", finName: "pFinName", finPos: "pFinPos" };
+const TOKENS = { "โรงเรียน": "name", "สังกัด": "area", "ธนาคาร": "bank", "ชื่อบัญชี": "accName", "เลขบัญชี": "accNo",
+  "ผู้อำนวยการ": "dirName", "เจ้าหน้าที่การเงิน": "finName" };
+const TOKEN_RE = new RegExp(`\\{(${Object.keys(TOKENS).join("|")})\\}`, "g");
+/** แทน {โรงเรียน} {เลขบัญชี} ... ด้วยข้อมูลโรงเรียน; คำที่ไม่มีข้อมูลจะคงไว้ เพื่อให้ตรวจพบได้ */
+const fillTokens = (s, p) => s.replace(TOKEN_RE, (m, k) => (p && (p[TOKENS[k]] || "").trim()) || m);
 
 /* =========================================================
    2) HELPERS — วันที่ไทย, เลขไทย, จำนวนเงิน, บาทเป็นตัวอักษร
@@ -303,6 +365,8 @@ function formValues() {
   const v = Object.fromEntries([...FIELDS, ...EXTRA, "docxFont"].map((f) => [f, $(f).value]));
   FLAGS.forEach((f) => { v[f] = $(f).checked; });
   v.items = state.items.map((it) => ({ ...it }));
+  const p = activeProfile();
+  v.profile = p ? { ...p } : null;           // เก็บสำเนาไว้กับเอกสาร: ฉบับในชุดใช้ข้อมูลโรงเรียนของตัวเอง
   return v;
 }
 
@@ -310,7 +374,7 @@ function formValues() {
 function prepare(raw) {
   const T = (s) => (raw.thaiNum ? toThaiDigits(s) : s);
   const d = {};
-  for (const f of [...FIELDS, ...EXTRA]) d[f] = T((raw[f] || "").trim());
+  for (const f of [...FIELDS, ...EXTRA]) d[f] = T(fillTokens((raw[f] || "").trim(), raw.profile));
   d.date = T(thaiDate(raw.date));
   d.paragraphs = d.body.split(/\n+/).map((p) => p.trim()).filter(Boolean);
   d.approverLines = d.approverPos.split(/\n+/).map((p) => p.trim()).filter(Boolean);
@@ -334,6 +398,7 @@ function prepare(raw) {
 function missingOf(raw) {
   const miss = FIELDS.filter((f) => !(raw[f] || "").trim());
   if (raw.useApproval) EXTRA.forEach((f) => { if (!(raw[f] || "").trim()) miss.push(f); });
+  if ([...FIELDS, ...EXTRA].some((f) => { TOKEN_RE.lastIndex = 0; return TOKEN_RE.test(fillTokens(raw[f] || "", raw.profile)); })) miss.push("tokens");
   if (raw.useItems) {
     const rows = raw.items.filter((it) => it.desc.trim() || it.amount.trim());
     if (!rows.length || rows.some((it) => !it.desc.trim() || isNaN(parseAmount(it.amount)))) miss.push("items");
@@ -343,6 +408,7 @@ function missingOf(raw) {
 function validate(showMarks) {
   const miss = missingOf(formValues());
   [...FIELDS, ...EXTRA].forEach((f) => $(f).classList.toggle("invalid", showMarks && miss.includes(f)));
+  if (showMarks && miss.includes("tokens")) $("body").classList.add("invalid");
   document.querySelectorAll("#items input").forEach((el) => {
     const bad = showMarks && miss.includes("items") && (el.dataset.k === "desc" ? !el.value.trim() : el.dataset.k === "amount" && isNaN(parseAmount(el.value)));
     el.classList.toggle("invalid", bad);
@@ -578,7 +644,7 @@ async function exportBatch(kind) {
    ========================================================= */
 function reportMissing(miss) {
   setStatus("กรุณากรอกให้ครบ: " + miss.map((f) => LABELS[f]).join(", "), "err");
-  const first = miss[0] === "items" ? document.querySelector("#items .invalid") : $(miss[0]);
+  const first = miss[0] === "items" ? document.querySelector("#items .invalid") : miss[0] === "tokens" ? $("body") : $(miss[0]);
   first && first.focus();
 }
 function setStatus(msg, cls = "") { const s = $("status"); s.textContent = msg; s.className = cls; }
@@ -648,6 +714,10 @@ function applyValues(v) {
   [...FIELDS, ...EXTRA].forEach((f) => { $(f).value = v[f] ?? ""; });
   FLAGS.forEach((f) => { if (f in v) $(f).checked = !!v[f]; });
   if (v.docxFont) $("docxFont").value = v.docxFont;
+  // เปิดฉบับเก่า: เลือกโรงเรียนของฉบับนั้นกลับมา (ถ้ายังมีอยู่) โดยไม่เขียนทับช่องในฟอร์ม
+  if (v.profile && state.profiles.list.some((p) => p.id === v.profile.id)) {
+    state.profiles.active = v.profile.id; saveProfiles(); renderProfiles();
+  }
   state.items = (v.items || []).map((it) => ({ desc: it.desc || "", type: it.type || "", amount: it.amount || "" }));
   if ($("useItems").checked && !state.items.length) state.items.push({ desc: "", type: "", amount: "" });
   syncBoxes(); renderItems(); render();
@@ -677,6 +747,108 @@ function renderBatch() {
     (v) => applyValues(v), (i) => { state.batch.splice(i, 1); store.set(KEY_BATCH, state.batch); renderBatch(); });
 }
 
+// ---- ข้อมูลโรงเรียน (โปรไฟล์)
+const KEY_PROF = "memo.profiles.v1";
+const activeProfile = () => state.profiles.list.find((p) => p.id === state.profiles.active) || null;
+const saveProfiles = () => store.set(KEY_PROF, state.profiles);
+
+function renderProfiles() {
+  const { list, active } = state.profiles, sel = $("profileSel");
+  sel.innerHTML = list.length
+    ? list.map((p) => `<option value="${p.id}" ${p.id === active ? "selected" : ""}>${esc(p.name)}</option>`).join("")
+    : `<option value="">— ยังไม่ได้ตั้งค่าโรงเรียน —</option>`;
+  $("editProfile").disabled = !list.length;
+  const p = activeProfile();
+  $("profileHint").textContent = p
+    ? [p.area, p.dirName && `ผอ. ${p.dirName}`, p.finName && `การเงิน: ${p.finName}`, p.accNo && `บัญชี ${p.accNo}`].filter(Boolean).join(" · ")
+    : "กรอกข้อมูลโรงเรียนครั้งเดียว ระบบจะจำไว้และเติมให้ทุกครั้ง";
+}
+function openProfileEditor(p) {
+  state.editing = p ? p.id : null;
+  for (const [k, id] of Object.entries(PROFILE_FIELDS)) $(id).value = p ? p[k] || "" : (k === "finPos" ? "เจ้าหน้าที่การเงิน" : "");
+  $("delProfile").hidden = !p;
+  $("cancelProfile").hidden = !state.profiles.list.length;
+  $("profileEditor").hidden = false;
+  $("pName").focus();
+}
+/** เติมช่องในฟอร์มจากข้อมูลโรงเรียน (ผู้ใช้แก้ต่อได้) */
+function applyProfileToForm(p, prev) {
+  if (!p) return;
+  const set = (id, val) => { if (val) $(id).value = val; };
+  set("agency", [p.name, p.area].filter(Boolean).join(" "));
+  set("to", `ผู้อำนวยการ${p.name}`);
+  set("signer", p.finName); set("position", p.finPos);
+  set("approverName", p.dirName); set("approverPos", p.dirPos || `ผู้อำนวยการ${p.name}`);
+  const ref = $("ref").value.trim();
+  if (p.ref && (!ref || (prev && ref === (prev.ref || "").trim()))) $("ref").value = p.ref;
+  render();
+}
+function selectProfile(id) {
+  const prev = activeProfile();
+  state.profiles.active = id; saveProfiles(); renderProfiles();
+  applyProfileToForm(activeProfile(), prev);
+}
+
+$("profileSel").addEventListener("change", (e) => selectProfile(e.target.value));
+$("editProfile").addEventListener("click", () => openProfileEditor(activeProfile()));
+$("addProfile").addEventListener("click", () => openProfileEditor(null));
+$("cancelProfile").addEventListener("click", () => { $("profileEditor").hidden = true; });
+$("saveProfile").addEventListener("click", () => {
+  const p = { id: state.editing || "p" + Date.now().toString(36) };
+  for (const [k, id] of Object.entries(PROFILE_FIELDS)) p[k] = $(id).value.trim();
+  if (!p.name) { $("pName").classList.add("invalid"); $("pName").focus(); return; }
+  $("pName").classList.remove("invalid");
+  const list = state.profiles.list, i = list.findIndex((x) => x.id === p.id);
+  const prev = activeProfile();
+  if (i >= 0) list[i] = p; else list.push(p);
+  state.profiles.active = p.id;
+  const ok = saveProfiles();
+  $("profileEditor").hidden = true;
+  renderProfiles(); applyProfileToForm(p, prev);
+  setStatus(ok ? `บันทึกข้อมูล${p.name}แล้ว ครั้งต่อไประบบจะเติมให้อัตโนมัติ` : "เบราว์เซอร์นี้บันทึกข้อมูลไม่ได้ (ใช้ได้เฉพาะครั้งนี้)", ok ? "ok" : "err");
+});
+$("delProfile").addEventListener("click", () => {
+  const p = activeProfile();
+  if (!p || !confirm(`ลบข้อมูล “${p.name}” ?`)) return;
+  state.profiles.list = state.profiles.list.filter((x) => x.id !== p.id);
+  state.profiles.active = state.profiles.list[0] ? state.profiles.list[0].id : null;
+  saveProfiles(); renderProfiles();
+  if (state.profiles.list.length) $("profileEditor").hidden = true; else openProfileEditor(null);
+  render();
+});
+$("exportProfiles").addEventListener("click", () => {
+  download(new Blob([JSON.stringify(state.profiles, null, 2)], { type: "application/json" }), "memo_schools.json");
+});
+$("importProfiles").addEventListener("change", async (e) => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    const incoming = (Array.isArray(data) ? data : data.list || []).filter((p) => p && p.name);
+    if (!incoming.length) throw new Error("ไม่พบข้อมูลโรงเรียนในไฟล์");
+    for (const p of incoming) {
+      const clean = { id: String(p.id || "p" + Math.random().toString(36).slice(2, 8)) };
+      for (const k of Object.keys(PROFILE_FIELDS)) clean[k] = String(p[k] || "");
+      const i = state.profiles.list.findIndex((x) => x.id === clean.id);
+      if (i >= 0) state.profiles.list[i] = clean; else state.profiles.list.push(clean);
+    }
+    if (!activeProfile()) state.profiles.active = state.profiles.list[0].id;
+    saveProfiles(); renderProfiles(); $("profileEditor").hidden = true;
+    applyProfileToForm(activeProfile());
+    setStatus(`นำเข้าข้อมูลโรงเรียน ${incoming.length} แห่งแล้ว`, "ok");
+  } catch (err) { setStatus("นำเข้าไม่สำเร็จ: " + err.message, "err"); }
+});
+$("tokens").innerHTML = Object.keys(TOKENS).map((k) => `<button type="button" data-t="{${k}}">{${k}}</button>`).join("");
+$("tokens").addEventListener("click", (e) => {
+  const t = e.target.dataset.t, ta = $("body");
+  if (!t) return;
+  const a = ta.selectionStart ?? ta.value.length, b = ta.selectionEnd ?? a;
+  ta.value = ta.value.slice(0, a) + t + ta.value.slice(b);
+  ta.focus(); ta.setSelectionRange(a + t.length, a + t.length);
+  render();
+});
+
 // ---- wire up
 $("template").innerHTML = TEMPLATES.map((t, i) => `<option value="${i}">${t.name}</option>`).join("");
 $("template").addEventListener("change", (e) => {
@@ -684,7 +856,6 @@ $("template").addEventListener("change", (e) => {
   if ($("body").value.trim() && !confirm("แทนที่ “เรื่อง” “เนื้อความ” และส่วนเสริม ด้วยแม่แบบนี้?")) return;
   $("subject").value = t.subject; $("body").value = t.body;
   $("useItems").checked = !!t.useItems; $("useApproval").checked = !!t.useApproval; $("signDate").checked = !!t.signDate;
-  if (t.position && !$("position").value.trim()) $("position").value = t.position;
   state.items = (t.items || []).map((it) => ({ ...it }));
   syncBoxes(); renderItems(); render();
 });
@@ -727,15 +898,23 @@ $("newBtn").addEventListener("click", () => {
   if (!confirm("ล้างข้อมูลในฟอร์มเพื่อเริ่มฉบับใหม่?")) return;
   applyValues({ date: new Date().toISOString().slice(0, 10), agency: $("agency").value, signer: $("signer").value,
                 position: $("position").value, thaiNum: $("thaiNum").checked });
+  applyProfileToForm(activeProfile());
 });
 window.addEventListener("resize", fitPreview);
 document.fonts && document.fonts.ready.then(fitPreview);
 
 // ---- initial state
 state.batch = store.get(KEY_BATCH, []);
+const savedProfiles = store.get(KEY_PROF, null);
+if (savedProfiles && Array.isArray(savedProfiles.list)) state.profiles = savedProfiles;
+renderProfiles();
 const draft = store.get(KEY_DRAFT, null);
 if (draft) applyValues(draft);
-else applyValues({ date: new Date().toISOString().slice(0, 10), body: TEMPLATES[0].body, thaiNum: true });
+else {
+  applyValues({ date: new Date().toISOString().slice(0, 10), body: TEMPLATES[0].body, thaiNum: true });
+  applyProfileToForm(activeProfile());
+}
+if (!state.profiles.list.length) openProfileEditor(null);
 renderHistory(); renderBatch();
 </script>
 </body>
