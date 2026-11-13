@@ -33,6 +33,18 @@
   header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
   main { display: grid; grid-template-columns: minmax(320px, 460px) 1fr; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  /* มือถือ: แถบดาวน์โหลดติดขอบล่าง เพราะกรอบตัวอย่างอยู่ใต้ฟอร์มยาว */
+  .mobilebar { display: none; }
+  @media (max-width: 900px) {
+    .mobilebar { display: flex; flex-wrap: wrap; gap: 8px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+                 background: var(--panel); border-top: 1px solid var(--line);
+                 padding: 8px max(16px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+    .mobilebar button { flex: 1; }
+    .mobilebar #mStatus { flex-basis: 100%; font-size: 12px; color: var(--muted); }
+    .mobilebar #mStatus:empty { display: none; }
+    .mobilebar #mStatus.err { color: var(--err); } .mobilebar #mStatus.ok { color: var(--ok); }
+    body { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+  }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
   .panel h2 { font-size: 16px; margin: 0 0 10px; }
   label { display: block; font-weight: 700; font-size: 14px; margin: 10px 0 4px; }
@@ -291,7 +303,7 @@
   </section>
 
   <!-- ================= PREVIEW ================= -->
-  <section class="panel" aria-label="ตัวอย่างเอกสาร">
+  <section class="panel" aria-label="ตัวอย่างเอกสาร" id="previewPanel">
     <h2>2. ตรวจตัวอย่าง แล้วดาวน์โหลด</h2>
     <div class="actions">
       <button class="primary" id="pdfBtn">📄 ดาวน์โหลด PDF</button>
@@ -305,6 +317,12 @@
     </div>
   </section>
 </main>
+<div class="mobilebar" role="toolbar" aria-label="ดาวน์โหลด">
+  <span id="mStatus" role="status"></span>
+  <button type="button" id="mPreview">ดูตัวอย่าง</button>
+  <button type="button" class="primary" id="mDocx">📝 Word</button>
+  <button type="button" class="primary" id="mPdf">📄 PDF</button>
+</div>
 <div id="batchRender" aria-hidden="true"></div>
 <div id="confirmBox" class="confirm" role="dialog" aria-modal="true" aria-labelledby="confirmMsg" hidden>
   <div class="confirm-card">
@@ -743,9 +761,11 @@ function reportMissing(miss) {
   const first = miss[0] === "items" ? document.querySelector("#items .invalid") : miss[0] === "tokens" ? $("body") : $(miss[0]);
   first && first.focus();
 }
-function setStatus(msg, cls = "") { const s = $("status"); s.textContent = msg; s.className = cls; }
+function setStatus(msg, cls = "") {
+  for (const id of ["status", "mStatus"]) { const s = $(id); s.textContent = msg; s.className = cls; }
+}
 function busy(on, msg) {
-  ["pdfBtn", "docxBtn", "batchPdf", "batchDocx"].forEach((id) => { $(id).disabled = on; });
+  ["pdfBtn", "docxBtn", "batchPdf", "batchDocx", "mPdf", "mDocx"].forEach((id) => { $(id).disabled = on; });
   if (on) setStatus(msg);
 }
 // ASCII file name: some browsers drop non-Latin download names and save a bare "download" file
@@ -1103,6 +1123,9 @@ for (const [id, key] of [["logo", "logo"], ["sig", "sig"]]) {
   });
 }
 $("pdfBtn").addEventListener("click", () => exportOne("pdf"));
+$("mPdf").addEventListener("click", () => exportOne("pdf"));
+$("mDocx").addEventListener("click", () => exportOne("docx"));
+$("mPreview").addEventListener("click", () => $("previewPanel").scrollIntoView({ behavior: "smooth", block: "start" }));
 $("docxBtn").addEventListener("click", () => exportOne("docx"));
 $("batchPdf").addEventListener("click", () => exportBatch("pdf"));
 $("batchDocx").addEventListener("click", () => exportBatch("docx"));
