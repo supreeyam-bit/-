@@ -105,6 +105,11 @@
   .memo table.items .am { width: 32mm; text-align: right; white-space: nowrap; }
   .memo table.items .bt { width: 14mm; padding-left: 2mm; }
   .memo table.items .nw { white-space: nowrap; }
+  .item2 { display: grid; gap: 6px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+  .item2 .r { display: flex; gap: 6px; align-items: center; }
+  .item2 .r > input { flex: 1; min-width: 0; padding: 6px 8px; }
+  .item2 .r > select { flex: 0 0 auto; width: auto; padding: 6px 8px; }
+  .item2 .r > .u { flex: 0 0 auto; font-size: 13px; color: var(--muted); }
   .memo table.items .sum td { padding-top: 1.5mm; }
   .memo .sign { margin-left: 70mm; text-align: center; margin-top: 10mm; }
   .memo .sign img { max-height: 15mm; max-width: 50mm; display: block; margin: 0 auto 1mm; }
@@ -243,6 +248,11 @@
             <input id="catalogNew" placeholder="เช่น ค่าวัสดุสำนักงาน">
             <label for="catalogNewType">ประเภทเงิน</label>
             <input id="catalogNewType" list="typeNames" value="ประเภทเงินอุดหนุนรายหัว">
+            <label for="catalogNewUnit">วิธีคิดจำนวนเงิน</label>
+            <select id="catalogNewUnit">
+              <option value="">เงินก้อน (ใส่จำนวนเงิน)</option>
+              <option value="person">คิดต่อคน (จำนวน ... คน คนละ ... บาท)</option>
+            </select>
             <div class="actions" style="margin-top:8px">
               <button type="button" class="primary small" id="catalogAdd">+ เพิ่มลงบันทึกและจำไว้</button>
             </div>
@@ -414,7 +424,7 @@ function keepTogether(t) {
   const parts = window.Intl && Intl.Segmenter
     ? Array.from(new Intl.Segmenter("th", { granularity: "grapheme" }).segment(t), (x) => x.segment)
     : [t];
-  return parts.join("\u2060");
+  return parts.join("\u2060").replace(/ /g, "\u00a0");   // เว้นวรรคในวลีเป็นแบบไม่ตัดบรรทัด
 }
 const num = (n) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 
@@ -486,25 +496,31 @@ function prepare(raw) {
   if (raw.useItems) {
     const daily = raw.itemMode === "daily";
     const rows = itemRows(raw);
-    const amountOf = (it) => (daily ? parseAmount(it.days) * parseAmount(it.rate) : parseAmount(it.amount));
+    const amountOf = (it) => (daily ? parseAmount(it.days) * parseAmount(it.rate)
+      : isPerson(it) ? parseAmount(it.count) * parseAmount(it.each) : parseAmount(it.amount));
     const total = rows.reduce((s, it) => s + (amountOf(it) || 0), 0);
     d.items = {
       daily,
       rows: rows.map((it, i) => {
         const amt = amountOf(it);
         let desc = (it.desc || "").trim();
+        const person = !daily && isPerson(it);
+        // word joiner กันไม่ให้ "(๒๑x๑,๓๒๓)" หรือ "๑,๕๐๐" ถูกตัดกลางตัวเลข (ตัวเลขไทยถูกตัดคำเหมือนตัวอักษรไทย)
+        const keep = (t) => Array.from(t).join("\u2060");
+        let calc = "";
         if (daily) {
           const days = num(parseAmount(it.days) || 0), rate = num(parseAmount(it.rate) || 0);
-          // word joiner กันไม่ให้ "(๒๑x๑,๓๒๓)" ถูกตัดกลางตัวเลข (ตัวเลขไทยถูกตัดคำเหมือนตัวอักษรไทย)
-          const keep = (t) => Array.from(t).join("\u2060");
           desc = [desc, `จำนวน ${keep(days)} วัน วันละ ${keep(rate)} บาท ${keep(`(${days}x${rate})`)}`].filter(Boolean).join(" ");
+        } else if (person) {
+          // ตัดบรรทัดได้เฉพาะระหว่าง "จำนวน X คน" กับ "คนละ Y บาท"
+          calc = `${keepTogether(`จำนวน ${num(parseAmount(it.count) || 0)} คน`)} ${keepTogether(`คนละ ${num(parseAmount(it.each) || 0)} บาท`)}`;
         }
         // ชื่อรายการกับประเภทเงินอยู่ช่องเดียวกัน อ่านต่อกันเหมือนต้นฉบับ และตัดบรรทัดได้สวยกว่าแยกคอลัมน์
         const name = desc, type = daily ? "" : (it.type || "").trim();
         // ในไฟล์ Word ให้ "ประเภทเงิน..." อยู่ติดกันทั้งก้อน (word joiner ระหว่างกลุ่มอักษร ไม่แทรกกลางสระ/วรรณยุกต์)
-        if (!daily) desc = [desc, keepTogether(type)].filter(Boolean).join(" ");
-        return { no: T(`${i + 1}.`), desc: T(desc), name: T(name), type: T(type),
-                 label: daily ? "รวม" : "จำนวน", amount: isNaN(amt) ? "" : T(money(amt)) };
+        if (!daily) desc = [desc, calc, keepTogether(type)].filter(Boolean).join(" ");
+        return { no: T(`${i + 1}.`), desc: T(desc), name: T(name), calc: T(calc), type: T(type),
+                 label: daily || person ? "รวม" : "จำนวน", amount: isNaN(amt) ? "" : T(money(amt)) };
       }),
       totalLabel: daily ? "รวมเงินที่ขอเบิกครั้งนี้ทั้งสิ้น" : "รวมเป็นเงิน",
       total: T(money(total)), words: bahtText(total),
@@ -514,13 +530,18 @@ function prepare(raw) {
 }
 /** แถวรายการที่มีข้อมูล (ข้ามแถวว่าง) */
 function itemRows(raw) {
-  const keys = raw.itemMode === "daily" ? ["desc", "days", "rate"] : ["desc", "type", "amount"];
+  const keys = raw.itemMode === "daily" ? ["desc", "days", "rate"] : ["desc", "type", "amount", "count", "each"];
   return (raw.items || []).filter((it) => keys.some((k) => (it[k] || "").trim()));
 }
+/** แถวแบบ "จำนวน X คน คนละ Y บาท" */
+const isPerson = (it) => it.unit === "person";
+/** ช่องที่ต้องกรอกของแถวนี้ */
+const requiredKeys = (mode, it) => (mode === "daily" ? ["days", "rate"] : isPerson(it) ? ["desc", "count", "each"] : ["desc", "amount"]);
 /** แถวนี้ยังกรอกไม่ครบหรือไม่ (ใช้ทั้งตรวจและไฮไลต์ช่อง) */
 function badItemField(mode, it, k) {
   const bad = (s) => isNaN(parseAmount(s || "")) || parseAmount(s) <= 0;
   if (mode === "daily") return (k === "days" || k === "rate") && bad(it[k]);
+  if (isPerson(it)) return (k === "desc" && !(it.desc || "").trim()) || ((k === "count" || k === "each") && bad(it[k]));
   return (k === "desc" && !(it.desc || "").trim()) || (k === "amount" && isNaN(parseAmount(it.amount || "")));
 }
 
@@ -533,8 +554,8 @@ function missingOf(raw) {
   const ctx = tokenCtx(raw);
   if ([...FIELDS, ...EXTRA].some((f) => { TOKEN_RE.lastIndex = 0; return TOKEN_RE.test(fillTokens(raw[f] || "", ctx)); })) miss.push("tokens");
   if (raw.useItems) {
-    const rows = itemRows(raw), keys = raw.itemMode === "daily" ? ["days", "rate"] : ["desc", "amount"];
-    if (!rows.length || rows.some((it) => keys.some((k) => badItemField(raw.itemMode, it, k)))) miss.push("items");
+    const rows = itemRows(raw);
+    if (!rows.length || rows.some((it) => requiredKeys(raw.itemMode, it).some((k) => badItemField(raw.itemMode, it, k)))) miss.push("items");
   }
   return miss;
 }
@@ -543,7 +564,7 @@ function validate(showMarks) {
   [...FIELDS, ...EXTRA].forEach((f) => $(f).classList.toggle("invalid", showMarks && miss.includes(f)));
   if (showMarks && miss.includes("tokens")) $("body").classList.add("invalid");
   const mode = $("itemMode").value;
-  document.querySelectorAll("#items .item").forEach((row, i) => {
+  document.querySelectorAll("#items > div").forEach((row, i) => {
     const it = state.items[i] || {}, empty = !itemRows({ itemMode: mode, items: [it] }).length;
     row.querySelectorAll("input").forEach((el) => {
       const bad = showMarks && miss.includes("items") && (!empty || i === 0) && badItemField(mode, it, el.dataset.k);
@@ -563,7 +584,7 @@ function memoHtml(d) {
     const it = d.items;
     const table = `<table class="items${it.daily ? " daily" : ""}"><colgroup><col class="no"><col><col class="ty"><col class="jn"><col class="am"><col class="bt"></colgroup>
       ${it.rows.map((r) => `<tr><td class="no">${r.no}</td><td colspan="2">${it.daily ? v(r.desc, "รายการ")
-          : `${r.name ? esc(r.name) : `<span class="ph">รายการ</span>`} <span class="nw">${esc(r.type)}</span>`}</td>
+          : `${r.name ? esc(r.name) : `<span class="ph">รายการ</span>`}${r.calc ? ` <span class="nw">${esc(r.calc)}</span>` : ""} <span class="nw">${esc(r.type)}</span>`}</td>
         <td class="jn">${r.label}</td><td class="am">${r.amount}</td><td class="bt">บาท</td></tr>`).join("")}
       <tr class="sum"><td></td><td colspan="3" style="text-align:right">${it.totalLabel}</td><td class="am">${it.total}</td><td class="bt">บาท</td></tr>
       <tr><td></td><td colspan="5" style="text-align:right">(${it.words})</td></tr></table>`;
@@ -863,6 +884,7 @@ function renderItems() {
   const fields = $("itemMode").value === "daily"
     ? [["desc", "รายการ (เว้นว่างได้)"], ["days", "จำนวนวัน"], ["rate", "วันละ (บาท)"]]
     : [["desc", "รายการ"], ["type", "ประเภทเงิน (ถ้ามี)"], ["amount", "จำนวนเงิน"]];
+  if ($("itemMode").value !== "daily") { state.items.forEach((it, i) => box.append(amountRow(it, i))); $("catalogWrap").hidden = false; return; }
   state.items.forEach((it, i) => {
     const row = document.createElement("div");
     row.className = "item";
@@ -886,7 +908,53 @@ function renderItems() {
     row.append(del);
     box.append(row);
   });
-  $("catalogWrap").hidden = $("itemMode").value === "daily";
+  $("catalogWrap").hidden = true;
+}
+/** ช่องกรอกหนึ่งช่องของแถวรายการ */
+function itemInput(it, k, ph, row) {
+  const inp = Object.assign(document.createElement("input"), { value: it[k] || "", placeholder: ph });
+  inp.dataset.k = k;
+  if (["amount", "count", "each"].includes(k)) inp.inputMode = "decimal";
+  if (k === "desc") inp.setAttribute("list", "itemNames");
+  if (k === "type") inp.setAttribute("list", "typeNames");
+  inp.addEventListener("input", () => {
+    it[k] = inp.value;
+    // เลือกชื่อจากรายการที่จำไว้ → เติมประเภทเงินและรูปแบบ (ต่อคน) ให้ถ้ายังว่าง
+    const hit = k === "desc" && state.catalog.find((c) => c.desc === inp.value.trim());
+    if (hit && hit.type && !it.type) { it.type = hit.type; const t = row.querySelector('[data-k="type"]'); if (t) t.value = hit.type; }
+    if (hit && hit.unit === "person" && !isPerson(it) && !(it.amount || "").trim()) { it.unit = "person"; renderItems(); render(); focusItem(-1, "count"); return; }
+    render(); if (document.querySelector(".invalid")) validate(true);
+  });
+  return inp;
+}
+/** แถวรายการแบบเงินก้อน หรือแบบ "จำนวน X คน คนละ Y บาท" */
+function amountRow(it, i) {
+  const row = document.createElement("div");
+  row.className = "item2";
+  const top = document.createElement("div"); top.className = "r";
+  top.append(itemInput(it, "desc", `${i + 1}. รายการ`, row), itemInput(it, "type", "ประเภทเงิน (ถ้ามี)", row));
+  const bottom = document.createElement("div"); bottom.className = "r";
+  const unit = document.createElement("select");
+  unit.setAttribute("aria-label", "วิธีคิดจำนวนเงิน");
+  unit.innerHTML = `<option value="">เงินก้อน</option><option value="person">คิดต่อคน</option>`;
+  unit.value = isPerson(it) ? "person" : "";
+  unit.addEventListener("change", () => { it.unit = unit.value; renderItems(); render(); focusItem(i, unit.value ? "count" : "amount"); });
+  bottom.append(unit);
+  const unitText = (t) => Object.assign(document.createElement("span"), { className: "u", textContent: t });
+  if (isPerson(it)) bottom.append(itemInput(it, "count", "จำนวนคน", row), unitText("คน"), itemInput(it, "each", "คนละ", row), unitText("บาท/คน"));
+  else bottom.append(itemInput(it, "amount", "จำนวนเงิน", row), unitText("บาท"));
+  const del = Object.assign(document.createElement("button"), { type: "button", className: "small", textContent: "ลบ", title: "ลบรายการ" });
+  del.onclick = () => { state.items.splice(i, 1); renderItems(); render(); };
+  bottom.append(del);
+  row.append(top, bottom);
+  return row;
+}
+/** เลื่อนไปที่ช่องของแถว i (−1 = แถวสุดท้าย) */
+function focusItem(i, k) {
+  const rows = document.querySelectorAll("#items > div");
+  const row = rows[i < 0 ? rows.length - 1 : i];
+  const el = row && (row.querySelector(`[data-k="${k}"]`) || row.querySelector("input"));
+  el && el.focus();
 }
 
 // ---- รายการที่ใช้บ่อย (จำไว้ในเบราว์เซอร์)
@@ -913,7 +981,10 @@ const DEFAULT_CATALOG = [
   { desc: "เทพื้นปูนลานกิจกรรม", type: "ประเภทเงินรายได้สถานศึกษา" },
   ...["โครงการแข่งขันทักษะวิชาการ", "โครงการกีฬาและนันทนาการ", "กิจกรรมกีฬาสีภายใน", "กิจกรรมปัจฉิมนิเทศ",
       "โครงการส่งเสริมการอ่านและทักษะภาษา", "โครงการวิจัยและนิเทศภายใน",
-      "เงินปัจจัยพื้นฐานสำหรับนักเรียนยากจน", "เงินทุนเสมอภาคทางการศึกษา"].map((desc) => ({ desc, type: "" })),
+      ].map((desc) => ({ desc, type: "" })),
+  // คิดต่อคน: "จำนวน X คน คนละ Y บาท"
+  ...["เงินปัจจัยพื้นฐานสำหรับนักเรียนยากจน", "เงินทุนเสมอภาคทางการศึกษา ระดับอนุบาล",
+      "เงินทุนเสมอภาคทางการศึกษา ระดับประถมศึกษา"].map((desc) => ({ desc, type: "", unit: "person" })),
 ];
 state.catalog = [];
 /** ช่องเลือกรายการ จัดกลุ่มตามประเภทเงิน (อุดหนุนรายหัวขึ้นก่อน) */
@@ -939,19 +1010,17 @@ function renderCatalog() {
 /** เพิ่มบรรทัดรายการจากชื่อที่เลือก แล้วไปที่ช่องจำนวนเงิน */
 function addItemFromCatalog(c) {
   let it = state.items[state.items.length - 1];   // เติมแถวว่างแถวสุดท้ายก่อน ถ้าไม่มีจึงเพิ่มแถวใหม่
-  if (!it || (it.desc || "").trim() || (it.amount || "").trim()) { it = blankItem(); state.items.push(it); }
-  it.desc = c.desc; it.type = c.type || "";
+  if (!it || ["desc", "amount", "count", "each"].some((k) => (it[k] || "").trim())) { it = blankItem(); state.items.push(it); }
+  it.desc = c.desc; it.type = c.type || ""; it.unit = c.unit || "";
   renderItems(); render();
-  const rows = document.querySelectorAll("#items .item");
-  const amt = rows[rows.length - 1] && rows[rows.length - 1].querySelector('[data-k="amount"]');
-  amt && amt.focus();
+  focusItem(-1, it.unit === "person" ? "count" : "amount");
 }
 function rememberItems(names) {
   let added = 0;
   for (const n of names) {
     const desc = (n.desc || "").trim();
     if (!desc || state.catalog.some((c) => c.desc === desc)) continue;
-    state.catalog.push({ desc, type: (n.type || "").trim() }); added++;
+    state.catalog.push({ desc, type: (n.type || "").trim(), ...(isPerson(n) ? { unit: "person" } : {}) }); added++;
   }
   if (added) { store.set(KEY_CATALOG, state.catalog); renderCatalog(); }
   return added;
@@ -960,7 +1029,8 @@ function rememberItems(names) {
 function rememberFromForm() {
   if ($("useItems").checked && $("itemMode").value !== "daily") rememberItems(state.items);
 }
-const blankItem = (it = {}) => ({ desc: it.desc || "", type: it.type || "", amount: it.amount || "", days: it.days || "", rate: it.rate || "" });
+const blankItem = (it = {}) => ({ desc: it.desc || "", type: it.type || "", amount: it.amount || "", days: it.days || "", rate: it.rate || "",
+  unit: it.unit || "", count: it.count || "", each: it.each || "" });
 function syncBoxes() {
   $("itemsBox").hidden = !$("useItems").checked;
   $("approvalBox").hidden = !$("useApproval").checked;
@@ -1185,7 +1255,7 @@ $("addItem").addEventListener("click", () => {
   const last = state.items[state.items.length - 1];
   state.items.push(blankItem({ type: last ? last.type : "", rate: last ? last.rate : "" }));
   renderItems(); render();
-  const inputs = document.querySelectorAll("#items .item:last-child input"); inputs[0] && inputs[0].focus();
+  focusItem(-1, "desc");
 });
 for (const [id, key] of [["logo", "logo"], ["sig", "sig"]]) {
   $(id).addEventListener("change", async (e) => {
@@ -1249,6 +1319,14 @@ state.catalog = store.get(KEY_CATALOG, null) || (() => {
   for (const c of store.get(KEY_CATALOG_OLD, [])) if (c && c.desc && !list.some((x) => x.desc === c.desc)) list.push({ desc: c.desc, type: c.type || "" });
   return list;
 })();
+for (const d of DEFAULT_CATALOG.filter((c) => c.unit === "person")) {
+  const found = state.catalog.find((c) => c.desc === d.desc);
+  if (found) found.unit = "person";
+  else if (!store.get("memo.itemCatalog.personAdded", false)) state.catalog.push({ ...d });
+}
+// "เงินทุนเสมอภาคทางการศึกษา" รุ่นก่อนเป็นเงินก้อน ตอนนี้แยกเป็นระดับอนุบาล/ประถมแบบคิดต่อคนแล้ว
+state.catalog = state.catalog.filter((c) => c.desc !== "เงินทุนเสมอภาคทางการศึกษา" || c.unit === "person");
+store.set("memo.itemCatalog.personAdded", true); store.set(KEY_CATALOG, state.catalog);
 renderCatalog();
 $("catalogPick").addEventListener("change", (e) => {
   const c = state.catalog[Number(e.target.value)];
@@ -1263,10 +1341,10 @@ $("catalog").addEventListener("click", (e) => {
   if (add !== undefined) addItemFromCatalog(state.catalog[Number(add)]);
 });
 const addCatalogName = () => {
-  const desc = $("catalogNew").value.trim(), type = $("catalogNewType").value.trim();
+  const desc = $("catalogNew").value.trim(), type = $("catalogNewType").value.trim(), unit = $("catalogNewUnit").value;
   if (!desc) return $("catalogNew").focus();
-  rememberItems([{ desc, type }]);
-  addItemFromCatalog(state.catalog.find((c) => c.desc === desc) || { desc, type });
+  rememberItems([{ desc, type, unit }]);
+  addItemFromCatalog(state.catalog.find((c) => c.desc === desc) || { desc, type, unit });
   $("catalogNew").value = "";
   setStatus(`เพิ่ม “${desc}” ลงบันทึกและจำไว้ในรายการให้เลือกแล้ว`, "ok");
 };
