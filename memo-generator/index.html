@@ -26,6 +26,7 @@
     --line: #374151; --accent: #60a5fa; --accent-ink: #0b1220; --err: #f87171; --ok: #4ade80;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Sarabun", system-ui, sans-serif; font-size: 15px; }
   header { padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
   header h1 { margin: 0; font-size: 20px; }
@@ -107,6 +108,12 @@
   .small-btn { display: inline-block; font-weight: 400; font-size: 12px; margin: 0; padding: 3px 8px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
   .tokens { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
   .tokens button { padding: 1px 8px; font-size: 12px; border-radius: 999px; }
+  .confirm { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center;
+             padding: 16px; z-index: 50; }
+  .confirm-card { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px 6px;
+                  max-width: 420px; width: 100%; }
+  .confirm-card p { margin: 0 0 14px; line-height: 1.6; }
+  button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .chip { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
   .tokens .chip button { border: 0; border-radius: 0; }
   .tokens .chip .x { color: var(--muted); padding: 1px 7px; border-left: 1px solid var(--line); }
@@ -299,6 +306,12 @@
   </section>
 </main>
 <div id="batchRender" aria-hidden="true"></div>
+<div id="confirmBox" class="confirm" role="dialog" aria-modal="true" aria-labelledby="confirmMsg" hidden>
+  <div class="confirm-card">
+    <p id="confirmMsg"></p>
+    <div class="actions"><button type="button" class="primary" id="confirmOk">ยืนยัน</button><button type="button" id="confirmCancel">ยกเลิก</button></div>
+  </div>
+</div>
 
 <script>
 /* =========================================================
@@ -568,7 +581,7 @@ async function savePdf(el, name) {
     html2canvas: { scale: 3, backgroundColor: "#ffffff", scrollX: 0, scrollY: 0 },   // scroll offsets would shift the page down
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     pagebreak: { mode: ["css"], before: ".newpage", avoid: ["p", "tr", ".title", ".ln", ".half", ".to", ".sign", ".approve"] },
-  }).from(el).save();
+  }).from(el).outputPdf("blob").then((blob) => download(blob, name));
 }
 
 /** html2canvas does not know where Thai words end, so a wrapped Thai line is drawn on top of the
@@ -694,10 +707,10 @@ async function exportOne(kind) {
   if (miss.length) return reportMissing(miss);
   busy(true, kind === "pdf" ? "กำลังสร้าง PDF..." : "กำลังสร้างไฟล์ Word...");
   try {
-    if (kind === "pdf") { addThaiBreaks($("doc")); try { await savePdf($("doc"), fileName("pdf")); } finally { render(); } }
-    else download(await docx.Packer.toBlob(buildDocx([prepare(formValues())])), fileName("docx"));
-    setStatus("ดาวน์โหลดแล้ว", "ok");
-    rememberFromForm();
+    let saved;
+    if (kind === "pdf") { addThaiBreaks($("doc")); try { saved = await savePdf($("doc"), fileName("pdf")); } finally { render(); } }
+    else saved = await download(await docx.Packer.toBlob(buildDocx([prepare(formValues())])), fileName("docx"));
+    if (saved) { setStatus("ดาวน์โหลดแล้ว", "ok"); rememberFromForm(); }
   } catch (e) { setStatus("สร้างไฟล์ไม่สำเร็จ: " + e.message, "err"); }
   busy(false);
 }
@@ -707,16 +720,17 @@ async function exportBatch(kind) {
   busy(true, `กำลังสร้างไฟล์ ${state.batch.length} ฉบับ...`);
   const memos = state.batch.map(prepare), name = `memo_set_${state.batch.length}.${kind}`;
   try {
+    let saved;
     if (kind === "pdf") {
       const host = $("batchRender");
       host.innerHTML = `<div>${memos.map((d, i) => `<div class="memo ${i ? "newpage" : ""}">${memoHtml(d)}</div>`).join("")}</div>`;
       addThaiBreaks(host.firstElementChild);
-      await savePdf(host.firstElementChild, name);
+      saved = await savePdf(host.firstElementChild, name);
       host.innerHTML = "";
     } else {
-      download(await docx.Packer.toBlob(buildDocx(memos)), name);
+      saved = await download(await docx.Packer.toBlob(buildDocx(memos)), name);
     }
-    setStatus(`ดาวน์โหลดชุดเอกสาร ${memos.length} ฉบับแล้ว`, "ok");
+    if (saved) setStatus(`ดาวน์โหลดชุดเอกสาร ${memos.length} ฉบับแล้ว`, "ok");
   } catch (e) { setStatus("สร้างไฟล์ไม่สำเร็จ: " + e.message, "err"); }
   busy(false);
 }
@@ -739,11 +753,43 @@ function fileName(ext) {
   const d = $("date").value.replace(/-/g, "") || new Date().toISOString().slice(0, 10).replace(/-/g, "");
   return `memo_${d}.${ext}`;
 }
-function download(blob, name) {
+/* เปิดบน claude.ai: หน้าเว็บดาวน์โหลดเองไม่ได้ ต้องผ่าน "downloads" (ผู้ใช้กดยืนยันก่อน)
+   เปิดไฟล์ในเครื่อง: ใช้ลิงก์ดาวน์โหลดปกติ */
+let downloadsCap;
+const getDownloads = () => (downloadsCap ??= (window.claude && typeof window.claude.use === "function")
+  ? window.claude.use("downloads").catch(() => null) : Promise.resolve(null));
+/** คืนค่า true เมื่อส่งไฟล์ให้ผู้ใช้แล้ว, false เมื่อผู้ใช้ยกเลิก */
+async function download(blob, name) {
+  const dl = await getDownloads();
+  if (dl) {
+    try { await dl.save({ filename: name, data: blob }); return true; }
+    catch (e) {
+      if (e && e.code === "declined") { setStatus("ยกเลิกการดาวน์โหลด"); return false; }
+      if (e && e.code === "rate_limited") { setStatus("มีหน้าต่างยืนยันการดาวน์โหลดเปิดอยู่ กดยืนยันหรือปิดก่อน แล้วลองอีกครั้ง", "err"); return false; }
+      throw new Error((e && e.message) || "ดาวน์โหลดไม่ได้ในหน้านี้");
+    }
+  }
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  return true;
+}
+
+/* กล่องยืนยันในหน้า (confirm() ของเบราว์เซอร์ไม่แสดงเมื่อเปิดบน claude.ai) */
+function askConfirm(message, okText = "ยืนยัน") {
+  return new Promise((resolve) => {
+    const box = $("confirmBox");
+    $("confirmMsg").textContent = message;
+    $("confirmOk").textContent = okText;
+    box.hidden = false;
+    $("confirmOk").focus();
+    const done = (v) => { box.hidden = true; $("confirmOk").onclick = $("confirmCancel").onclick = null; document.removeEventListener("keydown", onKey); resolve(v); };
+    const onKey = (e) => { if (e.key === "Escape") done(false); };
+    document.addEventListener("keydown", onKey);
+    $("confirmOk").onclick = () => done(true);
+    $("confirmCancel").onclick = () => done(false);
+  });
 }
 function loadImage(file) {
   return new Promise((resolve, reject) => {
@@ -972,9 +1018,9 @@ $("saveProfile").addEventListener("click", () => {
   renderProfiles(); applyProfileToForm(p, prev);
   setStatus(ok ? `บันทึกข้อมูล${p.name}แล้ว ครั้งต่อไประบบจะเติมให้อัตโนมัติ` : "เบราว์เซอร์นี้บันทึกข้อมูลไม่ได้ (ใช้ได้เฉพาะครั้งนี้)", ok ? "ok" : "err");
 });
-$("delProfile").addEventListener("click", () => {
+$("delProfile").addEventListener("click", async () => {
   const p = activeProfile();
-  if (!p || !confirm(`ลบข้อมูล “${p.name}” ?`)) return;
+  if (!p || !(await askConfirm(`ลบข้อมูล “${p.name}” ออกจากเครื่องนี้?`, "ลบ"))) return;
   state.profiles.list = state.profiles.list.filter((x) => x.id !== p.id);
   state.profiles.active = state.profiles.list[0] ? state.profiles.list[0].id : null;
   saveProfiles(); renderProfiles();
@@ -982,7 +1028,8 @@ $("delProfile").addEventListener("click", () => {
   render();
 });
 $("exportProfiles").addEventListener("click", () => {
-  download(new Blob([JSON.stringify(state.profiles, null, 2)], { type: "application/json" }), "memo_schools.json");
+  download(new Blob([JSON.stringify(state.profiles, null, 2)], { type: "application/json" }), "memo_schools.json")
+    .then((ok) => ok && setStatus("ส่งไฟล์สำรองข้อมูลโรงเรียนแล้ว", "ok"), (e) => setStatus("สำรองข้อมูลไม่สำเร็จ: " + e.message, "err"));
 });
 $("importProfiles").addEventListener("change", async (e) => {
   const f = e.target.files[0];
@@ -1021,9 +1068,14 @@ $("tokens").addEventListener("click", (e) => {
 
 // ---- wire up
 $("template").innerHTML = TEMPLATES.map((t, i) => `<option value="${i}">${t.name}</option>`).join("");
-$("template").addEventListener("change", (e) => {
+let templatePrev = "0";
+$("template").addEventListener("focus", (e) => { templatePrev = e.target.value; });
+$("template").addEventListener("change", async (e) => {
   const t = TEMPLATES[e.target.value];
-  if ($("body").value.trim() && !confirm("แทนที่ “เรื่อง” “เนื้อความ” และส่วนเสริม ด้วยแม่แบบนี้?")) return;
+  if ($("body").value.trim() && !(await askConfirm(`ใช้แม่แบบ “${t.name}” แทน “เรื่อง” “เนื้อความ” และรายการเดิม?`, "ใช้แม่แบบนี้"))) {
+    e.target.value = templatePrev; return;
+  }
+  templatePrev = e.target.value;
   $("subject").value = t.subject; $("body").value = t.body;
   $("useItems").checked = !!t.useItems; $("useApproval").checked = !!t.useApproval; $("signDate").checked = !!t.signDate;
   $("itemMode").value = t.itemMode || "amount";
@@ -1067,8 +1119,8 @@ $("saveBtn").addEventListener("click", () => {
   setStatus(store.set(KEY_HIST, list.slice(0, 30)) ? "บันทึกลงประวัติแล้ว" : "เบราว์เซอร์นี้บันทึกข้อมูลไม่ได้", "ok");
   renderHistory();
 });
-$("newBtn").addEventListener("click", () => {
-  if (!confirm("ล้างข้อมูลในฟอร์มเพื่อเริ่มฉบับใหม่?")) return;
+$("newBtn").addEventListener("click", async () => {
+  if (!(await askConfirm("ล้างข้อมูลในฟอร์มเพื่อเริ่มฉบับใหม่? (ข้อมูลโรงเรียนยังอยู่)", "เริ่มฉบับใหม่"))) return;
   applyValues({ date: new Date().toISOString().slice(0, 10), agency: $("agency").value, signer: $("signer").value,
                 position: $("position").value, thaiNum: $("thaiNum").checked });
   applyProfileToForm(activeProfile());
