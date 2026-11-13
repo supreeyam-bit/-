@@ -89,6 +89,12 @@
   .memo table.items .jn { width: 18mm; }
   .memo table.items .am { width: 32mm; text-align: right; white-space: nowrap; }
   .memo table.items .bt { width: 16mm; padding-left: 2mm; }
+  /* แบบจำนวนวัน: ช่องรายการกว้างขึ้น (ตรงกับคอลัมน์ในไฟล์ Word) */
+  .memo table.items.daily .no { width: 8mm; }
+  .memo table.items.daily .ty { width: 2mm; }
+  .memo table.items.daily .jn { width: 12mm; }
+  .memo table.items.daily .am { width: 32mm; }
+  .memo table.items.daily .bt { width: 14mm; }
   .memo table.items .sum td { padding-top: 1.5mm; }
   .memo .sign { margin-left: 70mm; text-align: center; margin-top: 10mm; }
   .memo .sign img { max-height: 15mm; max-width: 50mm; display: block; margin: 0 auto 1mm; }
@@ -134,12 +140,10 @@
         <input id="pArea" placeholder="สำนักงานเขตพื้นที่การศึกษาประถมศึกษา... เขต ...">
         <label for="pRef">เลขที่หนังสือ (ส่วนที่ซ้ำทุกฉบับ)</label>
         <input id="pRef" placeholder="เช่น ศธ ๐๔๐๐๐/ หรือ ........../๒๕๖๙">
-        <div class="row">
-          <div><label for="pBank">ธนาคาร</label><input id="pBank" placeholder="ธนาคารออมสิน"></div>
-          <div><label for="pAccNo">เลขที่บัญชี</label><input id="pAccNo" inputmode="numeric"></div>
-        </div>
-        <label for="pAccName">ชื่อบัญชี</label>
-        <input id="pAccName" placeholder="เงินอุดหนุนโรงเรียนตัวอย่างวิทยา">
+        <label>บัญชีธนาคารของโรงเรียน (ใส่ได้ทุกบัญชี)</label>
+        <div id="pAccounts"></div>
+        <button type="button" class="small" id="addAccount" style="margin-top:6px">+ เพิ่มบัญชี</button>
+        <div class="hint">เช่น บัญชีเงินอุดหนุน, บัญชีเงินอาหารกลางวัน ตอนทำบันทึกกดเลือกบัญชีที่จะเบิกได้เลย</div>
         <label for="pDirName">ชื่อผู้อำนวยการ (ผู้อนุมัติ)</label>
         <input id="pDirName" placeholder="นางตัวอย่าง ใจดี">
         <label for="pDirPos">ตำแหน่งผู้อำนวยการ</label>
@@ -187,6 +191,12 @@
       <label for="to">เรียน <span class="req">*</span></label>
       <input id="to" name="to" placeholder="เช่น ผู้อำนวยการโรงเรียนตัวอย่างวิทยา">
 
+      <div id="accountWrap" hidden>
+        <label for="account">บัญชีที่ขอเบิก</label>
+        <select id="account" name="account"></select>
+        <div class="hint">ระบบใส่ธนาคาร ชื่อบัญชี และเลขที่บัญชีลงในเนื้อความตรง {ธนาคาร} {ชื่อบัญชี} {เลขบัญชี}</div>
+      </div>
+
       <label for="body">เนื้อความ <span class="req">*</span></label>
       <textarea id="body" name="body"></textarea>
       <div class="hint">ขึ้นบรรทัดใหม่ = ย่อหน้าใหม่ ระบบย่อหน้า ๒.๕ ซม. ให้เอง · กดเพื่อแทรกข้อมูลโรงเรียน (ระบบแทนค่าให้ตอนสร้างเอกสาร):</div>
@@ -195,6 +205,11 @@
       <!-- ---- รายการเงิน ---- -->
       <label class="check"><input type="checkbox" id="useItems"> มีรายการจำนวนเงิน (รวมยอดและเขียนเป็นตัวอักษรให้อัตโนมัติ)</label>
       <div class="box" id="itemsBox" hidden>
+        <label for="itemMode">รูปแบบรายการ</label>
+        <select id="itemMode" name="itemMode">
+          <option value="amount">กรอกจำนวนเงินแต่ละรายการ</option>
+          <option value="daily">จำนวนวัน × วันละ ... บาท (เช่น อาหารกลางวัน)</option>
+        </select>
         <div id="items"></div>
         <button type="button" class="small" id="addItem" style="margin-top:8px">+ เพิ่มรายการ</button>
         <div class="total" id="totalView"></div>
@@ -291,7 +306,11 @@ const TEMPLATES = [
   { name: "ขอเบิกถอนเงิน", subject: "ขอเบิกถอนเงิน",
     body: "ด้วยเจ้าหน้าที่การเงิน{โรงเรียน} มีความประสงค์ขอเบิกเงินอุดหนุนจากบัญชี{ธนาคาร} ชื่อบัญชี{ชื่อบัญชี} เลขที่บัญชี {เลขบัญชี} เพื่อจ่ายเงินตามรายละเอียด ดังนี้\nจึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ",
     useItems: true, items: [{ desc: "", type: "ประเภทเงินอุดหนุนรายหัว", amount: "" }],
-    signDate: true, useApproval: true },
+    signDate: true, useApproval: true, account: "อุดหนุน" },
+  { name: "ขอเบิกเงินอาหารกลางวัน", subject: "ขอเบิกถอนเงิน",
+    body: "ด้วยเจ้าหน้าที่การเงิน{โรงเรียน} มีความประสงค์ขอเบิกเงินอุดหนุนจากบัญชี{ธนาคาร} ชื่อบัญชี{ชื่อบัญชี} เลขที่บัญชี {เลขบัญชี} เพื่อจ่ายเงินตามรายละเอียด ดังนี้\nจึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ",
+    useItems: true, itemMode: "daily", items: [{ desc: "", days: "", rate: "" }],
+    signDate: true, useApproval: true, account: "อาหารกลางวัน" },
   { name: "รายงานผลการดำเนินงาน", subject: "รายงานผลการดำเนินงาน",
     body: "ตามที่ ได้มอบหมายให้ข้าพเจ้าดำเนินการ เมื่อวันที่ นั้น\nบัดนี้ การดำเนินการดังกล่าวได้เสร็จสิ้นแล้ว ผลการดำเนินงานปรากฏดังนี้\nจึงเรียนมาเพื่อโปรดทราบ" },
   { name: "ขอความอนุเคราะห์", subject: "ขอความอนุเคราะห์",
@@ -308,13 +327,30 @@ const $ = (id) => document.getElementById(id);
 const state = { logo: null, sig: null, items: [], batch: [], profiles: { active: null, list: [] } };
 
 /* ข้อมูลโรงเรียน: ช่องในโปรไฟล์ ↔ คำแทนที่ใช้ในเนื้อความ */
-const PROFILE_FIELDS = { name: "pName", area: "pArea", ref: "pRef", bank: "pBank", accNo: "pAccNo", accName: "pAccName",
+const PROFILE_FIELDS = { name: "pName", area: "pArea", ref: "pRef",
   dirName: "pDirName", dirPos: "pDirPos", finName: "pFinName", finPos: "pFinPos" };
 const TOKENS = { "โรงเรียน": "name", "สังกัด": "area", "ธนาคาร": "bank", "ชื่อบัญชี": "accName", "เลขบัญชี": "accNo",
   "ผู้อำนวยการ": "dirName", "เจ้าหน้าที่การเงิน": "finName" };
 const TOKEN_RE = new RegExp(`\\{(${Object.keys(TOKENS).join("|")})\\}`, "g");
 /** แทน {โรงเรียน} {เลขบัญชี} ... ด้วยข้อมูลโรงเรียน; คำที่ไม่มีข้อมูลจะคงไว้ เพื่อให้ตรวจพบได้ */
-const fillTokens = (s, p) => s.replace(TOKEN_RE, (m, k) => (p && (p[TOKENS[k]] || "").trim()) || m);
+const fillTokens = (s, p) => s.replace(TOKEN_RE, (m, k) => (p && String(p[TOKENS[k]] || "").trim()) || m);
+/** ข้อมูลโรงเรียน + บัญชีที่เลือกของเอกสารนี้ รวมเป็นชุดเดียวสำหรับแทนค่า */
+function tokenCtx(raw) {
+  const p = raw.profile;
+  if (!p) return null;
+  const acc = (p.accounts || [])[Number(raw.account) || 0];
+  return { ...p, ...(acc || {}) };
+}
+/** ข้อมูลโรงเรียนจากไฟล์/รุ่นเก่า → รูปแบบปัจจุบัน (บัญชีเป็นรายการ) */
+function normalizeProfile(p) {
+  const clean = { id: String(p.id || "p" + Math.random().toString(36).slice(2, 8)) };
+  for (const k of Object.keys(PROFILE_FIELDS)) clean[k] = String(p[k] || "");
+  const accs = Array.isArray(p.accounts) ? p.accounts : (p.bank || p.accNo || p.accName ? [p] : []);
+  clean.accounts = accs.map((a) => ({ bank: String(a.bank || ""), accName: String(a.accName || ""), accNo: String(a.accNo || "") }))
+                       .filter((a) => a.bank || a.accName || a.accNo);
+  return clean;
+}
+const num = (n) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 
 /* =========================================================
    2) HELPERS — วันที่ไทย, เลขไทย, จำนวนเงิน, บาทเป็นตัวอักษร
@@ -362,7 +398,7 @@ function bahtText(n) {
 
 /** อ่านฟอร์มเป็นค่าดิบ (ใช้เก็บประวัติ/ชุดเอกสาร) */
 function formValues() {
-  const v = Object.fromEntries([...FIELDS, ...EXTRA, "docxFont"].map((f) => [f, $(f).value]));
+  const v = Object.fromEntries([...FIELDS, ...EXTRA, "docxFont", "itemMode", "account"].map((f) => [f, $(f).value]));
   FLAGS.forEach((f) => { v[f] = $(f).checked; });
   v.items = state.items.map((it) => ({ ...it }));
   const p = activeProfile();
@@ -374,22 +410,46 @@ function formValues() {
 function prepare(raw) {
   const T = (s) => (raw.thaiNum ? toThaiDigits(s) : s);
   const d = {};
-  for (const f of [...FIELDS, ...EXTRA]) d[f] = T(fillTokens((raw[f] || "").trim(), raw.profile));
+  const ctx = tokenCtx(raw);
+  for (const f of [...FIELDS, ...EXTRA]) d[f] = T(fillTokens((raw[f] || "").trim(), ctx));
   d.date = T(thaiDate(raw.date));
   d.paragraphs = d.body.split(/\n+/).map((p) => p.trim()).filter(Boolean);
   d.approverLines = d.approverPos.split(/\n+/).map((p) => p.trim()).filter(Boolean);
   d.signDate = raw.signDate; d.useApproval = raw.useApproval;
   d.items = null;
   if (raw.useItems) {
-    const rows = (raw.items || []).filter((it) => it.desc.trim() || it.type.trim() || it.amount.trim());
-    const total = rows.reduce((s, it) => s + (parseAmount(it.amount) || 0), 0);
+    const daily = raw.itemMode === "daily";
+    const rows = itemRows(raw);
+    const amountOf = (it) => (daily ? parseAmount(it.days) * parseAmount(it.rate) : parseAmount(it.amount));
+    const total = rows.reduce((s, it) => s + (amountOf(it) || 0), 0);
     d.items = {
-      rows: rows.map((it, i) => ({ no: T(`${i + 1}.`), desc: T(it.desc.trim()), type: T(it.type.trim()),
-                                   amount: isNaN(parseAmount(it.amount)) ? "" : T(money(parseAmount(it.amount))) })),
+      daily,
+      rows: rows.map((it, i) => {
+        const amt = amountOf(it);
+        let desc = (it.desc || "").trim();
+        if (daily) {
+          const days = num(parseAmount(it.days) || 0), rate = num(parseAmount(it.rate) || 0);
+          desc = [desc, `จำนวน ${days} วัน วันละ ${rate} บาท (${days}x${rate})`].filter(Boolean).join(" ");
+        }
+        return { no: T(`${i + 1}.`), desc: T(desc), type: daily ? "" : T((it.type || "").trim()),
+                 label: daily ? "รวม" : "จำนวน", amount: isNaN(amt) ? "" : T(money(amt)) };
+      }),
+      totalLabel: daily ? "รวมเงินที่ขอเบิกครั้งนี้ทั้งสิ้น" : "รวมเป็นเงิน",
       total: T(money(total)), words: bahtText(total),
     };
   }
   return d;
+}
+/** แถวรายการที่มีข้อมูล (ข้ามแถวว่าง) */
+function itemRows(raw) {
+  const keys = raw.itemMode === "daily" ? ["desc", "days", "rate"] : ["desc", "type", "amount"];
+  return (raw.items || []).filter((it) => keys.some((k) => (it[k] || "").trim()));
+}
+/** แถวนี้ยังกรอกไม่ครบหรือไม่ (ใช้ทั้งตรวจและไฮไลต์ช่อง) */
+function badItemField(mode, it, k) {
+  const bad = (s) => isNaN(parseAmount(s || "")) || parseAmount(s) <= 0;
+  if (mode === "daily") return (k === "days" || k === "rate") && bad(it[k]);
+  return (k === "desc" && !(it.desc || "").trim()) || (k === "amount" && isNaN(parseAmount(it.amount || "")));
 }
 
 /* =========================================================
@@ -398,10 +458,11 @@ function prepare(raw) {
 function missingOf(raw) {
   const miss = FIELDS.filter((f) => !(raw[f] || "").trim());
   if (raw.useApproval) EXTRA.forEach((f) => { if (!(raw[f] || "").trim()) miss.push(f); });
-  if ([...FIELDS, ...EXTRA].some((f) => { TOKEN_RE.lastIndex = 0; return TOKEN_RE.test(fillTokens(raw[f] || "", raw.profile)); })) miss.push("tokens");
+  const ctx = tokenCtx(raw);
+  if ([...FIELDS, ...EXTRA].some((f) => { TOKEN_RE.lastIndex = 0; return TOKEN_RE.test(fillTokens(raw[f] || "", ctx)); })) miss.push("tokens");
   if (raw.useItems) {
-    const rows = raw.items.filter((it) => it.desc.trim() || it.amount.trim());
-    if (!rows.length || rows.some((it) => !it.desc.trim() || isNaN(parseAmount(it.amount)))) miss.push("items");
+    const rows = itemRows(raw), keys = raw.itemMode === "daily" ? ["days", "rate"] : ["desc", "amount"];
+    if (!rows.length || rows.some((it) => keys.some((k) => badItemField(raw.itemMode, it, k)))) miss.push("items");
   }
   return miss;
 }
@@ -409,9 +470,13 @@ function validate(showMarks) {
   const miss = missingOf(formValues());
   [...FIELDS, ...EXTRA].forEach((f) => $(f).classList.toggle("invalid", showMarks && miss.includes(f)));
   if (showMarks && miss.includes("tokens")) $("body").classList.add("invalid");
-  document.querySelectorAll("#items input").forEach((el) => {
-    const bad = showMarks && miss.includes("items") && (el.dataset.k === "desc" ? !el.value.trim() : el.dataset.k === "amount" && isNaN(parseAmount(el.value)));
-    el.classList.toggle("invalid", bad);
+  const mode = $("itemMode").value;
+  document.querySelectorAll("#items .item").forEach((row, i) => {
+    const it = state.items[i] || {}, empty = !itemRows({ itemMode: mode, items: [it] }).length;
+    row.querySelectorAll("input").forEach((el) => {
+      const bad = showMarks && miss.includes("items") && (!empty || i === 0) && badItemField(mode, it, el.dataset.k);
+      el.classList.toggle("invalid", bad);
+    });
   });
   return miss;
 }
@@ -424,10 +489,11 @@ function memoHtml(d) {
   const paras = d.paragraphs.map((p) => `<p>${esc(p)}</p>`);
   if (d.items) {
     const it = d.items;
-    const table = `<table class="items"><colgroup><col class="no"><col><col class="ty"><col class="jn"><col class="am"><col class="bt"></colgroup>
-      ${it.rows.map((r) => `<tr><td class="no">${r.no}</td><td>${v(r.desc, "รายการ")}</td><td class="ty">${esc(r.type)}</td>
-        <td class="jn">จำนวน</td><td class="am">${r.amount}</td><td class="bt">บาท</td></tr>`).join("")}
-      <tr class="sum"><td></td><td colspan="3" style="text-align:right">รวมเป็นเงิน</td><td class="am">${it.total}</td><td class="bt">บาท</td></tr>
+    const table = `<table class="items${it.daily ? " daily" : ""}"><colgroup><col class="no"><col><col class="ty"><col class="jn"><col class="am"><col class="bt"></colgroup>
+      ${it.rows.map((r) => `<tr><td class="no">${r.no}</td>${it.daily ? `<td colspan="2">${v(r.desc, "รายการ")}</td>`
+          : `<td>${v(r.desc, "รายการ")}</td><td class="ty">${esc(r.type)}</td>`}
+        <td class="jn">${r.label}</td><td class="am">${r.amount}</td><td class="bt">บาท</td></tr>`).join("")}
+      <tr class="sum"><td></td><td colspan="3" style="text-align:right">${it.totalLabel}</td><td class="am">${it.total}</td><td class="bt">บาท</td></tr>
       <tr><td></td><td colspan="5" style="text-align:right">(${it.words})</td></tr></table>`;
     paras.splice(Math.max(paras.length - 1, 0), 0, table);
   }
@@ -535,17 +601,19 @@ function memoDocxChildren(d) {
   }));
 
   if (d.items) {
-    const cols = [10, 46, 38, 18, 32, 16].map(mm);      // รวม 160 มม. (เผื่อความกว้างของ TH SarabunPSK)
+    // รวม 160 มม. (เผื่อความกว้างของ TH SarabunPSK); แบบจำนวนวันให้ช่องรายการกว้างขึ้น
+    const cols = (d.items.daily ? [8, 92, 2, 12, 32, 14] : [10, 46, 38, 18, 32, 16]).map(mm);
     const cell = (text, w, align = AlignmentType.LEFT, span = 1) => new TableCell({
       width: { size: w, type: WidthType.DXA }, columnSpan: span, margins: { left: mm(1), right: mm(1) },
       children: [new Paragraph({ alignment: align, children: [run(text)] })],
     });
     const R = AlignmentType.RIGHT;
     const rows = d.items.rows.map((r) => new TableRow({ children: [
-      cell(r.no, cols[0], R), cell(r.desc, cols[1]), cell(r.type, cols[2]),
-      cell("จำนวน", cols[3]), cell(r.amount, cols[4], R), cell("บาท", cols[5]),
+      cell(r.no, cols[0], R),
+      ...(d.items.daily ? [cell(r.desc, cols[1] + cols[2], AlignmentType.LEFT, 2)] : [cell(r.desc, cols[1]), cell(r.type, cols[2])]),
+      cell(r.label, cols[3]), cell(r.amount, cols[4], R), cell("บาท", cols[5]),
     ] }));
-    rows.push(new TableRow({ children: [cell("", cols[0]), cell("รวมเป็นเงิน", cols[1] + cols[2] + cols[3], R, 3), cell(d.items.total, cols[4], R), cell("บาท", cols[5])] }));
+    rows.push(new TableRow({ children: [cell("", cols[0]), cell(d.items.totalLabel, cols[1] + cols[2] + cols[3], R, 3), cell(d.items.total, cols[4], R), cell("บาท", cols[5])] }));
     rows.push(new TableRow({ children: [cell("", cols[0]), cell(`(${d.items.words})`, W - cols[0], R, 5)] }));
     const table = new Table({ rows, columnWidths: cols, width: { size: W, type: WidthType.DXA }, borders: TableBorders.NONE, layout: TableLayoutType.FIXED });
     bodyParas.splice(Math.max(bodyParas.length - 1, 0), 0, table);
@@ -683,13 +751,17 @@ function loadImage(file) {
 function renderItems() {
   const box = $("items");
   box.innerHTML = "";
+  const fields = $("itemMode").value === "daily"
+    ? [["desc", "รายการ (เว้นว่างได้)"], ["days", "จำนวนวัน"], ["rate", "วันละ (บาท)"]]
+    : [["desc", "รายการ"], ["type", "ประเภทเงิน (ถ้ามี)"], ["amount", "จำนวนเงิน"]];
   state.items.forEach((it, i) => {
     const row = document.createElement("div");
     row.className = "item";
-    for (const [k, ph] of [["desc", `${i + 1}. รายการ`], ["type", "ประเภทเงิน (ถ้ามี)"], ["amount", "จำนวนเงิน"]]) {
-      const inp = Object.assign(document.createElement("input"), { value: it[k], placeholder: ph });
+    for (const [k, ph0] of fields) {
+      const ph = k === "desc" ? `${i + 1}. ${ph0}` : ph0;
+      const inp = Object.assign(document.createElement("input"), { value: it[k] || "", placeholder: ph });
       inp.dataset.k = k;
-      if (k === "amount") inp.inputMode = "decimal";
+      if (k === "amount" || k === "rate" || k === "days") inp.inputMode = "decimal";
       inp.addEventListener("input", () => { it[k] = inp.value; render(); if (document.querySelector(".invalid")) validate(true); });
       row.append(inp);
     }
@@ -699,6 +771,7 @@ function renderItems() {
     box.append(row);
   });
 }
+const blankItem = (it = {}) => ({ desc: it.desc || "", type: it.type || "", amount: it.amount || "", days: it.days || "", rate: it.rate || "" });
 function syncBoxes() {
   $("itemsBox").hidden = !$("useItems").checked;
   $("approvalBox").hidden = !$("useApproval").checked;
@@ -718,8 +791,10 @@ function applyValues(v) {
   if (v.profile && state.profiles.list.some((p) => p.id === v.profile.id)) {
     state.profiles.active = v.profile.id; saveProfiles(); renderProfiles();
   }
-  state.items = (v.items || []).map((it) => ({ desc: it.desc || "", type: it.type || "", amount: it.amount || "" }));
-  if ($("useItems").checked && !state.items.length) state.items.push({ desc: "", type: "", amount: "" });
+  $("itemMode").value = v.itemMode === "daily" ? "daily" : "amount";
+  renderAccountSelect(v.account);
+  state.items = (v.items || []).map(blankItem);
+  if ($("useItems").checked && !state.items.length) state.items.push(blankItem());
   syncBoxes(); renderItems(); render();
 }
 let saveTimer;
@@ -760,12 +835,50 @@ function renderProfiles() {
   $("editProfile").disabled = !list.length;
   const p = activeProfile();
   $("profileHint").textContent = p
-    ? [p.area, p.dirName && `ผอ. ${p.dirName}`, p.finName && `การเงิน: ${p.finName}`, p.accNo && `บัญชี ${p.accNo}`].filter(Boolean).join(" · ")
+    ? [p.area, p.dirName && `ผอ. ${p.dirName}`, p.finName && `การเงิน: ${p.finName}`,
+       p.accounts && p.accounts.length && `บัญชี ${p.accounts.length} บัญชี`].filter(Boolean).join(" · ")
     : "กรอกข้อมูลโรงเรียนครั้งเดียว ระบบจะจำไว้และเติมให้ทุกครั้ง";
+  renderAccountSelect();
 }
+/** รายการบัญชีของโรงเรียนที่เลือก ให้กดเลือกในฟอร์ม */
+function renderAccountSelect(want) {
+  const p = activeProfile(), accs = (p && p.accounts) || [], sel = $("account");
+  const cur = want !== undefined ? String(want) : sel.value;
+  sel.innerHTML = accs.map((a, i) => `<option value="${i}">${esc([a.bank, a.accName, a.accNo].filter(Boolean).join(" · "))}</option>`).join("");
+  sel.value = accs[Number(cur)] ? String(Number(cur)) : "0";
+  $("accountWrap").hidden = !accs.length;
+}
+/** เลือกบัญชีที่ชื่อมีคำนี้ เช่น "อาหารกลางวัน" */
+function pickAccount(keyword) {
+  const p = activeProfile();
+  const i = ((p && p.accounts) || []).findIndex((a) => `${a.accName} ${a.bank}`.includes(keyword));
+  if (i >= 0) $("account").value = String(i);
+}
+function renderAccountEditor(accs) {
+  const box = $("pAccounts");
+  box.innerHTML = "";
+  accs.forEach((a) => {
+    const row = document.createElement("div");
+    row.className = "item acc";
+    for (const [k, ph] of [["bank", "ธนาคาร เช่น ธนาคารออมสิน"], ["accName", "ชื่อบัญชี"], ["accNo", "เลขที่บัญชี"]]) {
+      const inp = Object.assign(document.createElement("input"), { value: a[k] || "", placeholder: ph });
+      inp.dataset.k = k;
+      if (k === "accNo") inp.inputMode = "numeric";
+      row.append(inp);
+    }
+    const del = Object.assign(document.createElement("button"), { type: "button", className: "small", textContent: "ลบ" });
+    del.onclick = () => { row.remove(); };
+    row.append(del);
+    box.append(row);
+  });
+}
+const readAccountEditor = () => [...document.querySelectorAll("#pAccounts .acc")].map((row) =>
+  Object.fromEntries([...row.querySelectorAll("input")].map((el) => [el.dataset.k, el.value.trim()])))
+  .filter((a) => a.bank || a.accName || a.accNo);
 function openProfileEditor(p) {
   state.editing = p ? p.id : null;
   for (const [k, id] of Object.entries(PROFILE_FIELDS)) $(id).value = p ? p[k] || "" : (k === "finPos" ? "เจ้าหน้าที่การเงิน" : "");
+  renderAccountEditor(p && p.accounts && p.accounts.length ? p.accounts : [{ bank: "", accName: "", accNo: "" }]);
   $("delProfile").hidden = !p;
   $("cancelProfile").hidden = !state.profiles.list.length;
   $("profileEditor").hidden = false;
@@ -796,6 +909,7 @@ $("cancelProfile").addEventListener("click", () => { $("profileEditor").hidden =
 $("saveProfile").addEventListener("click", () => {
   const p = { id: state.editing || "p" + Date.now().toString(36) };
   for (const [k, id] of Object.entries(PROFILE_FIELDS)) p[k] = $(id).value.trim();
+  p.accounts = readAccountEditor();
   if (!p.name) { $("pName").classList.add("invalid"); $("pName").focus(); return; }
   $("pName").classList.remove("invalid");
   const list = state.profiles.list, i = list.findIndex((x) => x.id === p.id);
@@ -828,8 +942,7 @@ $("importProfiles").addEventListener("change", async (e) => {
     const incoming = (Array.isArray(data) ? data : data.list || []).filter((p) => p && p.name);
     if (!incoming.length) throw new Error("ไม่พบข้อมูลโรงเรียนในไฟล์");
     for (const p of incoming) {
-      const clean = { id: String(p.id || "p" + Math.random().toString(36).slice(2, 8)) };
-      for (const k of Object.keys(PROFILE_FIELDS)) clean[k] = String(p[k] || "");
+      const clean = normalizeProfile(p);
       const i = state.profiles.list.findIndex((x) => x.id === clean.id);
       if (i >= 0) state.profiles.list[i] = clean; else state.profiles.list.push(clean);
     }
@@ -839,6 +952,12 @@ $("importProfiles").addEventListener("change", async (e) => {
     setStatus(`นำเข้าข้อมูลโรงเรียน ${incoming.length} แห่งแล้ว`, "ok");
   } catch (err) { setStatus("นำเข้าไม่สำเร็จ: " + err.message, "err"); }
 });
+$("addAccount").addEventListener("click", () => {
+  const cur = readAccountEditor(), last = cur[cur.length - 1];
+  renderAccountEditor([...cur, { bank: last ? last.bank : "", accName: "", accNo: "" }]);
+  const rows = document.querySelectorAll("#pAccounts .acc"); rows[rows.length - 1].querySelectorAll("input")[1].focus();
+});
+$("itemMode").addEventListener("change", () => { renderItems(); render(); });
 $("tokens").innerHTML = Object.keys(TOKENS).map((k) => `<button type="button" data-t="{${k}}">{${k}}</button>`).join("");
 $("tokens").addEventListener("click", (e) => {
   const t = e.target.dataset.t, ta = $("body");
@@ -856,18 +975,20 @@ $("template").addEventListener("change", (e) => {
   if ($("body").value.trim() && !confirm("แทนที่ “เรื่อง” “เนื้อความ” และส่วนเสริม ด้วยแม่แบบนี้?")) return;
   $("subject").value = t.subject; $("body").value = t.body;
   $("useItems").checked = !!t.useItems; $("useApproval").checked = !!t.useApproval; $("signDate").checked = !!t.signDate;
-  state.items = (t.items || []).map((it) => ({ ...it }));
+  $("itemMode").value = t.itemMode || "amount";
+  if (t.account) pickAccount(t.account);
+  state.items = (t.items || []).map(blankItem);
   syncBoxes(); renderItems(); render();
 });
 $("form").addEventListener("input", () => { render(); if (document.querySelector(".invalid")) validate(true); });
 ["thaiNum", "signDate"].forEach((id) => $(id).addEventListener("change", render));
 ["useItems", "useApproval"].forEach((id) => $(id).addEventListener("change", () => {
-  if (id === "useItems" && $("useItems").checked && !state.items.length) { state.items.push({ desc: "", type: "", amount: "" }); renderItems(); }
+  if (id === "useItems" && $("useItems").checked && !state.items.length) { state.items.push(blankItem()); renderItems(); }
   syncBoxes(); render();
 }));
 $("addItem").addEventListener("click", () => {
   const last = state.items[state.items.length - 1];
-  state.items.push({ desc: "", type: last ? last.type : "", amount: "" });
+  state.items.push(blankItem({ type: last ? last.type : "", rate: last ? last.rate : "" }));
   renderItems(); render();
   const inputs = document.querySelectorAll("#items .item:last-child input"); inputs[0] && inputs[0].focus();
 });
@@ -906,7 +1027,7 @@ document.fonts && document.fonts.ready.then(fitPreview);
 // ---- initial state
 state.batch = store.get(KEY_BATCH, []);
 const savedProfiles = store.get(KEY_PROF, null);
-if (savedProfiles && Array.isArray(savedProfiles.list)) state.profiles = savedProfiles;
+if (savedProfiles && Array.isArray(savedProfiles.list)) state.profiles = { active: savedProfiles.active, list: savedProfiles.list.map(normalizeProfile) };
 renderProfiles();
 const draft = store.get(KEY_DRAFT, null);
 if (draft) applyValues(draft);
