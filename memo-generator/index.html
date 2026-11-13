@@ -531,7 +531,7 @@ function memoHtml(d) {
       <div><span class="ck"></span>อนุมัติ</div>
       <div><span class="ck"></span>ไม่อนุมัติ เนื่องจาก ....................................................................</div>
     </div>
-    <div class="sign" style="margin-top:6mm">
+    <div class="sign" style="margin-top:6mm; margin-left:50mm">
       <div class="gap"></div><div>ลงชื่อ ...........................................</div>
       <div>(${v(d.approverName, "ชื่อผู้อนุมัติ")})</div>
       ${d.approverLines.length ? d.approverLines.map((l, i) => `<div>${i ? "" : "ตำแหน่ง "}${esc(l)}</div>`).join("") : `<div class="ph">ตำแหน่งผู้อนุมัติ</div>`}
@@ -602,7 +602,8 @@ function memoDocxChildren(d) {
     const h = Math.round(hMm / 25.4 * 96);
     return new ImageRun({ data: asset.bytes, transformation: { width: Math.round(h * asset.w / asset.h), height: h } });
   };
-  const signPara = (text) => new Paragraph({ alignment: AlignmentType.CENTER, indent: { left: mm(70) }, children: [run(text)] });
+  // ผู้อนุมัติใช้ช่องกว้างกว่า (เริ่ม 50 มม.) เพราะตำแหน่งมักยาว เช่น "ตำแหน่ง ผู้อำนวยการโรงเรียน..."
+  const signPara = (text, left = 70) => new Paragraph({ alignment: AlignmentType.CENTER, indent: { left: mm(left) }, children: [run(text)] });
   const blank = () => new Paragraph({ children: [run("")] });
 
   const bodyParas = d.paragraphs.map((p, i) => new Paragraph({
@@ -646,10 +647,10 @@ function memoDocxChildren(d) {
     new Paragraph({ indent: { left: mm(25) }, tabStops: [dotsTo(W)],
       children: [run("☐", 16, false, "Segoe UI Symbol"), run("  ไม่อนุมัติ เนื่องจาก "), tab()] }),
     blank(), blank(),
-    signPara("ลงชื่อ ..........................................."),
-    signPara(`(${d.approverName})`),
-    ...d.approverLines.map((l, i) => signPara((i ? "" : "ตำแหน่ง ") + l)),
-    signPara(`วันที่ ${d.date}`),
+    signPara("ลงชื่อ ...........................................", 50),
+    signPara(`(${d.approverName})`, 50),
+    ...d.approverLines.map((l, i) => signPara((i ? "" : "ตำแหน่ง ") + l, 50)),
+    signPara(`วันที่ ${d.date}`, 50),
   ];
 
   return [
