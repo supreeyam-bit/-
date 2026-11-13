@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ระบบสร้างบันทึกข้อความ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<style>
+  :root {
+    --bg: #f3f4f6; --panel: #ffffff; --ink: #1f2937; --muted: #6b7280;
+    --line: #d1d5db; --accent: #1d4ed8; --accent-ink: #ffffff; --err: #b91c1c; --ok: #15803d;
+    /* TH Sarabun 16pt in Word looks about the size of Google Sarabun 12.5pt */
+    --s: 0.78;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #111827; --panel: #1f2937; --ink: #f3f4f6; --muted: #9ca3af;
+      --line: #374151; --accent: #60a5fa; --accent-ink: #0b1220; --err: #f87171; --ok: #4ade80;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #111827; --panel: #1f2937; --ink: #f3f4f6; --muted: #9ca3af;
+    --line: #374151; --accent: #60a5fa; --accent-ink: #0b1220; --err: #f87171; --ok: #4ade80;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Sarabun", system-ui, sans-serif; font-size: 15px; }
+  header { padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { margin: 0; font-size: 20px; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+  main { display: grid; grid-template-columns: minmax(320px, 440px) 1fr; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+  .panel h2 { font-size: 16px; margin: 0 0 10px; }
+  label { display: block; font-weight: 700; font-size: 14px; margin: 10px 0 4px; }
+  label .req { color: var(--err); }
+  input, select, textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+  textarea { min-height: 200px; resize: vertical; line-height: 1.6; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .invalid { border-color: var(--err); outline: 1px solid var(--err); }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  .check { display: flex; align-items: center; gap: 8px; font-weight: 400; }
+  .check input { width: auto; }
+  details { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+  summary { cursor: pointer; font-weight: 700; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 6px; padding: 8px 14px; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+  button:disabled { opacity: .5; cursor: wait; }
+  #status { font-size: 13px; color: var(--muted); }
+  #status.err { color: var(--err); } #status.ok { color: var(--ok); }
+  .history { list-style: none; padding: 0; margin: 8px 0 0; }
+  .history li { display: flex; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+  .history li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history button { padding: 3px 8px; font-size: 12px; }
+
+  /* ---------- preview: A4 page, always paper-white ---------- */
+  .stage { overflow: hidden; }
+  .scaler { transform-origin: top left; }
+  .page { width: 210mm; min-height: 297mm; background: #fff; color: #000; box-shadow: 0 2px 10px rgba(0,0,0,.25);
+          padding: 15mm 20mm 20mm 30mm; }
+  #doc { width: 160mm; background: #fff; font-family: "Sarabun", serif; font-size: calc(16pt * var(--s)); line-height: 1.55; color: #000; }
+  #doc .title { position: relative; height: 15mm; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 4mm; }
+  #doc .title img { position: absolute; left: 0; bottom: 0; height: 15mm; }
+  #doc .title h3 { margin: 0; font-size: calc(29pt * var(--s)); font-weight: 700; line-height: 1; }
+  #doc .ln { display: flex; align-items: baseline; }
+  #doc .ln b { font-size: calc(20pt * var(--s)); white-space: nowrap; margin-right: .4em; }
+  #doc .ln .v { white-space: pre-wrap; }
+  #doc .ln .dots { flex: 1; border-bottom: 1.2px dotted #000; margin: 0 .3em; min-width: 1em; transform: translateY(-.25em); }
+  #doc .half { display: flex; }
+  #doc .half > div { flex: 1; min-width: 0; }
+  #doc .to { margin-top: 3mm; }
+  #doc .body p { margin: 0; text-indent: 25mm; text-align: justify; white-space: pre-wrap; }
+  #doc .body { margin-top: 3mm; }
+  #doc .sign { margin-left: 70mm; text-align: center; margin-top: 12mm; }
+  #doc .sign img { max-height: 15mm; max-width: 50mm; display: block; margin: 0 auto 1mm; }
+  #doc .sign .gap { height: 12mm; }
+  #doc .ph { color: #9ca3af; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ระบบสร้างบันทึกข้อความอัตโนมัติ</h1>
+  <p>กรอกข้อมูล ดูตัวอย่างแบบเรียลไทม์ แล้วดาวน์โหลดเป็น PDF หรือ Word ไม่ต้องสมัครสมาชิก ข้อมูลอยู่ในเครื่องคุณเท่านั้น</p>
+</header>
+
+<main>
+  <!-- ================= FORM ================= -->
+  <section class="panel" aria-label="ฟอร์มกรอกข้อมูล">
+    <h2>1. กรอกข้อมูล</h2>
+
+    <label for="template">รูปแบบบันทึกข้อความ</label>
+    <select id="template"></select>
+    <div class="hint">เลือกแม่แบบเพื่อเติม “เรื่อง” และ “เนื้อความ” ตัวอย่าง แล้วแก้ไขต่อได้</div>
+
+    <form id="form" novalidate>
+      <label for="agency">ส่วนราชการ <span class="req">*</span></label>
+      <input id="agency" name="agency" placeholder="เช่น งานวิชาการ โรงเรียนตัวอย่างวิทยา โทร. ๐ ๔๓๐๐ ๐๐๐๐">
+
+      <div class="row">
+        <div>
+          <label for="ref">ที่ <span class="req">*</span></label>
+          <input id="ref" name="ref" placeholder="เช่น ศธ ๐๔๐๐๐/๑๒๓">
+        </div>
+        <div>
+          <label for="date">วันที่ <span class="req">*</span></label>
+          <input id="date" name="date" type="date">
+        </div>
+      </div>
+
+      <label for="subject">เรื่อง <span class="req">*</span></label>
+      <input id="subject" name="subject">
+
+      <label for="to">เรียน <span class="req">*</span></label>
+      <input id="to" name="to" placeholder="เช่น ผู้อำนวยการโรงเรียนตัวอย่างวิทยา">
+
+      <label for="body">เนื้อความ <span class="req">*</span></label>
+      <textarea id="body" name="body"></textarea>
+      <div class="hint">ขึ้นบรรทัดใหม่ = ย่อหน้าใหม่ ระบบย่อหน้า ๒.๕ ซม. ให้เอง</div>
+
+      <div class="row">
+        <div>
+          <label for="signer">ผู้ลงนาม <span class="req">*</span></label>
+          <input id="signer" name="signer" placeholder="นายตัวอย่าง ใจดี">
+        </div>
+        <div>
+          <label for="position">ตำแหน่ง <span class="req">*</span></label>
+          <input id="position" name="position" placeholder="ครู วิทยฐานะครูชำนาญการ">
+        </div>
+      </div>
+
+      <details>
+        <summary>ตัวเลือกเพิ่มเติม</summary>
+        <label class="check"><input type="checkbox" id="thaiNum" checked> ใช้เลขไทย (๑ ๒ ๓)</label>
+        <label for="logo">โลโก้ / ตราครุฑ (สูง ๑.๕ ซม.)</label>
+        <input id="logo" type="file" accept="image/png,image/jpeg">
+        <label for="sig">ลายเซ็นอิเล็กทรอนิกส์ (รูปภาพ)</label>
+        <input id="sig" type="file" accept="image/png,image/jpeg">
+        <div class="hint">แนะนำไฟล์ PNG พื้นหลังโปร่งใส</div>
+        <label for="docxFont">ฟอนต์ในไฟล์ Word</label>
+        <select id="docxFont">
+          <option>TH SarabunIT๙</option>
+          <option selected>TH SarabunPSK</option>
+          <option>TH Sarabun New</option>
+        </select>
+        <div class="hint">ไฟล์ Word จะใช้ฟอนต์ที่ติดตั้งในเครื่องผู้เปิด</div>
+      </details>
+    </form>
+
+    <details open>
+      <summary>ประวัติเอกสาร (เก็บในเบราว์เซอร์นี้)</summary>
+      <div class="actions" style="margin-top:8px"><button type="button" id="saveBtn">บันทึกฉบับนี้</button><button type="button" id="newBtn">เริ่มฉบับใหม่</button></div>
+      <ul class="history" id="history"></ul>
+    </details>
+  </section>
+
+  <!-- ================= PREVIEW ================= -->
+  <section class="panel" aria-label="ตัวอย่างเอกสาร">
+    <h2>2. ตรวจตัวอย่าง แล้วดาวน์โหลด</h2>
+    <div class="actions">
+      <button class="primary" id="pdfBtn">📄 ดาวน์โหลด PDF</button>
+      <button class="primary" id="docxBtn">📝 ดาวน์โหลด Word</button>
+      <span id="status" role="status"></span>
+    </div>
+    <div class="stage" id="stage">
+      <div class="scaler" id="scaler">
+        <div class="page"><div id="doc"></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* =========================================================
+   1) TEMPLATES — แม่แบบบันทึกข้อความ (เพิ่ม/แก้ได้ที่นี่)
+   ========================================================= */
+const TEMPLATES = [
+  { name: "บันทึกข้อความทั่วไป", subject: "", body: "ด้วย\nในการนี้\nจึงเรียนมาเพื่อโปรดทราบ" },
+  { name: "ขออนุญาตไปราชการ", subject: "ขออนุญาตไปราชการ",
+    body: "ด้วยข้าพเจ้า ได้รับหนังสือเชิญจาก ให้เข้าร่วม ในวันที่ ณ\nในการนี้ ข้าพเจ้าจึงขออนุญาตไปราชการดังกล่าว โดยขอเบิกค่าใช้จ่ายจาก\nจึงเรียนมาเพื่อโปรดพิจารณาอนุญาต" },
+  { name: "ขออนุมัติจัดซื้อ/จัดจ้าง", subject: "ขออนุมัติจัดซื้อวัสดุ",
+    body: "ด้วยงาน มีความประสงค์จะจัดซื้อ เพื่อใช้ใน จำนวน รายการ เป็นเงินทั้งสิ้น บาท ( ) รายละเอียดตามเอกสารแนบ\nจึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ" },
+  { name: "รายงานผลการดำเนินงาน", subject: "รายงานผลการดำเนินงาน",
+    body: "ตามที่ ได้มอบหมายให้ข้าพเจ้าดำเนินการ เมื่อวันที่ นั้น\nบัดนี้ การดำเนินการดังกล่าวได้เสร็จสิ้นแล้ว ผลการดำเนินงานปรากฏดังนี้\nจึงเรียนมาเพื่อโปรดทราบ" },
+  { name: "ขอความอนุเคราะห์", subject: "ขอความอนุเคราะห์",
+    body: "ด้วย มีความประสงค์จะ ในวันที่\nในการนี้ จึงขอความอนุเคราะห์\nจึงเรียนมาเพื่อโปรดพิจารณา" },
+];
+
+const FIELDS = ["agency", "ref", "date", "subject", "to", "body", "signer", "position"];
+const LABELS = { agency: "ส่วนราชการ", ref: "ที่", date: "วันที่", subject: "เรื่อง", to: "เรียน", body: "เนื้อความ", signer: "ผู้ลงนาม", position: "ตำแหน่ง" };
+const $ = (id) => document.getElementById(id);
+const state = { logo: null, sig: null };
+
+/* =========================================================
+   2) HELPERS — วันที่ไทย, เลขไทย, escape
+   ========================================================= */
+const MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+function thaiDate(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${d} ${MONTHS[m - 1]} ${y + 543}`;
+}
+const toThaiDigits = (s) => s.replace(/[0-9]/g, (c) => "๐๑๒๓๔๕๖๗๘๙"[c]);
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/** อ่านค่าจากฟอร์ม แล้วจัดรูปแบบพร้อมใช้ (ใช้ร่วมกันทั้ง Preview / PDF / Word) */
+function getData() {
+  const raw = Object.fromEntries(FIELDS.map((f) => [f, $(f).value.trim()]));
+  const out = { ...raw, date: thaiDate(raw.date) };
+  if ($("thaiNum").checked) for (const k in out) out[k] = toThaiDigits(out[k]);
+  out.paragraphs = out.body.split(/\n+/).map((p) => p.trim()).filter(Boolean);
+  return { raw, doc: out };
+}
+
+/* =========================================================
+   3) VALIDATION — ตรวจความครบถ้วน
+   ========================================================= */
+function validate(showMarks) {
+  const { raw } = getData();
+  const missing = FIELDS.filter((f) => !raw[f]);
+  FIELDS.forEach((f) => $(f).classList.toggle("invalid", showMarks && missing.includes(f)));
+  return missing;
+}
+
+/* =========================================================
+   4) RENDER PREVIEW — จัดรูปแบบตามแม่แบบราชการ
+   ========================================================= */
+function render() {
+  const { doc } = getData();
+  const v = (s, ph) => s ? esc(s) : `<span class="ph">${ph}</span>`;
+  $("doc").innerHTML = `
+    <div class="title">${state.logo ? `<img src="${state.logo.url}" alt="">` : ""}<h3>บันทึกข้อความ</h3></div>
+    <div class="ln"><b>ส่วนราชการ</b><span class="v">${v(doc.agency, "")}</span><span class="dots"></span></div>
+    <div class="half">
+      <div class="ln"><b>ที่</b><span class="v">${v(doc.ref, "")}</span><span class="dots"></span></div>
+      <div class="ln"><b>วันที่</b><span class="v">${v(doc.date, "")}</span><span class="dots"></span></div>
+    </div>
+    <div class="ln"><b>เรื่อง</b><span class="v">${v(doc.subject, "")}</span></div>
+    <div class="to">เรียน&nbsp;&nbsp;${v(doc.to, "...")}</div>
+    <div class="body">${doc.paragraphs.length ? doc.paragraphs.map((p) => `<p>${esc(p)}</p>`).join("") : `<p class="ph">เนื้อความ...</p>`}</div>
+    <div class="sign">
+      ${state.sig ? `<img src="${state.sig.url}" alt="">` : `<div class="gap"></div>`}
+      <div>(${v(doc.signer, "ชื่อผู้ลงนาม")})</div>
+      <div>${v(doc.position, "ตำแหน่ง")}</div>
+    </div>`;
+  fitPreview();
+  autosave();
+}
+
+function fitPreview() {
+  const stage = $("stage"), scaler = $("scaler"), page = scaler.firstElementChild;
+  const scale = Math.min(1, stage.clientWidth / page.offsetWidth);
+  scaler.style.transform = `scale(${scale})`;
+  stage.style.height = page.offsetHeight * scale + "px";
+}
+
+/* =========================================================
+   5) EXPORT PDF — html2pdf (เรนเดอร์ด้วยเบราว์เซอร์ ฟอนต์ไทยถูกต้อง)
+   ========================================================= */
+async function exportPdf() {
+  if (!checkBeforeExport()) return;
+  busy(true, "กำลังสร้าง PDF...");
+  try {
+    await document.fonts.ready;
+    await html2pdf().set({
+      margin: [15, 20, 20, 30],                // mm: บน ขวา ล่าง ซ้าย
+      filename: fileName("pdf"),
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 3, backgroundColor: "#ffffff" },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["avoid-all", "css"] },
+    }).from($("doc")).save();
+    setStatus("ดาวน์โหลด PDF แล้ว", "ok");
+  } catch (e) { setStatus("สร้าง PDF ไม่สำเร็จ: " + e.message, "err"); }
+  busy(false);
+}
+
+/* =========================================================
+   6) EXPORT WORD — docx.js (สร้าง .docx จริง แก้ไขต่อใน Word ได้)
+   ========================================================= */
+async function exportDocx() {
+  if (!checkBeforeExport()) return;
+  busy(true, "กำลังสร้างไฟล์ Word...");
+  try {
+    const blob = await docx.Packer.toBlob(buildDocx(getData().doc));
+    download(blob, fileName("docx"));
+    setStatus("ดาวน์โหลด Word แล้ว", "ok");
+  } catch (e) { setStatus("สร้างไฟล์ Word ไม่สำเร็จ: " + e.message, "err"); }
+  busy(false);
+}
+
+function buildDocx(d) {
+  const { Document, Paragraph, TextRun, ImageRun, AlignmentType, TabStopType, LeaderType, convertMillimetersToTwip: mm } = docx;
+  const F = $("docxFont").value;
+  const run = (text, pt = 16, bold = false) => new TextRun({
+    text, bold, boldComplexScript: bold, size: pt * 2, sizeComplexScript: pt * 2,
+    font: { ascii: F, hAnsi: F, cs: F, eastAsia: F },
+    language: { value: "th-TH", bidirectional: "th-TH" },
+  });
+  const tab = () => new TextRun({ text: "\t", size: 32, sizeComplexScript: 32, font: { ascii: F, hAnsi: F, cs: F } });
+  const W = mm(160), HALF = mm(80);
+  const dotsTo = (pos, type = TabStopType.RIGHT) => ({ type, position: pos, leader: LeaderType.DOT });
+  const img = (asset, hMm) => {
+    const h = Math.round(hMm / 25.4 * 96);
+    return new ImageRun({ data: asset.bytes, transformation: { width: Math.round(h * asset.w / asset.h), height: h } });
+  };
+
+  const children = [
+    new Paragraph({
+      tabStops: [{ type: TabStopType.CENTER, position: HALF }],
+      spacing: { after: 120 },
+      children: [...(state.logo ? [img(state.logo, 15)] : []), tab(), run("บันทึกข้อความ", 29, true)],
+    }),
+    new Paragraph({ tabStops: [dotsTo(W)], children: [run("ส่วนราชการ", 20, true), run("  " + d.agency), tab()] }),
+    new Paragraph({
+      tabStops: [dotsTo(HALF, TabStopType.LEFT), dotsTo(W)],
+      children: [run("ที่", 20, true), run("  " + d.ref), tab(), run("วันที่", 20, true), run("  " + d.date), tab()],
+    }),
+    new Paragraph({ children: [run("เรื่อง", 20, true), run("  " + d.subject)] }),
+    new Paragraph({ spacing: { before: 120 }, children: [run("เรียน  " + d.to)] }),
+    ...d.paragraphs.map((p, i) => new Paragraph({
+      alignment: AlignmentType.THAI_DISTRIBUTE,
+      indent: { firstLine: mm(25) },
+      spacing: { before: i === 0 ? 120 : 0 },
+      children: [run(p)],
+    })),
+    new Paragraph({ children: [run("")] }),
+    ...(state.sig
+      ? [new Paragraph({ alignment: AlignmentType.CENTER, indent: { left: mm(70) }, children: [img(state.sig, 15)] })]
+      : [new Paragraph({ children: [run("")] }), new Paragraph({ children: [run("")] })]),
+    new Paragraph({ alignment: AlignmentType.CENTER, indent: { left: mm(70) }, children: [run(`(${d.signer})`)] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, indent: { left: mm(70) }, children: [run(d.position)] }),
+  ];
+
+  return new Document({
+    creator: "ระบบสร้างบันทึกข้อความ",
+    title: d.subject,
+    styles: { default: { document: { run: { font: F, size: 32 } } } },
+    sections: [{
+      properties: { page: { size: { width: mm(210), height: mm(297) },
+                            margin: { top: mm(15), right: mm(20), bottom: mm(20), left: mm(30) } } },
+      children,
+    }],
+  });
+}
+
+/* =========================================================
+   7) UI glue — สถานะ, ไฟล์, รูปภาพ, ประวัติ
+   ========================================================= */
+function checkBeforeExport() {
+  const missing = validate(true);
+  if (missing.length) {
+    setStatus("กรุณากรอกให้ครบ: " + missing.map((f) => LABELS[f]).join(", "), "err");
+    $(missing[0]).focus();
+    return false;
+  }
+  return true;
+}
+function setStatus(msg, cls = "") { const s = $("status"); s.textContent = msg; s.className = cls; }
+function busy(on, msg) { $("pdfBtn").disabled = $("docxBtn").disabled = on; if (on) setStatus(msg); }
+// ASCII file name: some browsers drop non-Latin download names and save a bare "download" file
+function fileName(ext) {
+  const d = $("date").value.replace(/-/g, "") || new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  return `memo_${d}.${ext}`;
+}
+function download(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const url = r.result, im = new Image();
+      im.onload = () => {
+        const bin = atob(url.split(",")[1]), bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        resolve({ url, bytes, w: im.naturalWidth, h: im.naturalHeight });
+      };
+      im.onerror = reject; im.src = url;
+    };
+    r.onerror = reject; r.readAsDataURL(file);
+  });
+}
+
+// ---- storage (per-browser convenience only; wrapped so the app works without it)
+const KEY_DRAFT = "memo.draft.v1", KEY_HIST = "memo.history.v1";
+const store = {
+  get(k, def) { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
+};
+const formValues = () => ({ ...Object.fromEntries(FIELDS.map((f) => [f, $(f).value])), thaiNum: $("thaiNum").checked, docxFont: $("docxFont").value });
+function applyValues(v) {
+  FIELDS.forEach((f) => { $(f).value = v[f] ?? ""; });
+  if ("thaiNum" in v) $("thaiNum").checked = v.thaiNum;
+  if (v.docxFont) $("docxFont").value = v.docxFont;
+  render();
+}
+let saveTimer;
+function autosave() { clearTimeout(saveTimer); saveTimer = setTimeout(() => store.set(KEY_DRAFT, formValues()), 400); }
+function renderHistory() {
+  const list = store.get(KEY_HIST, []), ul = $("history");
+  ul.innerHTML = list.length ? "" : `<li><span class="hint">ยังไม่มีเอกสารที่บันทึกไว้</span></li>`;
+  list.forEach((h, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span title="${esc(h.values.subject || "")}">${esc(h.values.subject || "(ไม่มีเรื่อง)")} · ${esc(h.saved)}</span>`;
+    const open = Object.assign(document.createElement("button"), { textContent: "เปิด", onclick: () => applyValues(h.values) });
+    const del = Object.assign(document.createElement("button"), { textContent: "ลบ", onclick: () => { list.splice(i, 1); store.set(KEY_HIST, list); renderHistory(); } });
+    li.append(open, del); ul.append(li);
+  });
+}
+
+// ---- wire up
+$("template").innerHTML = TEMPLATES.map((t, i) => `<option value="${i}">${t.name}</option>`).join("");
+$("template").addEventListener("change", (e) => {
+  const t = TEMPLATES[e.target.value];
+  if ($("body").value.trim() && !confirm("แทนที่ “เรื่อง” และ “เนื้อความ” ด้วยแม่แบบนี้?")) return;
+  $("subject").value = t.subject; $("body").value = t.body; render();
+});
+$("form").addEventListener("input", () => { render(); if (document.querySelector(".invalid")) validate(true); });
+$("thaiNum").addEventListener("change", render);
+for (const [id, key] of [["logo", "logo"], ["sig", "sig"]]) {
+  $(id).addEventListener("change", async (e) => {
+    const f = e.target.files[0];
+    state[key] = f ? await loadImage(f).catch(() => (setStatus("อ่านไฟล์รูปไม่ได้", "err"), null)) : null;
+    render();
+  });
+}
+$("pdfBtn").addEventListener("click", exportPdf);
+$("docxBtn").addEventListener("click", exportDocx);
+$("saveBtn").addEventListener("click", () => {
+  const list = store.get(KEY_HIST, []);
+  list.unshift({ saved: new Date().toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" }), values: formValues() });
+  setStatus(store.set(KEY_HIST, list.slice(0, 30)) ? "บันทึกลงประวัติแล้ว" : "เบราว์เซอร์นี้บันทึกข้อมูลไม่ได้", "ok");
+  renderHistory();
+});
+$("newBtn").addEventListener("click", () => {
+  if (!confirm("ล้างข้อมูลในฟอร์มเพื่อเริ่มฉบับใหม่?")) return;
+  applyValues({ date: new Date().toISOString().slice(0, 10), agency: $("agency").value, signer: $("signer").value, position: $("position").value });
+});
+window.addEventListener("resize", fitPreview);
+document.fonts && document.fonts.ready.then(fitPreview);
+
+// ---- initial state
+const draft = store.get(KEY_DRAFT, null);
+if (draft) applyValues(draft);
+else { $("date").value = new Date().toISOString().slice(0, 10); $("body").value = TEMPLATES[0].body; render(); }
+renderHistory();
+</script>
+</body>
+</html>
