@@ -88,6 +88,7 @@
   .memo table.items .no { width: 8mm; text-align: right; padding-right: 2mm; }
   .memo table.items .ty { width: 2mm; }
   .memo table.items .jn { width: 18mm; }
+  .memo table.items.daily .jn { width: 12mm; }   /* "รวม" สั้นกว่า "จำนวน" ให้ช่องรายการกว้างขึ้น */
   .memo table.items .am { width: 32mm; text-align: right; white-space: nowrap; }
   .memo table.items .bt { width: 14mm; padding-left: 2mm; }
   .memo table.items .sum td { padding-top: 1.5mm; }
@@ -437,7 +438,9 @@ function prepare(raw) {
         let desc = (it.desc || "").trim();
         if (daily) {
           const days = num(parseAmount(it.days) || 0), rate = num(parseAmount(it.rate) || 0);
-          desc = [desc, `จำนวน ${days} วัน วันละ ${rate} บาท (${days}x${rate})`].filter(Boolean).join(" ");
+          // word joiner กันไม่ให้ "(๒๑x๑,๓๒๓)" ถูกตัดกลางตัวเลข (ตัวเลขไทยถูกตัดคำเหมือนตัวอักษรไทย)
+          const keep = (t) => Array.from(t).join("\u2060");
+          desc = [desc, `จำนวน ${keep(days)} วัน วันละ ${keep(rate)} บาท ${keep(`(${days}x${rate})`)}`].filter(Boolean).join(" ");
         }
         // ชื่อรายการกับประเภทเงินอยู่ช่องเดียวกัน อ่านต่อกันเหมือนต้นฉบับ และตัดบรรทัดได้สวยกว่าแยกคอลัมน์
         if (!daily) desc = [desc, (it.type || "").trim()].filter(Boolean).join(" ");
@@ -499,7 +502,7 @@ function memoHtml(d) {
   const paras = d.paragraphs.map((p) => `<p>${esc(p)}</p>`);
   if (d.items) {
     const it = d.items;
-    const table = `<table class="items"><colgroup><col class="no"><col><col class="ty"><col class="jn"><col class="am"><col class="bt"></colgroup>
+    const table = `<table class="items${it.daily ? " daily" : ""}"><colgroup><col class="no"><col><col class="ty"><col class="jn"><col class="am"><col class="bt"></colgroup>
       ${it.rows.map((r) => `<tr><td class="no">${r.no}</td><td colspan="2">${v(r.desc, "รายการ")}</td>
         <td class="jn">${r.label}</td><td class="am">${r.amount}</td><td class="bt">บาท</td></tr>`).join("")}
       <tr class="sum"><td></td><td colspan="3" style="text-align:right">${it.totalLabel}</td><td class="am">${it.total}</td><td class="bt">บาท</td></tr>
@@ -611,7 +614,7 @@ function memoDocxChildren(d) {
 
   if (d.items) {
     // รวม 160 มม. (เผื่อความกว้างของ TH SarabunPSK); ช่องรายการ = คอลัมน์ 1+2
-    const cols = [8, 86, 2, 18, 32, 14].map(mm);
+    const cols = (d.items.daily ? [8, 92, 2, 12, 32, 14] : [8, 86, 2, 18, 32, 14]).map(mm);
     const cell = (text, w, align = AlignmentType.LEFT, span = 1) => new TableCell({
       width: { size: w, type: WidthType.DXA }, columnSpan: span, margins: { left: mm(1), right: mm(1) },
       children: [new Paragraph({ alignment: align, children: [run(text)] })],
