@@ -297,7 +297,7 @@
 
     <details>
       <summary>ประวัติเอกสาร (เก็บในเบราว์เซอร์นี้)</summary>
-      <div class="actions" style="margin-top:8px"><button type="button" id="saveBtn">บันทึกฉบับนี้</button><button type="button" id="newBtn">เริ่มฉบับใหม่</button></div>
+      <div class="actions" style="margin-top:8px"><button type="button" id="saveBtn">บันทึกฉบับนี้</button></div>
       <ul class="list" id="history"></ul>
     </details>
   </section>
@@ -308,6 +308,7 @@
     <div class="actions">
       <button class="primary" id="pdfBtn">📄 ดาวน์โหลด PDF</button>
       <button class="primary" id="docxBtn">📝 ดาวน์โหลด Word</button>
+      <button type="button" id="newBtn">เริ่มฉบับใหม่</button>
       <span id="status" role="status"></span>
     </div>
     <div class="stage" id="stage">
@@ -343,8 +344,9 @@ const TEMPLATES = [
   { name: "ขออนุมัติจัดซื้อ/จัดจ้าง", subject: "ขออนุมัติจัดซื้อวัสดุ",
     body: "ด้วยงาน มีความประสงค์จะจัดซื้อ เพื่อใช้ใน รายละเอียดดังนี้\nจึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ",
     useItems: true, items: [{ desc: "", type: "", amount: "" }], useApproval: true },
+  // ข้อความตามที่เจ้าหน้าที่การเงินกำหนด (เว้นวรรคตามต้นฉบับ) ผู้ใช้กรอกเฉพาะรายการและจำนวนเงิน
   { name: "ขอเบิกถอนเงิน", subject: "ขอเบิกถอนเงิน",
-    body: "ด้วยเจ้าหน้าที่การเงิน{โรงเรียน} มีความประสงค์ขอเบิกเงินอุดหนุนจากบัญชี{ธนาคาร} ชื่อบัญชี{ชื่อบัญชี} เลขที่บัญชี {เลขบัญชี} เพื่อจ่ายเงินตามรายละเอียด ดังนี้\nจึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ",
+    body: "ด้วยเจ้าหน้าที่การเงิน{โรงเรียน}  มีความประสงค์ขอเบิกเงินอุดหนุนจากบัญชี{ธนาคาร}ชื่อบัญชี{ชื่อบัญชี}เลขที่บัญชี {เลขบัญชี} เพื่อจ่ายเงินตามรายละเอียด ดังนี้\nจึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ",
     useItems: true, items: [{ desc: "", type: "ประเภทเงินอุดหนุนรายหัว", amount: "" }],
     signDate: true, useApproval: true, account: "อุดหนุน" },
   { name: "ขอเบิกเงินอาหารกลางวัน", subject: "ขอเบิกถอนเงิน",
@@ -474,8 +476,9 @@ function prepare(raw) {
           desc = [desc, `จำนวน ${keep(days)} วัน วันละ ${keep(rate)} บาท ${keep(`(${days}x${rate})`)}`].filter(Boolean).join(" ");
         }
         // ชื่อรายการกับประเภทเงินอยู่ช่องเดียวกัน อ่านต่อกันเหมือนต้นฉบับ และตัดบรรทัดได้สวยกว่าแยกคอลัมน์
-        if (!daily) desc = [desc, (it.type || "").trim()].filter(Boolean).join(" ");
-        return { no: T(`${i + 1}.`), desc: T(desc),
+        const name = desc, type = daily ? "" : (it.type || "").trim();
+        if (!daily) desc = [desc, type].filter(Boolean).join(" ");
+        return { no: T(`${i + 1}.`), desc: T(desc), name: T(name), type: T(type),
                  label: daily ? "รวม" : "จำนวน", amount: isNaN(amt) ? "" : T(money(amt)) };
       }),
       totalLabel: daily ? "รวมเงินที่ขอเบิกครั้งนี้ทั้งสิ้น" : "รวมเป็นเงิน",
@@ -534,7 +537,7 @@ function memoHtml(d) {
   if (d.items) {
     const it = d.items;
     const table = `<table class="items${it.daily ? " daily" : ""}"><colgroup><col class="no"><col><col class="ty"><col class="jn"><col class="am"><col class="bt"></colgroup>
-      ${it.rows.map((r) => `<tr><td class="no">${r.no}</td><td colspan="2">${v(r.desc, "รายการ")}</td>
+      ${it.rows.map((r) => `<tr><td class="no">${r.no}</td><td colspan="2">${r.name || it.daily ? v(r.desc, "รายการ") : `<span class="ph">รายการ</span> ${esc(r.type)}`}</td>
         <td class="jn">${r.label}</td><td class="am">${r.amount}</td><td class="bt">บาท</td></tr>`).join("")}
       <tr class="sum"><td></td><td colspan="3" style="text-align:right">${it.totalLabel}</td><td class="am">${it.total}</td><td class="bt">บาท</td></tr>
       <tr><td></td><td colspan="5" style="text-align:right">(${it.words})</td></tr></table>`;
@@ -1142,11 +1145,15 @@ $("saveBtn").addEventListener("click", () => {
   setStatus(store.set(KEY_HIST, list.slice(0, 30)) ? "บันทึกลงประวัติแล้ว" : "เบราว์เซอร์นี้บันทึกข้อมูลไม่ได้", "ok");
   renderHistory();
 });
+// ฉบับใหม่: คงแม่แบบ เนื้อความ และประเภทเงินไว้ ล้างเฉพาะชื่อรายการ จำนวนเงิน/จำนวนวัน
 $("newBtn").addEventListener("click", async () => {
-  if (!(await askConfirm("ล้างข้อมูลในฟอร์มเพื่อเริ่มฉบับใหม่? (ข้อมูลโรงเรียนยังอยู่)", "เริ่มฉบับใหม่"))) return;
-  applyValues({ date: new Date().toISOString().slice(0, 10), agency: $("agency").value, signer: $("signer").value,
-                position: $("position").value, thaiNum: $("thaiNum").checked });
-  applyProfileToForm(activeProfile());
+  if (!(await askConfirm("เริ่มฉบับใหม่? ระบบคงเนื้อความและแม่แบบไว้ ล้างเฉพาะรายการและจำนวนเงิน", "เริ่มฉบับใหม่"))) return;
+  const v = formValues();
+  v.date = new Date().toISOString().slice(0, 10);
+  const keepType = (v.items[0] && v.items[0].type) || DEFAULT_TYPE;
+  v.items = [blankItem({ type: v.itemMode === "daily" ? "" : keepType, rate: v.itemMode === "daily" && v.items[0] ? v.items[0].rate : "" })];
+  applyValues(v);
+  setStatus("เริ่มฉบับใหม่แล้ว กรอกรายการและจำนวนเงินได้เลย", "ok");
 });
 window.addEventListener("resize", fitPreview);
 window.addEventListener("pagehide", () => { clearTimeout(saveTimer); store.set(KEY_DRAFT, formValues()); });
