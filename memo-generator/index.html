@@ -30,54 +30,74 @@
   header { padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
   header h1 { margin: 0; font-size: 20px; }
   header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
-  main { display: grid; grid-template-columns: minmax(320px, 440px) 1fr; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
+  main { display: grid; grid-template-columns: minmax(320px, 460px) 1fr; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
   .panel h2 { font-size: 16px; margin: 0 0 10px; }
   label { display: block; font-weight: 700; font-size: 14px; margin: 10px 0 4px; }
   label .req { color: var(--err); }
   input, select, textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
-  textarea { min-height: 200px; resize: vertical; line-height: 1.6; }
+  textarea { min-height: 160px; resize: vertical; line-height: 1.6; }
+  textarea.short { min-height: 64px; }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .invalid { border-color: var(--err); outline: 1px solid var(--err); }
   .hint { color: var(--muted); font-size: 12px; margin-top: 3px; }
   .check { display: flex; align-items: center; gap: 8px; font-weight: 400; }
   .check input { width: auto; }
+  .box { border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px 10px; margin-top: 6px; }
+  .item { display: grid; grid-template-columns: 1fr 1fr 110px auto; gap: 6px; margin-top: 6px; }
+  .item input { padding: 6px 8px; }
+  @media (max-width: 520px) { .item { grid-template-columns: 1fr 1fr; } }
+  .total { margin-top: 8px; font-size: 14px; }
   details { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
   summary { cursor: pointer; font-weight: 700; }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
   button { font: inherit; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 6px; padding: 8px 14px; cursor: pointer; }
   button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+  button.small { padding: 3px 8px; font-size: 12px; }
   button:disabled { opacity: .5; cursor: wait; }
   #status { font-size: 13px; color: var(--muted); }
   #status.err { color: var(--err); } #status.ok { color: var(--ok); }
-  .history { list-style: none; padding: 0; margin: 8px 0 0; }
-  .history li { display: flex; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
-  .history li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .history button { padding: 3px 8px; font-size: 12px; }
+  .list { list-style: none; padding: 0; margin: 8px 0 0; }
+  .list li { display: flex; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+  .list li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .list button { padding: 3px 8px; font-size: 12px; }
 
-  /* ---------- preview: A4 page, always paper-white ---------- */
+  /* ---------- memo page: A4, always paper-white ---------- */
   .stage { overflow: hidden; }
   .scaler { transform-origin: top left; }
   .page { width: 210mm; min-height: 297mm; background: #fff; color: #000; box-shadow: 0 2px 10px rgba(0,0,0,.25);
           padding: 15mm 20mm 20mm 30mm; }
-  #doc { width: 160mm; background: #fff; font-family: "Sarabun", serif; font-size: calc(16pt * var(--s)); line-height: 1.55; color: #000; }
-  #doc .title { position: relative; height: 15mm; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 4mm; }
-  #doc .title img { position: absolute; left: 0; bottom: 0; height: 15mm; }
-  #doc .title h3 { margin: 0; font-size: calc(29pt * var(--s)); font-weight: 700; line-height: 1; }
-  #doc .ln { display: flex; align-items: baseline; }
-  #doc .ln b { font-size: calc(20pt * var(--s)); white-space: nowrap; margin-right: .4em; }
-  #doc .ln .v { white-space: pre-wrap; }
-  #doc .ln .dots { flex: 1; border-bottom: 1.2px dotted #000; margin: 0 .3em; min-width: 1em; transform: translateY(-.25em); }
-  #doc .half { display: flex; }
-  #doc .half > div { flex: 1; min-width: 0; }
-  #doc .to { margin-top: 3mm; }
-  #doc .body p { margin: 0; text-indent: 25mm; text-align: justify; white-space: pre-wrap; }
-  #doc .body { margin-top: 3mm; }
-  #doc .sign { margin-left: 70mm; text-align: center; margin-top: 12mm; }
-  #doc .sign img { max-height: 15mm; max-width: 50mm; display: block; margin: 0 auto 1mm; }
-  #doc .sign .gap { height: 12mm; }
-  #doc .ph { color: #9ca3af; }
+  .memo { width: 160mm; background: #fff; font-family: "Sarabun", serif; font-size: calc(16pt * var(--s)); line-height: 1.55; color: #000; }
+  .memo .title { position: relative; height: 15mm; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 4mm; }
+  .memo .title img { position: absolute; left: 0; bottom: 0; height: 15mm; }
+  .memo .title h3 { margin: 0; font-size: calc(29pt * var(--s)); font-weight: 700; line-height: 1; }
+  .memo .ln { display: flex; align-items: baseline; }
+  .memo .ln b { font-size: calc(20pt * var(--s)); white-space: nowrap; margin-right: .4em; }
+  .memo .ln .v { white-space: pre-wrap; }
+  .memo .ln .dots { flex: 1; border-bottom: 1.2px dotted #000; margin: 0 .3em; min-width: 1em; transform: translateY(-.25em); }
+  .memo .half { display: flex; }
+  .memo .half > div { flex: 1; min-width: 0; }
+  .memo .to { margin-top: 3mm; }
+  .memo .body p { margin: 0; text-indent: 25mm; text-align: justify; white-space: pre-wrap; }
+  .memo .body { margin-top: 3mm; }
+  .memo table.items { width: 100%; border-collapse: collapse; margin: 1mm 0; }
+  .memo table.items td { padding: 0 1mm; vertical-align: top; }
+  .memo table.items { table-layout: fixed; }
+  .memo table.items .no { width: 10mm; text-align: right; padding-right: 2mm; }
+  .memo table.items .ty { width: 38mm; }
+  .memo table.items .jn { width: 18mm; }
+  .memo table.items .am { width: 32mm; text-align: right; white-space: nowrap; }
+  .memo table.items .bt { width: 16mm; padding-left: 2mm; }
+  .memo table.items .sum td { padding-top: 1.5mm; }
+  .memo .sign { margin-left: 70mm; text-align: center; margin-top: 10mm; }
+  .memo .sign img { max-height: 15mm; max-width: 50mm; display: block; margin: 0 auto 1mm; }
+  .memo .sign .gap { height: 12mm; }
+  .memo .sign .pos { white-space: pre-wrap; }
+  .memo .approve { margin-top: 6mm; padding-left: 25mm; }
+  .memo .approve .ck { display: inline-block; width: 1em; height: 1em; border: 1px solid #000; vertical-align: -.12em; margin-right: .5em; }
+  .memo .ph { color: #9ca3af; }
+  #batchRender { position: fixed; left: -10000px; top: 0; }
 </style>
 </head>
 <body>
@@ -93,11 +113,11 @@
 
     <label for="template">รูปแบบบันทึกข้อความ</label>
     <select id="template"></select>
-    <div class="hint">เลือกแม่แบบเพื่อเติม “เรื่อง” และ “เนื้อความ” ตัวอย่าง แล้วแก้ไขต่อได้</div>
+    <div class="hint">เลือกแม่แบบเพื่อเติม “เรื่อง” “เนื้อความ” และส่วนเสริมที่เกี่ยวข้อง แล้วแก้ไขต่อได้</div>
 
     <form id="form" novalidate>
       <label for="agency">ส่วนราชการ <span class="req">*</span></label>
-      <input id="agency" name="agency" placeholder="เช่น งานวิชาการ โรงเรียนตัวอย่างวิทยา โทร. ๐ ๔๓๐๐ ๐๐๐๐">
+      <input id="agency" name="agency" placeholder="เช่น โรงเรียนตัวอย่างวิทยา สำนักงานเขตพื้นที่การศึกษา...">
 
       <div class="row">
         <div>
@@ -120,6 +140,15 @@
       <textarea id="body" name="body"></textarea>
       <div class="hint">ขึ้นบรรทัดใหม่ = ย่อหน้าใหม่ ระบบย่อหน้า ๒.๕ ซม. ให้เอง</div>
 
+      <!-- ---- รายการเงิน ---- -->
+      <label class="check"><input type="checkbox" id="useItems"> มีรายการจำนวนเงิน (รวมยอดและเขียนเป็นตัวอักษรให้อัตโนมัติ)</label>
+      <div class="box" id="itemsBox" hidden>
+        <div id="items"></div>
+        <button type="button" class="small" id="addItem" style="margin-top:8px">+ เพิ่มรายการ</button>
+        <div class="total" id="totalView"></div>
+        <div class="hint">ตารางรายการจะแทรกไว้ก่อนย่อหน้าสุดท้ายของเนื้อความ (เช่น ก่อน “จึงเรียนมาเพื่อ...”)</div>
+      </div>
+
       <div class="row">
         <div>
           <label for="signer">ผู้ลงนาม <span class="req">*</span></label>
@@ -127,13 +156,24 @@
         </div>
         <div>
           <label for="position">ตำแหน่ง <span class="req">*</span></label>
-          <input id="position" name="position" placeholder="ครู วิทยฐานะครูชำนาญการ">
+          <input id="position" name="position" placeholder="ครู / เจ้าหน้าที่การเงิน">
         </div>
+      </div>
+      <label class="check"><input type="checkbox" id="signDate"> มีคำว่า “ลงชื่อ” และวันที่ใต้ลายมือชื่อ</label>
+
+      <!-- ---- ส่วนอนุมัติ ---- -->
+      <label class="check"><input type="checkbox" id="useApproval"> มีช่อง ☐ อนุมัติ ☐ ไม่อนุมัติ ให้ผู้บังคับบัญชาลงนามท้ายบันทึก</label>
+      <div class="box" id="approvalBox" hidden>
+        <label for="approverName">ชื่อผู้อนุมัติ <span class="req">*</span></label>
+        <input id="approverName" placeholder="นางตัวอย่าง ใจดี">
+        <label for="approverPos">ตำแหน่งผู้อนุมัติ <span class="req">*</span></label>
+        <textarea id="approverPos" class="short" placeholder="ผู้อำนวยการโรงเรียนตัวอย่างวิทยา"></textarea>
+        <div class="hint">พิมพ์หลายบรรทัดได้ เช่น “...รักษาการในตำแหน่ง” แล้วขึ้นบรรทัดใหม่</div>
       </div>
 
       <details>
         <summary>ตัวเลือกเพิ่มเติม</summary>
-        <label class="check"><input type="checkbox" id="thaiNum" checked> ใช้เลขไทย (๑ ๒ ๓)</label>
+        <label class="check"><input type="checkbox" id="thaiNum" checked> ใช้เลขไทยทั้งฉบับ (๑ ๒ ๓)</label>
         <label for="logo">โลโก้ / ตราครุฑ (สูง ๑.๕ ซม.)</label>
         <input id="logo" type="file" accept="image/png,image/jpeg">
         <label for="sig">ลายเซ็นอิเล็กทรอนิกส์ (รูปภาพ)</label>
@@ -150,9 +190,20 @@
     </form>
 
     <details open>
+      <summary>ชุดเอกสาร (รวมหลายฉบับเป็นไฟล์เดียว)</summary>
+      <div class="hint">เช่น ขอเบิกเงินหลายโรงเรียน หรือหลายวันที่ แก้ฟอร์มแล้วกด “เพิ่มเข้าชุด” ทีละฉบับ แต่ละฉบับขึ้นหน้าใหม่</div>
+      <div class="actions" style="margin-top:8px">
+        <button type="button" id="addBatch">+ เพิ่มฉบับนี้เข้าชุด</button>
+        <button type="button" id="batchDocx">📝 Word ทั้งชุด</button>
+        <button type="button" id="batchPdf">📄 PDF ทั้งชุด</button>
+      </div>
+      <ul class="list" id="batch"></ul>
+    </details>
+
+    <details>
       <summary>ประวัติเอกสาร (เก็บในเบราว์เซอร์นี้)</summary>
       <div class="actions" style="margin-top:8px"><button type="button" id="saveBtn">บันทึกฉบับนี้</button><button type="button" id="newBtn">เริ่มฉบับใหม่</button></div>
-      <ul class="history" id="history"></ul>
+      <ul class="list" id="history"></ul>
     </details>
   </section>
 
@@ -166,11 +217,12 @@
     </div>
     <div class="stage" id="stage">
       <div class="scaler" id="scaler">
-        <div class="page"><div id="doc"></div></div>
+        <div class="page"><div id="doc" class="memo"></div></div>
       </div>
     </div>
   </section>
 </main>
+<div id="batchRender" aria-hidden="true"></div>
 
 <script>
 /* =========================================================
@@ -179,9 +231,15 @@
 const TEMPLATES = [
   { name: "บันทึกข้อความทั่วไป", subject: "", body: "ด้วย\nในการนี้\nจึงเรียนมาเพื่อโปรดทราบ" },
   { name: "ขออนุญาตไปราชการ", subject: "ขออนุญาตไปราชการ",
-    body: "ด้วยข้าพเจ้า ได้รับหนังสือเชิญจาก ให้เข้าร่วม ในวันที่ ณ\nในการนี้ ข้าพเจ้าจึงขออนุญาตไปราชการดังกล่าว โดยขอเบิกค่าใช้จ่ายจาก\nจึงเรียนมาเพื่อโปรดพิจารณาอนุญาต" },
+    body: "ด้วยข้าพเจ้า ได้รับหนังสือเชิญจาก ให้เข้าร่วม ในวันที่ ณ\nในการนี้ ข้าพเจ้าจึงขออนุญาตไปราชการดังกล่าว โดยขอเบิกค่าใช้จ่ายจาก\nจึงเรียนมาเพื่อโปรดพิจารณาอนุญาต",
+    useApproval: true },
   { name: "ขออนุมัติจัดซื้อ/จัดจ้าง", subject: "ขออนุมัติจัดซื้อวัสดุ",
-    body: "ด้วยงาน มีความประสงค์จะจัดซื้อ เพื่อใช้ใน จำนวน รายการ เป็นเงินทั้งสิ้น บาท ( ) รายละเอียดตามเอกสารแนบ\nจึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ" },
+    body: "ด้วยงาน มีความประสงค์จะจัดซื้อ เพื่อใช้ใน รายละเอียดดังนี้\nจึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ",
+    useItems: true, items: [{ desc: "", type: "", amount: "" }], useApproval: true },
+  { name: "ขอเบิกถอนเงิน", subject: "ขอเบิกถอนเงิน",
+    body: "ด้วยเจ้าหน้าที่การเงินโรงเรียน มีความประสงค์ขอเบิกเงินอุดหนุนจากบัญชีธนาคาร ชื่อบัญชี เลขที่บัญชี เพื่อจ่ายเงินตามรายละเอียด ดังนี้\nจึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ",
+    useItems: true, items: [{ desc: "", type: "ประเภทเงินอุดหนุนรายหัว", amount: "" }],
+    signDate: true, position: "เจ้าหน้าที่การเงิน", useApproval: true },
   { name: "รายงานผลการดำเนินงาน", subject: "รายงานผลการดำเนินงาน",
     body: "ตามที่ ได้มอบหมายให้ข้าพเจ้าดำเนินการ เมื่อวันที่ นั้น\nบัดนี้ การดำเนินการดังกล่าวได้เสร็จสิ้นแล้ว ผลการดำเนินงานปรากฏดังนี้\nจึงเรียนมาเพื่อโปรดทราบ" },
   { name: "ขอความอนุเคราะห์", subject: "ขอความอนุเคราะห์",
@@ -189,12 +247,15 @@ const TEMPLATES = [
 ];
 
 const FIELDS = ["agency", "ref", "date", "subject", "to", "body", "signer", "position"];
-const LABELS = { agency: "ส่วนราชการ", ref: "ที่", date: "วันที่", subject: "เรื่อง", to: "เรียน", body: "เนื้อความ", signer: "ผู้ลงนาม", position: "ตำแหน่ง" };
+const EXTRA = ["approverName", "approverPos"];
+const FLAGS = ["useItems", "signDate", "useApproval", "thaiNum"];
+const LABELS = { agency: "ส่วนราชการ", ref: "ที่", date: "วันที่", subject: "เรื่อง", to: "เรียน", body: "เนื้อความ",
+  signer: "ผู้ลงนาม", position: "ตำแหน่ง", approverName: "ชื่อผู้อนุมัติ", approverPos: "ตำแหน่งผู้อนุมัติ", items: "รายการเงิน" };
 const $ = (id) => document.getElementById(id);
-const state = { logo: null, sig: null };
+const state = { logo: null, sig: null, items: [], batch: [] };
 
 /* =========================================================
-   2) HELPERS — วันที่ไทย, เลขไทย, escape
+   2) HELPERS — วันที่ไทย, เลขไทย, จำนวนเงิน, บาทเป็นตัวอักษร
    ========================================================= */
 const MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
 function thaiDate(iso) {
@@ -203,52 +264,147 @@ function thaiDate(iso) {
   return `${d} ${MONTHS[m - 1]} ${y + 543}`;
 }
 const toThaiDigits = (s) => s.replace(/[0-9]/g, (c) => "๐๑๒๓๔๕๖๗๘๙"[c]);
+const fromThaiDigits = (s) => String(s).replace(/[๐-๙]/g, (c) => "๐๑๒๓๔๕๖๗๘๙".indexOf(c));
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+/** "๒๐,000.50" หรือ "20000.5" → 20000.5 (NaN ถ้าไม่ใช่ตัวเลข) */
+const parseAmount = (s) => { const t = fromThaiDigits(s).replace(/[,\s]/g, ""); return t === "" ? NaN : Number(t); };
+const money = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** อ่านค่าจากฟอร์ม แล้วจัดรูปแบบพร้อมใช้ (ใช้ร่วมกันทั้ง Preview / PDF / Word) */
-function getData() {
-  const raw = Object.fromEntries(FIELDS.map((f) => [f, $(f).value.trim()]));
-  const out = { ...raw, date: thaiDate(raw.date) };
-  if ($("thaiNum").checked) for (const k in out) out[k] = toThaiDigits(out[k]);
-  out.paragraphs = out.body.split(/\n+/).map((p) => p.trim()).filter(Boolean);
-  return { raw, doc: out };
+/** แปลงจำนวนเงินเป็นคำอ่านภาษาไทย แบบ BAHTTEXT เช่น 23000 → "สองหมื่นสามพันบาทถ้วน" */
+function bahtText(n) {
+  const DIG = ["", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"];
+  const UNIT = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน"];
+  const group = (s, higher = false) => { // อ่านกลุ่มไม่เกิน 6 หลัก (higher = มีหลักล้านนำหน้า)
+    let out = "";
+    const len = s.length;
+    for (let i = 0; i < len; i++) {
+      const d = +s[i], pos = len - 1 - i;
+      if (!d) continue;
+      if (pos === 0 && d === 1 && (higher || /[1-9]/.test(s.slice(0, -1)))) out += "เอ็ด";
+      else if (pos === 1 && d === 2) out += "ยี่";
+      else if (!(pos === 1 && d === 1)) out += DIG[d];
+      out += UNIT[pos];
+    }
+    return out;
+  };
+  const read = (s) => {
+    s = s.replace(/^0+/, "");
+    if (!s) return "";
+    return s.length > 6 ? read(s.slice(0, -6)) + "ล้าน" + group(s.slice(-6), true) : group(s);
+  };
+  const cents = Math.round(Math.abs(n) * 100);
+  const baht = Math.floor(cents / 100), sat = cents % 100;
+  if (!baht && !sat) return "ศูนย์บาทถ้วน";
+  return (baht ? read(String(baht)) + "บาท" : "") + (sat ? group(String(sat)) + "สตางค์" : "ถ้วน");
+}
+
+/** อ่านฟอร์มเป็นค่าดิบ (ใช้เก็บประวัติ/ชุดเอกสาร) */
+function formValues() {
+  const v = Object.fromEntries([...FIELDS, ...EXTRA, "docxFont"].map((f) => [f, $(f).value]));
+  FLAGS.forEach((f) => { v[f] = $(f).checked; });
+  v.items = state.items.map((it) => ({ ...it }));
+  return v;
+}
+
+/** แปลงค่าดิบเป็นข้อมูลพร้อมจัดหน้า — ใช้ร่วมกันทั้ง Preview / PDF / Word */
+function prepare(raw) {
+  const T = (s) => (raw.thaiNum ? toThaiDigits(s) : s);
+  const d = {};
+  for (const f of [...FIELDS, ...EXTRA]) d[f] = T((raw[f] || "").trim());
+  d.date = T(thaiDate(raw.date));
+  d.paragraphs = d.body.split(/\n+/).map((p) => p.trim()).filter(Boolean);
+  d.approverLines = d.approverPos.split(/\n+/).map((p) => p.trim()).filter(Boolean);
+  d.signDate = raw.signDate; d.useApproval = raw.useApproval;
+  d.items = null;
+  if (raw.useItems) {
+    const rows = (raw.items || []).filter((it) => it.desc.trim() || it.type.trim() || it.amount.trim());
+    const total = rows.reduce((s, it) => s + (parseAmount(it.amount) || 0), 0);
+    d.items = {
+      rows: rows.map((it, i) => ({ no: T(`${i + 1}.`), desc: T(it.desc.trim()), type: T(it.type.trim()),
+                                   amount: isNaN(parseAmount(it.amount)) ? "" : T(money(parseAmount(it.amount))) })),
+      total: T(money(total)), words: bahtText(total),
+    };
+  }
+  return d;
 }
 
 /* =========================================================
    3) VALIDATION — ตรวจความครบถ้วน
    ========================================================= */
+function missingOf(raw) {
+  const miss = FIELDS.filter((f) => !(raw[f] || "").trim());
+  if (raw.useApproval) EXTRA.forEach((f) => { if (!(raw[f] || "").trim()) miss.push(f); });
+  if (raw.useItems) {
+    const rows = raw.items.filter((it) => it.desc.trim() || it.amount.trim());
+    if (!rows.length || rows.some((it) => !it.desc.trim() || isNaN(parseAmount(it.amount)))) miss.push("items");
+  }
+  return miss;
+}
 function validate(showMarks) {
-  const { raw } = getData();
-  const missing = FIELDS.filter((f) => !raw[f]);
-  FIELDS.forEach((f) => $(f).classList.toggle("invalid", showMarks && missing.includes(f)));
-  return missing;
+  const miss = missingOf(formValues());
+  [...FIELDS, ...EXTRA].forEach((f) => $(f).classList.toggle("invalid", showMarks && miss.includes(f)));
+  document.querySelectorAll("#items input").forEach((el) => {
+    const bad = showMarks && miss.includes("items") && (el.dataset.k === "desc" ? !el.value.trim() : el.dataset.k === "amount" && isNaN(parseAmount(el.value)));
+    el.classList.toggle("invalid", bad);
+  });
+  return miss;
 }
 
 /* =========================================================
-   4) RENDER PREVIEW — จัดรูปแบบตามแม่แบบราชการ
+   4) RENDER — HTML ของบันทึก 1 ฉบับ (ใช้ทั้ง Preview และ PDF)
    ========================================================= */
-function render() {
-  const { doc } = getData();
-  const v = (s, ph) => s ? esc(s) : `<span class="ph">${ph}</span>`;
-  $("doc").innerHTML = `
+function memoHtml(d) {
+  const v = (s, ph = "") => s ? esc(s) : `<span class="ph">${ph}</span>`;
+  const paras = d.paragraphs.map((p) => `<p>${esc(p)}</p>`);
+  if (d.items) {
+    const it = d.items;
+    const table = `<table class="items"><colgroup><col class="no"><col><col class="ty"><col class="jn"><col class="am"><col class="bt"></colgroup>
+      ${it.rows.map((r) => `<tr><td class="no">${r.no}</td><td>${v(r.desc, "รายการ")}</td><td class="ty">${esc(r.type)}</td>
+        <td class="jn">จำนวน</td><td class="am">${r.amount}</td><td class="bt">บาท</td></tr>`).join("")}
+      <tr class="sum"><td></td><td colspan="3" style="text-align:right">รวมเป็นเงิน</td><td class="am">${it.total}</td><td class="bt">บาท</td></tr>
+      <tr><td></td><td colspan="5" style="text-align:right">(${it.words})</td></tr></table>`;
+    paras.splice(Math.max(paras.length - 1, 0), 0, table);
+  }
+  const signLine = d.signDate ? `<div>ลงชื่อ ...........................................</div>` : "";
+  return `
     <div class="title">${state.logo ? `<img src="${state.logo.url}" alt="">` : ""}<h3>บันทึกข้อความ</h3></div>
-    <div class="ln"><b>ส่วนราชการ</b><span class="v">${v(doc.agency, "")}</span><span class="dots"></span></div>
+    <div class="ln"><b>ส่วนราชการ</b><span class="v">${v(d.agency)}</span><span class="dots"></span></div>
     <div class="half">
-      <div class="ln"><b>ที่</b><span class="v">${v(doc.ref, "")}</span><span class="dots"></span></div>
-      <div class="ln"><b>วันที่</b><span class="v">${v(doc.date, "")}</span><span class="dots"></span></div>
+      <div class="ln"><b>ที่</b><span class="v">${v(d.ref)}</span><span class="dots"></span></div>
+      <div class="ln"><b>วันที่</b><span class="v">${v(d.date)}</span><span class="dots"></span></div>
     </div>
-    <div class="ln"><b>เรื่อง</b><span class="v">${v(doc.subject, "")}</span></div>
-    <div class="to">เรียน&nbsp;&nbsp;${v(doc.to, "...")}</div>
-    <div class="body">${doc.paragraphs.length ? doc.paragraphs.map((p) => `<p>${esc(p)}</p>`).join("") : `<p class="ph">เนื้อความ...</p>`}</div>
+    <div class="ln"><b>เรื่อง</b><span class="v">${v(d.subject)}</span></div>
+    <div class="to">เรียน&nbsp;&nbsp;${v(d.to, "...")}</div>
+    <div class="body">${paras.length ? paras.join("") : `<p class="ph">เนื้อความ...</p>`}</div>
     <div class="sign">
-      ${state.sig ? `<img src="${state.sig.url}" alt="">` : `<div class="gap"></div>`}
-      <div>(${v(doc.signer, "ชื่อผู้ลงนาม")})</div>
-      <div>${v(doc.position, "ตำแหน่ง")}</div>
-    </div>`;
+      ${state.sig ? `<img src="${state.sig.url}" alt="">` : `<div class="gap"></div>${signLine}`}
+      <div>(${v(d.signer, "ชื่อผู้ลงนาม")})</div>
+      <div class="pos">${v(d.position, "ตำแหน่ง")}</div>
+      ${d.signDate ? `<div>วันที่ ${v(d.date)}</div>` : ""}
+    </div>
+    ${d.useApproval ? `
+    <div class="approve">
+      <div><span class="ck"></span>อนุมัติ</div>
+      <div><span class="ck"></span>ไม่อนุมัติ เนื่องจาก ....................................................................</div>
+    </div>
+    <div class="sign" style="margin-top:6mm">
+      <div class="gap"></div><div>ลงชื่อ ...........................................</div>
+      <div>(${v(d.approverName, "ชื่อผู้อนุมัติ")})</div>
+      ${d.approverLines.length ? d.approverLines.map((l, i) => `<div>${i ? "" : "ตำแหน่ง "}${esc(l)}</div>`).join("") : `<div class="ph">ตำแหน่งผู้อนุมัติ</div>`}
+      <div>วันที่ ${v(d.date)}</div>
+    </div>` : ""}`;
+}
+
+function render() {
+  const raw = formValues();
+  $("doc").innerHTML = memoHtml(prepare(raw));
+  if (raw.useItems) {
+    const d = prepare(raw).items;
+    $("totalView").textContent = `รวม ${d.total} บาท (${d.words})`;
+  }
   fitPreview();
   autosave();
 }
-
 function fitPreview() {
   const stage = $("stage"), scaler = $("scaler"), page = scaler.firstElementChild;
   const scale = Math.min(1, stage.clientWidth / page.offsetWidth);
@@ -259,55 +415,98 @@ function fitPreview() {
 /* =========================================================
    5) EXPORT PDF — html2pdf (เรนเดอร์ด้วยเบราว์เซอร์ ฟอนต์ไทยถูกต้อง)
    ========================================================= */
-async function exportPdf() {
-  if (!checkBeforeExport()) return;
-  busy(true, "กำลังสร้าง PDF...");
-  try {
-    await document.fonts.ready;
-    await html2pdf().set({
-      margin: [15, 20, 20, 30],                // mm: บน ขวา ล่าง ซ้าย
-      filename: fileName("pdf"),
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 3, backgroundColor: "#ffffff" },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      pagebreak: { mode: ["avoid-all", "css"] },
-    }).from($("doc")).save();
-    setStatus("ดาวน์โหลด PDF แล้ว", "ok");
-  } catch (e) { setStatus("สร้าง PDF ไม่สำเร็จ: " + e.message, "err"); }
-  busy(false);
+async function savePdf(el, name) {
+  await document.fonts.ready;
+  await html2pdf().set({
+    margin: [15, 20, 20, 30],                // mm: บน ขวา ล่าง ซ้าย
+    filename: name,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 3, backgroundColor: "#ffffff", scrollX: 0, scrollY: 0 },   // scroll offsets would shift the page down
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["css"], before: ".newpage", avoid: ["p", "tr", ".title", ".ln", ".half", ".to", ".sign", ".approve"] },
+  }).from(el).save();
+}
+
+/** html2canvas does not know where Thai words end, so a wrapped Thai line is drawn on top of the
+ *  previous one. Insert zero-width spaces between words (Intl.Segmenter) before rendering to PDF. */
+function addThaiBreaks(root) {
+  if (!(window.Intl && Intl.Segmenter)) return;
+  const seg = new Intl.Segmenter("th", { granularity: "word" });
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const n of nodes) {
+    if (/[\u0E00-\u0E7F]/.test(n.data)) n.data = Array.from(seg.segment(n.data), (x) => x.segment).join("\u200B");
+  }
 }
 
 /* =========================================================
    6) EXPORT WORD — docx.js (สร้าง .docx จริง แก้ไขต่อใน Word ได้)
    ========================================================= */
-async function exportDocx() {
-  if (!checkBeforeExport()) return;
-  busy(true, "กำลังสร้างไฟล์ Word...");
-  try {
-    const blob = await docx.Packer.toBlob(buildDocx(getData().doc));
-    download(blob, fileName("docx"));
-    setStatus("ดาวน์โหลด Word แล้ว", "ok");
-  } catch (e) { setStatus("สร้างไฟล์ Word ไม่สำเร็จ: " + e.message, "err"); }
-  busy(false);
-}
-
-function buildDocx(d) {
-  const { Document, Paragraph, TextRun, ImageRun, AlignmentType, TabStopType, LeaderType, convertMillimetersToTwip: mm } = docx;
+function memoDocxChildren(d) {
+  const { Paragraph, TextRun, ImageRun, AlignmentType, TabStopType, LeaderType, Table, TableRow, TableCell,
+          TableBorders, TableLayoutType, WidthType, convertMillimetersToTwip: mm } = docx;
   const F = $("docxFont").value;
-  const run = (text, pt = 16, bold = false) => new TextRun({
+  const run = (text, pt = 16, bold = false, font = F) => new TextRun({
     text, bold, boldComplexScript: bold, size: pt * 2, sizeComplexScript: pt * 2,
-    font: { ascii: F, hAnsi: F, cs: F, eastAsia: F },
+    font: { ascii: font, hAnsi: font, cs: font, eastAsia: font },
     language: { value: "th-TH", bidirectional: "th-TH" },
   });
-  const tab = () => new TextRun({ text: "\t", size: 32, sizeComplexScript: 32, font: { ascii: F, hAnsi: F, cs: F } });
+  const tab = () => run("\t");
   const W = mm(160), HALF = mm(80);
   const dotsTo = (pos, type = TabStopType.RIGHT) => ({ type, position: pos, leader: LeaderType.DOT });
   const img = (asset, hMm) => {
     const h = Math.round(hMm / 25.4 * 96);
     return new ImageRun({ data: asset.bytes, transformation: { width: Math.round(h * asset.w / asset.h), height: h } });
   };
+  const signPara = (text) => new Paragraph({ alignment: AlignmentType.CENTER, indent: { left: mm(70) }, children: [run(text)] });
+  const blank = () => new Paragraph({ children: [run("")] });
 
-  const children = [
+  const bodyParas = d.paragraphs.map((p, i) => new Paragraph({
+    alignment: AlignmentType.THAI_DISTRIBUTE,
+    indent: { firstLine: mm(25) },
+    spacing: { before: i === 0 ? 120 : 0 },
+    children: [run(p)],
+  }));
+
+  if (d.items) {
+    const cols = [10, 46, 38, 18, 32, 16].map(mm);      // รวม 160 มม. (เผื่อความกว้างของ TH SarabunPSK)
+    const cell = (text, w, align = AlignmentType.LEFT, span = 1) => new TableCell({
+      width: { size: w, type: WidthType.DXA }, columnSpan: span, margins: { left: mm(1), right: mm(1) },
+      children: [new Paragraph({ alignment: align, children: [run(text)] })],
+    });
+    const R = AlignmentType.RIGHT;
+    const rows = d.items.rows.map((r) => new TableRow({ children: [
+      cell(r.no, cols[0], R), cell(r.desc, cols[1]), cell(r.type, cols[2]),
+      cell("จำนวน", cols[3]), cell(r.amount, cols[4], R), cell("บาท", cols[5]),
+    ] }));
+    rows.push(new TableRow({ children: [cell("", cols[0]), cell("รวมเป็นเงิน", cols[1] + cols[2] + cols[3], R, 3), cell(d.items.total, cols[4], R), cell("บาท", cols[5])] }));
+    rows.push(new TableRow({ children: [cell("", cols[0]), cell(`(${d.items.words})`, W - cols[0], R, 5)] }));
+    const table = new Table({ rows, columnWidths: cols, width: { size: W, type: WidthType.DXA }, borders: TableBorders.NONE, layout: TableLayoutType.FIXED });
+    bodyParas.splice(Math.max(bodyParas.length - 1, 0), 0, table);
+  }
+
+  const signName = [
+    ...(state.sig
+      ? [new Paragraph({ alignment: AlignmentType.CENTER, indent: { left: mm(70) }, children: [img(state.sig, 15)] })]
+      : [blank(), ...(d.signDate ? [signPara("ลงชื่อ ...........................................")] : [blank()])]),
+    signPara(`(${d.signer})`),
+    ...d.position.split(/\n+/).map(signPara),
+    ...(d.signDate ? [signPara(`วันที่ ${d.date}`)] : []),
+  ];
+
+  const approval = !d.useApproval ? [] : [
+    blank(),
+    new Paragraph({ indent: { left: mm(25) }, children: [run("☐", 16, false, "Segoe UI Symbol"), run("  อนุมัติ")] }),
+    new Paragraph({ indent: { left: mm(25) }, tabStops: [dotsTo(W)],
+      children: [run("☐", 16, false, "Segoe UI Symbol"), run("  ไม่อนุมัติ เนื่องจาก "), tab()] }),
+    blank(), blank(),
+    signPara("ลงชื่อ ..........................................."),
+    signPara(`(${d.approverName})`),
+    ...d.approverLines.map((l, i) => signPara((i ? "" : "ตำแหน่ง ") + l)),
+    signPara(`วันที่ ${d.date}`),
+  ];
+
+  return [
     new Paragraph({
       tabStops: [{ type: TabStopType.CENTER, position: HALF }],
       spacing: { after: 120 },
@@ -320,46 +519,73 @@ function buildDocx(d) {
     }),
     new Paragraph({ children: [run("เรื่อง", 20, true), run("  " + d.subject)] }),
     new Paragraph({ spacing: { before: 120 }, children: [run("เรียน  " + d.to)] }),
-    ...d.paragraphs.map((p, i) => new Paragraph({
-      alignment: AlignmentType.THAI_DISTRIBUTE,
-      indent: { firstLine: mm(25) },
-      spacing: { before: i === 0 ? 120 : 0 },
-      children: [run(p)],
-    })),
-    new Paragraph({ children: [run("")] }),
-    ...(state.sig
-      ? [new Paragraph({ alignment: AlignmentType.CENTER, indent: { left: mm(70) }, children: [img(state.sig, 15)] })]
-      : [new Paragraph({ children: [run("")] }), new Paragraph({ children: [run("")] })]),
-    new Paragraph({ alignment: AlignmentType.CENTER, indent: { left: mm(70) }, children: [run(`(${d.signer})`)] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, indent: { left: mm(70) }, children: [run(d.position)] }),
+    ...bodyParas,
+    blank(),
+    ...signName,
+    ...approval,
   ];
+}
 
+function buildDocx(memos) {
+  const { Document, convertMillimetersToTwip: mm } = docx;
+  const F = $("docxFont").value;
   return new Document({
     creator: "ระบบสร้างบันทึกข้อความ",
-    title: d.subject,
+    title: memos[0].subject,
     styles: { default: { document: { run: { font: F, size: 32 } } } },
-    sections: [{
+    // หนึ่ง section ต่อหนึ่งฉบับ → แต่ละฉบับขึ้นหน้าใหม่เสมอ
+    sections: memos.map((d) => ({
       properties: { page: { size: { width: mm(210), height: mm(297) },
                             margin: { top: mm(15), right: mm(20), bottom: mm(20), left: mm(30) } } },
-      children,
-    }],
+      children: memoDocxChildren(d),
+    })),
   });
 }
 
+async function exportOne(kind) {
+  const miss = validate(true);
+  if (miss.length) return reportMissing(miss);
+  busy(true, kind === "pdf" ? "กำลังสร้าง PDF..." : "กำลังสร้างไฟล์ Word...");
+  try {
+    if (kind === "pdf") { addThaiBreaks($("doc")); try { await savePdf($("doc"), fileName("pdf")); } finally { render(); } }
+    else download(await docx.Packer.toBlob(buildDocx([prepare(formValues())])), fileName("docx"));
+    setStatus("ดาวน์โหลดแล้ว", "ok");
+  } catch (e) { setStatus("สร้างไฟล์ไม่สำเร็จ: " + e.message, "err"); }
+  busy(false);
+}
+
+async function exportBatch(kind) {
+  if (!state.batch.length) return setStatus("ยังไม่มีเอกสารในชุด กด “เพิ่มฉบับนี้เข้าชุด” ก่อน", "err");
+  busy(true, `กำลังสร้างไฟล์ ${state.batch.length} ฉบับ...`);
+  const memos = state.batch.map(prepare), name = `memo_set_${state.batch.length}.${kind}`;
+  try {
+    if (kind === "pdf") {
+      const host = $("batchRender");
+      host.innerHTML = `<div>${memos.map((d, i) => `<div class="memo ${i ? "newpage" : ""}">${memoHtml(d)}</div>`).join("")}</div>`;
+      addThaiBreaks(host.firstElementChild);
+      await savePdf(host.firstElementChild, name);
+      host.innerHTML = "";
+    } else {
+      download(await docx.Packer.toBlob(buildDocx(memos)), name);
+    }
+    setStatus(`ดาวน์โหลดชุดเอกสาร ${memos.length} ฉบับแล้ว`, "ok");
+  } catch (e) { setStatus("สร้างไฟล์ไม่สำเร็จ: " + e.message, "err"); }
+  busy(false);
+}
+
 /* =========================================================
-   7) UI glue — สถานะ, ไฟล์, รูปภาพ, ประวัติ
+   7) UI glue — สถานะ, ไฟล์, รูปภาพ, รายการเงิน, ชุดเอกสาร, ประวัติ
    ========================================================= */
-function checkBeforeExport() {
-  const missing = validate(true);
-  if (missing.length) {
-    setStatus("กรุณากรอกให้ครบ: " + missing.map((f) => LABELS[f]).join(", "), "err");
-    $(missing[0]).focus();
-    return false;
-  }
-  return true;
+function reportMissing(miss) {
+  setStatus("กรุณากรอกให้ครบ: " + miss.map((f) => LABELS[f]).join(", "), "err");
+  const first = miss[0] === "items" ? document.querySelector("#items .invalid") : $(miss[0]);
+  first && first.focus();
 }
 function setStatus(msg, cls = "") { const s = $("status"); s.textContent = msg; s.className = cls; }
-function busy(on, msg) { $("pdfBtn").disabled = $("docxBtn").disabled = on; if (on) setStatus(msg); }
+function busy(on, msg) {
+  ["pdfBtn", "docxBtn", "batchPdf", "batchDocx"].forEach((id) => { $(id).disabled = on; });
+  if (on) setStatus(msg);
+}
 // ASCII file name: some browsers drop non-Latin download names and save a bare "download" file
 function fileName(ext) {
   const d = $("date").value.replace(/-/g, "") || new Date().toISOString().slice(0, 10).replace(/-/g, "");
@@ -387,42 +613,93 @@ function loadImage(file) {
   });
 }
 
+// ---- items editor
+function renderItems() {
+  const box = $("items");
+  box.innerHTML = "";
+  state.items.forEach((it, i) => {
+    const row = document.createElement("div");
+    row.className = "item";
+    for (const [k, ph] of [["desc", `${i + 1}. รายการ`], ["type", "ประเภทเงิน (ถ้ามี)"], ["amount", "จำนวนเงิน"]]) {
+      const inp = Object.assign(document.createElement("input"), { value: it[k], placeholder: ph });
+      inp.dataset.k = k;
+      if (k === "amount") inp.inputMode = "decimal";
+      inp.addEventListener("input", () => { it[k] = inp.value; render(); if (document.querySelector(".invalid")) validate(true); });
+      row.append(inp);
+    }
+    const del = Object.assign(document.createElement("button"), { type: "button", className: "small", textContent: "ลบ", title: "ลบรายการ" });
+    del.onclick = () => { state.items.splice(i, 1); renderItems(); render(); };
+    row.append(del);
+    box.append(row);
+  });
+}
+function syncBoxes() {
+  $("itemsBox").hidden = !$("useItems").checked;
+  $("approvalBox").hidden = !$("useApproval").checked;
+}
+
 // ---- storage (per-browser convenience only; wrapped so the app works without it)
-const KEY_DRAFT = "memo.draft.v1", KEY_HIST = "memo.history.v1";
+const KEY_DRAFT = "memo.draft.v2", KEY_HIST = "memo.history.v1", KEY_BATCH = "memo.batch.v1";
 const store = {
   get(k, def) { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
 };
-const formValues = () => ({ ...Object.fromEntries(FIELDS.map((f) => [f, $(f).value])), thaiNum: $("thaiNum").checked, docxFont: $("docxFont").value });
 function applyValues(v) {
-  FIELDS.forEach((f) => { $(f).value = v[f] ?? ""; });
-  if ("thaiNum" in v) $("thaiNum").checked = v.thaiNum;
+  [...FIELDS, ...EXTRA].forEach((f) => { $(f).value = v[f] ?? ""; });
+  FLAGS.forEach((f) => { if (f in v) $(f).checked = !!v[f]; });
   if (v.docxFont) $("docxFont").value = v.docxFont;
-  render();
+  state.items = (v.items || []).map((it) => ({ desc: it.desc || "", type: it.type || "", amount: it.amount || "" }));
+  if ($("useItems").checked && !state.items.length) state.items.push({ desc: "", type: "", amount: "" });
+  syncBoxes(); renderItems(); render();
 }
 let saveTimer;
 function autosave() { clearTimeout(saveTimer); saveTimer = setTimeout(() => store.set(KEY_DRAFT, formValues()), 400); }
-function renderHistory() {
-  const list = store.get(KEY_HIST, []), ul = $("history");
-  ul.innerHTML = list.length ? "" : `<li><span class="hint">ยังไม่มีเอกสารที่บันทึกไว้</span></li>`;
+
+function renderList(ul, list, emptyText, label, onOpen, onDelete) {
+  ul.innerHTML = list.length ? "" : `<li><span class="hint">${emptyText}</span></li>`;
   list.forEach((h, i) => {
     const li = document.createElement("li");
-    li.innerHTML = `<span title="${esc(h.values.subject || "")}">${esc(h.values.subject || "(ไม่มีเรื่อง)")} · ${esc(h.saved)}</span>`;
-    const open = Object.assign(document.createElement("button"), { textContent: "เปิด", onclick: () => applyValues(h.values) });
-    const del = Object.assign(document.createElement("button"), { textContent: "ลบ", onclick: () => { list.splice(i, 1); store.set(KEY_HIST, list); renderHistory(); } });
-    li.append(open, del); ul.append(li);
+    const span = document.createElement("span");
+    span.textContent = label(h, i); span.title = span.textContent;
+    const open = Object.assign(document.createElement("button"), { type: "button", textContent: "เปิด", onclick: () => onOpen(h, i) });
+    const del = Object.assign(document.createElement("button"), { type: "button", textContent: "ลบ", onclick: () => onDelete(i) });
+    li.append(span, open, del); ul.append(li);
   });
+}
+function renderHistory() {
+  const list = store.get(KEY_HIST, []);
+  renderList($("history"), list, "ยังไม่มีเอกสารที่บันทึกไว้", (h) => `${h.values.subject || "(ไม่มีเรื่อง)"} · ${h.saved}`,
+    (h) => applyValues(h.values), (i) => { list.splice(i, 1); store.set(KEY_HIST, list); renderHistory(); });
+}
+function renderBatch() {
+  renderList($("batch"), state.batch, "ยังไม่มีเอกสารในชุด",
+    (v, i) => `${i + 1}. ${v.subject || "(ไม่มีเรื่อง)"} · ${v.agency.split(/\s+/)[0] || ""} · ${thaiDate(v.date)}`,
+    (v) => applyValues(v), (i) => { state.batch.splice(i, 1); store.set(KEY_BATCH, state.batch); renderBatch(); });
 }
 
 // ---- wire up
 $("template").innerHTML = TEMPLATES.map((t, i) => `<option value="${i}">${t.name}</option>`).join("");
 $("template").addEventListener("change", (e) => {
   const t = TEMPLATES[e.target.value];
-  if ($("body").value.trim() && !confirm("แทนที่ “เรื่อง” และ “เนื้อความ” ด้วยแม่แบบนี้?")) return;
-  $("subject").value = t.subject; $("body").value = t.body; render();
+  if ($("body").value.trim() && !confirm("แทนที่ “เรื่อง” “เนื้อความ” และส่วนเสริม ด้วยแม่แบบนี้?")) return;
+  $("subject").value = t.subject; $("body").value = t.body;
+  $("useItems").checked = !!t.useItems; $("useApproval").checked = !!t.useApproval; $("signDate").checked = !!t.signDate;
+  if (t.position && !$("position").value.trim()) $("position").value = t.position;
+  state.items = (t.items || []).map((it) => ({ ...it }));
+  syncBoxes(); renderItems(); render();
 });
 $("form").addEventListener("input", () => { render(); if (document.querySelector(".invalid")) validate(true); });
-$("thaiNum").addEventListener("change", render);
+["thaiNum", "signDate"].forEach((id) => $(id).addEventListener("change", render));
+["useItems", "useApproval"].forEach((id) => $(id).addEventListener("change", () => {
+  if (id === "useItems" && $("useItems").checked && !state.items.length) { state.items.push({ desc: "", type: "", amount: "" }); renderItems(); }
+  syncBoxes(); render();
+}));
+$("addItem").addEventListener("click", () => {
+  const last = state.items[state.items.length - 1];
+  state.items.push({ desc: "", type: last ? last.type : "", amount: "" });
+  renderItems(); render();
+  const inputs = document.querySelectorAll("#items .item:last-child input"); inputs[0] && inputs[0].focus();
+});
 for (const [id, key] of [["logo", "logo"], ["sig", "sig"]]) {
   $(id).addEventListener("change", async (e) => {
     const f = e.target.files[0];
@@ -430,8 +707,16 @@ for (const [id, key] of [["logo", "logo"], ["sig", "sig"]]) {
     render();
   });
 }
-$("pdfBtn").addEventListener("click", exportPdf);
-$("docxBtn").addEventListener("click", exportDocx);
+$("pdfBtn").addEventListener("click", () => exportOne("pdf"));
+$("docxBtn").addEventListener("click", () => exportOne("docx"));
+$("batchPdf").addEventListener("click", () => exportBatch("pdf"));
+$("batchDocx").addEventListener("click", () => exportBatch("docx"));
+$("addBatch").addEventListener("click", () => {
+  const miss = validate(true);
+  if (miss.length) return reportMissing(miss);
+  state.batch.push(formValues()); store.set(KEY_BATCH, state.batch); renderBatch();
+  setStatus(`เพิ่มเข้าชุดแล้ว (${state.batch.length} ฉบับ) แก้ฟอร์มสำหรับฉบับถัดไปได้เลย`, "ok");
+});
 $("saveBtn").addEventListener("click", () => {
   const list = store.get(KEY_HIST, []);
   list.unshift({ saved: new Date().toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" }), values: formValues() });
@@ -440,16 +725,18 @@ $("saveBtn").addEventListener("click", () => {
 });
 $("newBtn").addEventListener("click", () => {
   if (!confirm("ล้างข้อมูลในฟอร์มเพื่อเริ่มฉบับใหม่?")) return;
-  applyValues({ date: new Date().toISOString().slice(0, 10), agency: $("agency").value, signer: $("signer").value, position: $("position").value });
+  applyValues({ date: new Date().toISOString().slice(0, 10), agency: $("agency").value, signer: $("signer").value,
+                position: $("position").value, thaiNum: $("thaiNum").checked });
 });
 window.addEventListener("resize", fitPreview);
 document.fonts && document.fonts.ready.then(fitPreview);
 
 // ---- initial state
+state.batch = store.get(KEY_BATCH, []);
 const draft = store.get(KEY_DRAFT, null);
 if (draft) applyValues(draft);
-else { $("date").value = new Date().toISOString().slice(0, 10); $("body").value = TEMPLATES[0].body; render(); }
-renderHistory();
+else applyValues({ date: new Date().toISOString().slice(0, 10), body: TEMPLATES[0].body, thaiNum: true });
+renderHistory(); renderBatch();
 </script>
 </body>
 </html>
