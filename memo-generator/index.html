@@ -84,17 +84,12 @@
   .memo table.items { width: 100%; border-collapse: collapse; margin: 1mm 0; }
   .memo table.items td { padding: 0 1mm; vertical-align: top; }
   .memo table.items { table-layout: fixed; }
-  .memo table.items .no { width: 10mm; text-align: right; padding-right: 2mm; }
-  .memo table.items .ty { width: 38mm; }
+  /* ตรงกับคอลัมน์ในไฟล์ Word: 8 | 86+2 (รายการ) | 18 | 32 | 14 มม. */
+  .memo table.items .no { width: 8mm; text-align: right; padding-right: 2mm; }
+  .memo table.items .ty { width: 2mm; }
   .memo table.items .jn { width: 18mm; }
   .memo table.items .am { width: 32mm; text-align: right; white-space: nowrap; }
-  .memo table.items .bt { width: 16mm; padding-left: 2mm; }
-  /* แบบจำนวนวัน: ช่องรายการกว้างขึ้น (ตรงกับคอลัมน์ในไฟล์ Word) */
-  .memo table.items.daily .no { width: 8mm; }
-  .memo table.items.daily .ty { width: 2mm; }
-  .memo table.items.daily .jn { width: 12mm; }
-  .memo table.items.daily .am { width: 32mm; }
-  .memo table.items.daily .bt { width: 14mm; }
+  .memo table.items .bt { width: 14mm; padding-left: 2mm; }
   .memo table.items .sum td { padding-top: 1.5mm; }
   .memo .sign { margin-left: 70mm; text-align: center; margin-top: 10mm; }
   .memo .sign img { max-height: 15mm; max-width: 50mm; display: block; margin: 0 auto 1mm; }
@@ -111,6 +106,9 @@
   .small-btn { display: inline-block; font-weight: 400; font-size: 12px; margin: 0; padding: 3px 8px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
   .tokens { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
   .tokens button { padding: 1px 8px; font-size: 12px; border-radius: 999px; }
+  .chip { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .tokens .chip button { border: 0; border-radius: 0; }
+  .tokens .chip .x { color: var(--muted); padding: 1px 7px; border-left: 1px solid var(--line); }
 </style>
 </head>
 <body>
@@ -212,6 +210,16 @@
         </select>
         <div id="items"></div>
         <button type="button" class="small" id="addItem" style="margin-top:8px">+ เพิ่มรายการ</button>
+        <div id="catalogWrap">
+          <div class="hint" style="margin-top:8px">รายการที่ใช้บ่อย: กดชื่อเพื่อเพิ่มลงบันทึก, กด × เพื่อลบออกจากรายการโปรด</div>
+          <div class="tokens" id="catalog"></div>
+          <div class="inline" style="margin-top:6px">
+            <input id="catalogNew" placeholder="ชื่อรายการใหม่ เช่น ค่าวัสดุสำนักงาน">
+            <button type="button" class="small" id="catalogAdd">+ บันทึกชื่อรายการ</button>
+          </div>
+          <div class="hint">ชื่อรายการใหม่ที่พิมพ์ในบันทึกจะถูกจำไว้ให้อัตโนมัติเมื่อดาวน์โหลดหรือเพิ่มเข้าชุด</div>
+        </div>
+        <datalist id="itemNames"></datalist>
         <div class="total" id="totalView"></div>
         <div class="hint">ตารางรายการจะแทรกไว้ก่อนย่อหน้าสุดท้ายของเนื้อความ (เช่น ก่อน “จึงเรียนมาเพื่อ...”)</div>
       </div>
@@ -431,7 +439,9 @@ function prepare(raw) {
           const days = num(parseAmount(it.days) || 0), rate = num(parseAmount(it.rate) || 0);
           desc = [desc, `จำนวน ${days} วัน วันละ ${rate} บาท (${days}x${rate})`].filter(Boolean).join(" ");
         }
-        return { no: T(`${i + 1}.`), desc: T(desc), type: daily ? "" : T((it.type || "").trim()),
+        // ชื่อรายการกับประเภทเงินอยู่ช่องเดียวกัน อ่านต่อกันเหมือนต้นฉบับ และตัดบรรทัดได้สวยกว่าแยกคอลัมน์
+        if (!daily) desc = [desc, (it.type || "").trim()].filter(Boolean).join(" ");
+        return { no: T(`${i + 1}.`), desc: T(desc),
                  label: daily ? "รวม" : "จำนวน", amount: isNaN(amt) ? "" : T(money(amt)) };
       }),
       totalLabel: daily ? "รวมเงินที่ขอเบิกครั้งนี้ทั้งสิ้น" : "รวมเป็นเงิน",
@@ -489,9 +499,8 @@ function memoHtml(d) {
   const paras = d.paragraphs.map((p) => `<p>${esc(p)}</p>`);
   if (d.items) {
     const it = d.items;
-    const table = `<table class="items${it.daily ? " daily" : ""}"><colgroup><col class="no"><col><col class="ty"><col class="jn"><col class="am"><col class="bt"></colgroup>
-      ${it.rows.map((r) => `<tr><td class="no">${r.no}</td>${it.daily ? `<td colspan="2">${v(r.desc, "รายการ")}</td>`
-          : `<td>${v(r.desc, "รายการ")}</td><td class="ty">${esc(r.type)}</td>`}
+    const table = `<table class="items"><colgroup><col class="no"><col><col class="ty"><col class="jn"><col class="am"><col class="bt"></colgroup>
+      ${it.rows.map((r) => `<tr><td class="no">${r.no}</td><td colspan="2">${v(r.desc, "รายการ")}</td>
         <td class="jn">${r.label}</td><td class="am">${r.amount}</td><td class="bt">บาท</td></tr>`).join("")}
       <tr class="sum"><td></td><td colspan="3" style="text-align:right">${it.totalLabel}</td><td class="am">${it.total}</td><td class="bt">บาท</td></tr>
       <tr><td></td><td colspan="5" style="text-align:right">(${it.words})</td></tr></table>`;
@@ -601,8 +610,8 @@ function memoDocxChildren(d) {
   }));
 
   if (d.items) {
-    // รวม 160 มม. (เผื่อความกว้างของ TH SarabunPSK); แบบจำนวนวันให้ช่องรายการกว้างขึ้น
-    const cols = (d.items.daily ? [8, 92, 2, 12, 32, 14] : [10, 46, 38, 18, 32, 16]).map(mm);
+    // รวม 160 มม. (เผื่อความกว้างของ TH SarabunPSK); ช่องรายการ = คอลัมน์ 1+2
+    const cols = [8, 86, 2, 18, 32, 14].map(mm);
     const cell = (text, w, align = AlignmentType.LEFT, span = 1) => new TableCell({
       width: { size: w, type: WidthType.DXA }, columnSpan: span, margins: { left: mm(1), right: mm(1) },
       children: [new Paragraph({ alignment: align, children: [run(text)] })],
@@ -610,7 +619,7 @@ function memoDocxChildren(d) {
     const R = AlignmentType.RIGHT;
     const rows = d.items.rows.map((r) => new TableRow({ children: [
       cell(r.no, cols[0], R),
-      ...(d.items.daily ? [cell(r.desc, cols[1] + cols[2], AlignmentType.LEFT, 2)] : [cell(r.desc, cols[1]), cell(r.type, cols[2])]),
+      cell(r.desc, cols[1] + cols[2], AlignmentType.LEFT, 2),
       cell(r.label, cols[3]), cell(r.amount, cols[4], R), cell("บาท", cols[5]),
     ] }));
     rows.push(new TableRow({ children: [cell("", cols[0]), cell(d.items.totalLabel, cols[1] + cols[2] + cols[3], R, 3), cell(d.items.total, cols[4], R), cell("บาท", cols[5])] }));
@@ -684,6 +693,7 @@ async function exportOne(kind) {
     if (kind === "pdf") { addThaiBreaks($("doc")); try { await savePdf($("doc"), fileName("pdf")); } finally { render(); } }
     else download(await docx.Packer.toBlob(buildDocx([prepare(formValues())])), fileName("docx"));
     setStatus("ดาวน์โหลดแล้ว", "ok");
+    rememberFromForm();
   } catch (e) { setStatus("สร้างไฟล์ไม่สำเร็จ: " + e.message, "err"); }
   busy(false);
 }
@@ -762,7 +772,14 @@ function renderItems() {
       const inp = Object.assign(document.createElement("input"), { value: it[k] || "", placeholder: ph });
       inp.dataset.k = k;
       if (k === "amount" || k === "rate" || k === "days") inp.inputMode = "decimal";
-      inp.addEventListener("input", () => { it[k] = inp.value; render(); if (document.querySelector(".invalid")) validate(true); });
+      if (k === "desc") inp.setAttribute("list", "itemNames");   // พิมพ์แล้วมีชื่อรายการที่ใช้บ่อยให้เลือก
+      inp.addEventListener("input", () => {
+        it[k] = inp.value;
+        // เลือกชื่อจากรายการที่ใช้บ่อย → เติมประเภทเงินให้ถ้ายังว่าง
+        const hit = k === "desc" && !it.type && state.catalog.find((c) => c.desc === inp.value.trim());
+        if (hit && hit.type) { it.type = hit.type; const t = row.querySelector('[data-k="type"]'); if (t) t.value = hit.type; }
+        render(); if (document.querySelector(".invalid")) validate(true);
+      });
       row.append(inp);
     }
     const del = Object.assign(document.createElement("button"), { type: "button", className: "small", textContent: "ลบ", title: "ลบรายการ" });
@@ -770,6 +787,36 @@ function renderItems() {
     row.append(del);
     box.append(row);
   });
+  $("catalogWrap").hidden = $("itemMode").value === "daily";
+}
+
+// ---- รายการที่ใช้บ่อย (จำไว้ในเบราว์เซอร์)
+const KEY_CATALOG = "memo.itemCatalog.v1";
+const DEFAULT_TYPE = "ประเภทเงินอุดหนุนรายหัว";
+const DEFAULT_CATALOG = [
+  "ค่าจ้างครู", "โครงการสถานศึกษาสีขาวปลอดยาเสพติด", "ค่าสาธารณูปโภค (ค่าไฟฟ้าเดือนธันวาคม)",
+  "วันคริสต์มาสและวันขึ้นปีใหม่", "โครงการทัศนศึกษาเยี่ยมชมแหล่งเรียนรู้", "วันวิทยาศาสตร์",
+].map((desc) => ({ desc, type: DEFAULT_TYPE }));
+state.catalog = [];
+function renderCatalog() {
+  $("catalog").innerHTML = state.catalog.map((c, i) =>
+    `<span class="chip"><button type="button" data-add="${i}" title="${esc(c.type || "")}">${esc(c.desc)}</button><button type="button" class="x" data-del="${i}" title="ลบออกจากรายการที่ใช้บ่อย">×</button></span>`).join("")
+    || `<span class="hint">ยังไม่มีรายการ</span>`;
+  $("itemNames").innerHTML = state.catalog.map((c) => `<option value="${esc(c.desc)}"></option>`).join("");
+}
+function rememberItems(names) {
+  let added = 0;
+  for (const n of names) {
+    const desc = (n.desc || "").trim();
+    if (!desc || state.catalog.some((c) => c.desc === desc)) continue;
+    state.catalog.push({ desc, type: (n.type || "").trim() || DEFAULT_TYPE }); added++;
+  }
+  if (added) { store.set(KEY_CATALOG, state.catalog); renderCatalog(); }
+  return added;
+}
+/** หลังดาวน์โหลด/เพิ่มเข้าชุด: จำชื่อรายการใหม่ที่ผู้ใช้พิมพ์ */
+function rememberFromForm() {
+  if ($("useItems").checked && $("itemMode").value !== "daily") rememberItems(state.items);
 }
 const blankItem = (it = {}) => ({ desc: it.desc || "", type: it.type || "", amount: it.amount || "", days: it.days || "", rate: it.rate || "" });
 function syncBoxes() {
@@ -1007,6 +1054,7 @@ $("addBatch").addEventListener("click", () => {
   const miss = validate(true);
   if (miss.length) return reportMissing(miss);
   state.batch.push(formValues()); store.set(KEY_BATCH, state.batch); renderBatch();
+  rememberFromForm();
   setStatus(`เพิ่มเข้าชุดแล้ว (${state.batch.length} ฉบับ) แก้ฟอร์มสำหรับฉบับถัดไปได้เลย`, "ok");
 });
 $("saveBtn").addEventListener("click", () => {
@@ -1022,6 +1070,7 @@ $("newBtn").addEventListener("click", () => {
   applyProfileToForm(activeProfile());
 });
 window.addEventListener("resize", fitPreview);
+window.addEventListener("pagehide", () => { clearTimeout(saveTimer); store.set(KEY_DRAFT, formValues()); });
 document.fonts && document.fonts.ready.then(fitPreview);
 
 // ---- initial state
@@ -1037,6 +1086,34 @@ else {
 }
 if (!state.profiles.list.length) openProfileEditor(null);
 renderHistory(); renderBatch();
+
+// รายการที่ใช้บ่อย
+state.catalog = store.get(KEY_CATALOG, null) || DEFAULT_CATALOG.map((c) => ({ ...c }));
+renderCatalog();
+$("catalog").addEventListener("click", (e) => {
+  const add = e.target.dataset.add, del = e.target.dataset.del;
+  if (del !== undefined) {
+    state.catalog.splice(Number(del), 1); store.set(KEY_CATALOG, state.catalog); renderCatalog(); return;
+  }
+  if (add === undefined) return;
+  const c = state.catalog[Number(add)];
+  // เติมแถวว่างแถวสุดท้ายก่อน ถ้าไม่มีจึงเพิ่มแถวใหม่
+  let it = state.items[state.items.length - 1];
+  if (!it || (it.desc || "").trim() || (it.amount || "").trim()) { it = blankItem(); state.items.push(it); }
+  it.desc = c.desc; it.type = c.type || it.type;
+  renderItems(); render();
+  const rows = document.querySelectorAll("#items .item");
+  const amt = rows[rows.length - 1] && rows[rows.length - 1].querySelector('[data-k="amount"]');
+  amt && amt.focus();
+});
+const addCatalogName = () => {
+  const desc = $("catalogNew").value.trim();
+  if (!desc) return $("catalogNew").focus();
+  if (!rememberItems([{ desc }])) setStatus("มีชื่อรายการนี้อยู่แล้ว");
+  $("catalogNew").value = "";
+};
+$("catalogAdd").addEventListener("click", addCatalogName);
+$("catalogNew").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addCatalogName(); } });
 </script>
 </body>
 </html>
